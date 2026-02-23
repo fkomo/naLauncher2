@@ -1,0 +1,43 @@
+<UserControl x:Class="naLauncher2.Wpf.GameInfoControl"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+         mc:Ignorable="d" 
+         Width="460" Height="260"
+         MouseEnter="UserControl_MouseEnter"
+         MouseLeave="UserControl_MouseLeave">
+    <UserControl.Effect>
+        <DropShadowEffect x:Name="ShadowEffect" BlurRadius="16" Color="Black" ShadowDepth="0" Opacity="1"/>
+    </UserControl.Effect>
+    <Border x:Name="MainBorder" BorderBrush="#FF404040" BorderThickness="1" Background="#FF1a1a1a">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="215"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Image section -->
+            <Grid Grid.Row="0">
+                <Image x:Name="ControlImage" 
+                       Stretch="UniformToFill"/>
+                <TextBlock x:Name="LoadingText"
+                           Text="Loading..."
+                           Foreground="#FF808080"
+                           FontSize="16"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"/>
+            </Grid>
+
+            <!-- Name label section -->
+            <TextBlock Grid.Row="1"
+                       x:Name="NameLabel"
+                       Foreground="#FFCCCCCC"
+                       FontSize="16"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       Padding="8,0,8,0"/>
+        </Grid>
+    </Border>
+</UserControl>
