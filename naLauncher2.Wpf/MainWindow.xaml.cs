@@ -87,12 +87,12 @@ namespace naLauncher2.Wpf
 
             RootGrid.UpdateLayout();
 
-            double horizontalContentWidth(int n) =>
-                n > 0 ? 2 * _gridOffset + n * (GameInfoControl.ControlWidth + Gap) - Gap : 0;
+            double horizontalContentWidth(int n) => n > 0 ? 2 * _gridOffset + n * (GameInfoControl.ControlWidth + Gap) - Gap : 0;
 
             _newGamesMaxScrollX = Math.Max(0, horizontalContentWidth(newGames.Count) - screenWidth);
             _recentGamesMaxScrollX = Math.Max(0, horizontalContentWidth(recentGames.Count) - screenWidth);
-            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Count) - UserGamesCanvas.ActualHeight);
+
+            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Count) - UserGamesCanvas.ActualHeight + _gridOffset);
 
             _visibleControls = UserGamesContainer.Children.OfType<GameInfoControl>()
                 .Select(c => (Control: c, LocalTop: Canvas.GetTop(c)))
@@ -223,10 +223,13 @@ namespace naLauncher2.Wpf
             {
                 anyActive = true;
                 double next = Math.Clamp(_allGamesOffsetY + _allGamesVelocityY, 0, _userGamesMaxScrollY);
+                
                 if (next <= 0 || next >= _userGamesMaxScrollY) _allGamesVelocityY = 0;
+                
                 _allGamesOffsetY = next;
                 _allGamesVelocityY *= ScrollFriction;
                 _allGamesTransform.Y = -_allGamesOffsetY;
+
                 UpdateViewportCulling();
             }
             else _allGamesVelocityY = 0;

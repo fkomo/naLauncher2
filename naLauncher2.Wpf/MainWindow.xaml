@@ -12,7 +12,7 @@
     Background="#00202020"
     KeyDown="Window_KeyDown"
     Loaded="Window_Loaded">
-    <Grid x:Name="RootGrid" Background="#B0202020">
+    <Grid x:Name="RootGrid" Background="#C0181D1F">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -30,7 +30,11 @@
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="0,0,16,0"/>
                 <Rectangle Grid.Column="1" x:Name="NewGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="1" x:Name="NewGamesScrollThumb" Height="8" Fill="#ADD8E6" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0"/>
+                <Rectangle Grid.Column="1" x:Name="NewGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                    <Rectangle.Effect>
+                        <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
+                    </Rectangle.Effect>
+                </Rectangle>
             </Grid>
             <Canvas x:Name="NewGamesCanvas" Height="292" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
                 <Canvas x:Name="NewGamesContainer"/>
@@ -48,7 +52,11 @@
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="0,0,16,0"/>
                 <Rectangle Grid.Column="1" x:Name="RecentGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="1" x:Name="RecentGamesScrollThumb" Height="8" Fill="#ADD8E6" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0"/>
+                <Rectangle Grid.Column="1" x:Name="RecentGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                    <Rectangle.Effect>
+                        <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
+                    </Rectangle.Effect>
+                </Rectangle>
             </Grid>
             <Canvas x:Name="RecentGamesCanvas" Height="292" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
                 <Canvas x:Name="RecentGamesContainer"/>
@@ -70,7 +78,11 @@
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="0,0,16,0"/>
                 <Rectangle Grid.Column="1" x:Name="UserGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="1" x:Name="UserGamesScrollThumb" Height="8" Fill="#ADD8E6" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0"/>
+                <Rectangle Grid.Column="1" x:Name="UserGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                    <Rectangle.Effect>
+                        <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
+                    </Rectangle.Effect>
+                </Rectangle>
             </Grid>
             <Canvas Grid.Row="1" x:Name="UserGamesCanvas" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="VerticalCanvas_MouseWheel">
                 <Canvas x:Name="UserGamesContainer"/>
