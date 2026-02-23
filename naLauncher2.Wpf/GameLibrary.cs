@@ -13,11 +13,11 @@ namespace naLauncher2.Wpf
         string? _libraryPath;
 
         static readonly GameLibrary _instance = new();
-        
+
         static readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             PropertyNameCaseInsensitive = true,
-            IgnoreReadOnlyFields= true,
+            IgnoreReadOnlyFields = true,
             WriteIndented = false
         };
 

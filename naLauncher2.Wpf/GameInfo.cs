@@ -11,5 +11,8 @@
         public int? Rating { get; set; }
         public string? Developer { get; set; }
         public string[] Genres { get; set; } = [];
+
+        public bool Installed => Shortcut is not null;
+        public bool NotPlayed => Played == null || Played.Count == 0;
     }
 }

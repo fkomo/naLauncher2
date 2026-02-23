@@ -1,9 +1,8 @@
-ï»¿using naLauncher2.Wpf.Common;
+using naLauncher2.Wpf.Common;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 
 namespace naLauncher2.Wpf
 {
@@ -12,59 +11,125 @@ namespace naLauncher2.Wpf
     /// </summary>
     public partial class MainWindow : Window
     {
-        double _scrollOffsetY = 0;
-        double _scrollVelocity = 0;
-        bool _scrollAnimating = false;
-
-        readonly TranslateTransform _scrollTransform = new();
-        GameInfoControl[] _visibleControls = [];
-        double _naturalMaxBottom = 0;
-
         const double ScrollFriction = 0.88;
         const double ScrollImpulse = 20;
         const double ScrollMaxVelocity = 400;
+        const double Gap = 16;
+        const double SectionGap = 32;
 
+        // horizontal scroll — New Games
+        readonly TranslateTransform _newGamesTransform = new();
+        double _newGamesOffsetX, _newGamesVelocityX, _newGamesMaxScrollX;
+
+        // horizontal scroll — Recent Games
+        readonly TranslateTransform _lastPlayedTransform = new();
+        double _lastPlayedOffsetX, _lastPlayedVelocityX, _recentGamesMaxScrollX;
+
+        // vertical scroll — User Games
+        readonly TranslateTransform _allGamesTransform = new();
+        double _allGamesOffsetY, _allGamesVelocityY, _userGamesMaxScrollY;
+        (GameInfoControl Control, double LocalTop)[] _visibleControls = [];
+
+        bool _scrollAnimating = false;
+        int _controlsPerRow;
         double _gridOffset;
 
         public MainWindow()
         {
             InitializeComponent();
-            GameControlsContainer.RenderTransform = _scrollTransform;
+            NewGamesContainer.RenderTransform = _newGamesTransform;
+            RecentGamesContainer.RenderTransform = _lastPlayedTransform;
+            UserGamesContainer.RenderTransform = _allGamesTransform;
         }
 
         async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             await GameLibrary.Instance.Load(@"c:\Users\filip\AppData\Roaming\Ujeby\naLauncher2\library.json");
 
-            AddGameLibraryControls();
+            double screenWidth = RootGrid.ActualWidth;
+            _controlsPerRow = (int)((screenWidth + Gap) / (GameInfoControl.ControlWidth + Gap));
+            
+            double totalWidth = _controlsPerRow * GameInfoControl.ControlWidth + (_controlsPerRow - 1) * Gap;
+            _gridOffset = (screenWidth - totalWidth) / 2;
 
-            // Arrange controls after canvas is laid out
-            ArrangeControlsInGrid(GameLibrary.Instance.Games.Keys.Order(), animate: 0);
+            var newGames = GameLibrary.Instance.Games
+                .Where(x => x.Value.Installed && x.Value.NotPlayed)
+                .OrderByDescending(x => x.Value.Added)
+                .Select(x => x.Key)
+                .ToList();
+
+            var recentGames = GameLibrary.Instance.Games
+                .Where(x => x.Value.Installed && !x.Value.NotPlayed)
+                .OrderByDescending(x => x.Value.Played.Last())
+                .Select(x => x.Key)
+                .ToList();
+
+            var userGames = GameLibrary.Instance.Games
+                .Where(x => x.Value.Installed)
+                .OrderBy(x => x.Key)
+                .Select(x => x.Key)
+                .ToList();
+
+            PopulateHorizontalSection(NewGamesContainer, newGames);
+            PopulateHorizontalSection(RecentGamesContainer, recentGames);
+            PopulateGridSection(UserGamesContainer, userGames);
+
+            NewGamesLabel.Text = $"New ({newGames.Count})";
+            RecentGamesLabel.Text = $"Recent ({recentGames.Count})";
+            UserGamesLabel.Text = $"Installed ({userGames.Count})";
+
+            double shadowOffset = GameInfoControl.ShadowBlurRadius;
+            double canvasTopMargin = SectionGap - shadowOffset;
+            NewGamesCanvas.Margin = new Thickness(0, canvasTopMargin, 0, 0);
+            RecentGamesCanvas.Margin = new Thickness(0, canvasTopMargin, 0, 0);
+            UserGamesCanvas.Margin = new Thickness(0, canvasTopMargin, 0, 0);
+
+            RootGrid.UpdateLayout();
+
+            double horizontalContentWidth(int n) =>
+                n > 0 ? 2 * _gridOffset + n * (GameInfoControl.ControlWidth + Gap) - Gap : 0;
+
+            _newGamesMaxScrollX = Math.Max(0, horizontalContentWidth(newGames.Count) - screenWidth);
+            _recentGamesMaxScrollX = Math.Max(0, horizontalContentWidth(recentGames.Count) - screenWidth);
+            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Count) - UserGamesCanvas.ActualHeight);
+
+            _visibleControls = UserGamesContainer.Children.OfType<GameInfoControl>()
+                .Select(c => (Control: c, LocalTop: Canvas.GetTop(c)))
+                .ToArray();
+
+            UpdateViewportCulling();
         }
 
-        void AddGameLibraryControls()
+        double GridContentHeight(int count)
         {
-            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(AddGameLibraryControls)}()");
+            if (count == 0) return 0;
+            int rows = (int)Math.Ceiling((double)count / _controlsPerRow);
+            return GameInfoControl.ShadowBlurRadius + rows * GameInfoControl.ControlHeight + (rows - 1) * Gap + Gap;
+        }
 
-            var _random = new Random();
+        void PopulateHorizontalSection(Canvas container, IList<string> gameIds)
+        {
+            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateHorizontalSection)}({gameIds.Count} games)");
 
-            foreach (var title in GameLibrary.Instance.Games.Keys)
+            for (int i = 0; i < gameIds.Count; i++)
             {
-                var control = new GameInfoControl(title);
-                control.CacheMode = new BitmapCache();
+                var control = new GameInfoControl(gameIds[i]) { CacheMode = new BitmapCache() };
+                container.Children.Add(control);
+                Canvas.SetLeft(control, _gridOffset + i * (GameInfoControl.ControlWidth + Gap));
+                Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius);
+            }
+        }
 
-                // Get screen dimensions
-                double screenWidth = SystemParameters.PrimaryScreenWidth;
-                double screenHeight = SystemParameters.PrimaryScreenHeight;
+        void PopulateGridSection(Canvas container, IList<string> gameIds)
+        {
+            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateGridSection)}({gameIds.Count} games)");
 
-                // Calculate random position ensuring control stays within screen bounds
-                double left = _random.NextDouble() * (screenWidth - control.Width);
-                double top = _random.NextDouble() * (screenHeight - control.Height);
-
-                // Add control to inner canvas
-                GameControlsContainer.Children.Add(control);
-                Canvas.SetLeft(control, left);
-                Canvas.SetTop(control, top);
+            for (int i = 0; i < gameIds.Count; i++)
+            {
+                var control = new GameInfoControl(gameIds[i]) { CacheMode = new BitmapCache() };
+                container.Children.Add(control);
+                Canvas.SetLeft(control, _gridOffset + (i % _controlsPerRow) * (GameInfoControl.ControlWidth + Gap));
+                Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius + (i / _controlsPerRow) * (GameInfoControl.ControlHeight + Gap));
             }
         }
 
@@ -74,119 +139,19 @@ namespace naLauncher2.Wpf
                 this.Close();
         }
 
-        void ArrangeControlsInGrid(IEnumerable<string> controlIds, double gap = 16, int animate = 1000)
-        {
-            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(ArrangeControlsInGrid)}()");
-
-            // Use actual canvas dimensions instead of SystemParameters which may differ due to DPI/scaling
-            double screenWidth = ControlsCanvas.ActualWidth;
-            double screenHeight = ControlsCanvas.ActualHeight;
-
-            // Calculate how many controls fit horizontally
-            int controlsPerRow = (int)((screenWidth + gap) / (GameInfoControl.ControlWidth + gap));
-
-            // Calculate total width needed for one row of controls
-            double totalWidth = (controlsPerRow * GameInfoControl.ControlWidth) + ((controlsPerRow - 1) * gap);
-
-            // Calculate horizontal offset to center the grid, distributing remaining space equally
-            double totalRemainingSpace = screenWidth - totalWidth;
-            _gridOffset = totalRemainingSpace / 2;
-
-            int index = 0;
-            var duration = TimeSpan.FromMilliseconds(animate);
-            var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
-
-            _scrollOffsetY = 0;
-            _scrollVelocity = 0;
-            _scrollTransform.Y = 0;
-            if (_scrollAnimating)
-            {
-                CompositionTarget.Rendering -= OnScrollRendering;
-                _scrollAnimating = false;
-            }
-
-            HideAllGameControls();
-
-            foreach (var control in controlIds.Select(FindControl).Where(x => x is not null))
-            {
-                control!.Visibility = Visibility.Visible;
-                
-                int row = index / controlsPerRow;
-                int col = index % controlsPerRow;
-
-                double newLeft = _gridOffset + (col * (GameInfoControl.ControlWidth + gap));
-                double newTop = _gridOffset + row * (GameInfoControl.ControlHeight + gap);
-
-                if (animate > 0)
-                {
-                    // Get current position
-                    double currentLeft = Canvas.GetLeft(control);
-                    double currentTop = Canvas.GetTop(control);
-
-                    // Calculate offset from current to new position
-                    double offsetX = currentLeft - newLeft;
-                    double offsetY = currentTop - newTop;
-
-                    // Set render transform if not already set
-                    if (control!.RenderTransform is not TranslateTransform)
-                    {
-                        control.RenderTransform = new TranslateTransform(offsetX, offsetY);
-                        control.RenderTransformOrigin = new Point(0, 0);
-                    }
-
-                    // Set final position
-                    Canvas.SetLeft(control, newLeft);
-                    Canvas.SetTop(control, newTop);
-
-                    // Animate from current offset to (0, 0)
-                    var translateTransform = (TranslateTransform)control.RenderTransform;
-                    var xAnimation = new DoubleAnimation(offsetX, 0, duration) { EasingFunction = easing };
-                    var yAnimation = new DoubleAnimation(offsetY, 0, duration) { EasingFunction = easing };
-
-                    translateTransform.BeginAnimation(TranslateTransform.XProperty, xAnimation);
-                    translateTransform.BeginAnimation(TranslateTransform.YProperty, yAnimation);
-                }
-                else
-                {
-                    Canvas.SetLeft(control, newLeft);
-                    Canvas.SetTop(control, newTop);
-                }
-
-                index++;
-            }
-
-            _visibleControls = GameInfoControls.Where(c => c.Visibility == Visibility.Visible).ToArray();
-            _naturalMaxBottom = _visibleControls.Length > 0
-                ? _visibleControls.Max(c => Canvas.GetTop(c) + GameInfoControl.ControlHeight)
-                : 0;
-
-            UpdateViewportCulling();
-        }
-
-        GameInfoControl? FindControl(string id) => GameInfoControls.FirstOrDefault(c => c.Id == id);
-
-        IEnumerable<GameInfoControl> GameInfoControls => GameControlsContainer.Children.OfType<GameInfoControl>();
-
-        void HideAllGameControls()
-        {
-            foreach (var control in GameInfoControls)
-                control.Visibility = Visibility.Collapsed;
-        }
-
         void UpdateViewportCulling()
         {
-            if (_visibleControls.Length == 0 || ControlsCanvas.ActualHeight == 0)
+            if (_visibleControls.Length == 0 || UserGamesCanvas.ActualHeight == 0)
                 return;
 
-            double viewportTop = _scrollOffsetY;
-            double viewportBottom = _scrollOffsetY + ControlsCanvas.ActualHeight;
+            double viewportTop = _allGamesOffsetY;
+            double viewportBottom = _allGamesOffsetY + UserGamesCanvas.ActualHeight;
             double buffer = GameInfoControl.ControlHeight;
 
-            foreach (var control in _visibleControls)
+            foreach (var (control, localTop) in _visibleControls)
             {
-                double top = Canvas.GetTop(control);
-                bool inViewport = top + GameInfoControl.ControlHeight + buffer > viewportTop
-                               && top - buffer < viewportBottom;
+                bool inViewport = localTop + GameInfoControl.ControlHeight + buffer > viewportTop
+                               && localTop - buffer < viewportBottom;
 
                 var target = inViewport ? Visibility.Visible : Visibility.Collapsed;
                 if (control.Visibility != target)
@@ -194,11 +159,28 @@ namespace naLauncher2.Wpf
             }
         }
 
-        void ControlsCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        void HorizontalCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            _scrollVelocity = Math.Clamp(
-                _scrollVelocity + (-e.Delta / 120.0 * ScrollImpulse),
-                -ScrollMaxVelocity, ScrollMaxVelocity);
+            double impulse = -e.Delta / 120.0 * ScrollImpulse;
+
+            if (sender == NewGamesCanvas && _newGamesMaxScrollX > 0)
+                _newGamesVelocityX = Math.Clamp(_newGamesVelocityX + impulse, -ScrollMaxVelocity, ScrollMaxVelocity);
+            else if (sender == RecentGamesCanvas && _recentGamesMaxScrollX > 0)
+                _lastPlayedVelocityX = Math.Clamp(_lastPlayedVelocityX + impulse, -ScrollMaxVelocity, ScrollMaxVelocity);
+
+            if (!_scrollAnimating)
+            {
+                _scrollAnimating = true;
+                CompositionTarget.Rendering += OnScrollRendering;
+            }
+
+            e.Handled = true;
+        }
+
+        void VerticalCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (_userGamesMaxScrollY > 0)
+                _allGamesVelocityY = Math.Clamp(_allGamesVelocityY + (-e.Delta / 120.0 * ScrollImpulse), -ScrollMaxVelocity, ScrollMaxVelocity);
 
             if (!_scrollAnimating)
             {
@@ -211,34 +193,47 @@ namespace naLauncher2.Wpf
 
         void OnScrollRendering(object? sender, EventArgs e)
         {
-            if (Math.Abs(_scrollVelocity) < 0.5 || _visibleControls.Length == 0)
+            bool anyActive = false;
+
+            if (Math.Abs(_newGamesVelocityX) >= 0.5)
             {
-                _scrollVelocity = 0;
-                CompositionTarget.Rendering -= OnScrollRendering;
-                _scrollAnimating = false;
-                return;
+                anyActive = true;
+                double next = Math.Clamp(_newGamesOffsetX + _newGamesVelocityX, 0, _newGamesMaxScrollX);
+                if (next <= 0 || next >= _newGamesMaxScrollX) _newGamesVelocityX = 0;
+                _newGamesOffsetX = next;
+                _newGamesVelocityX *= ScrollFriction;
+                _newGamesTransform.X = -_newGamesOffsetX;
             }
+            else _newGamesVelocityX = 0;
 
-            double maxScrollOffset = Math.Max(0, _naturalMaxBottom - ControlsCanvas.ActualHeight + _gridOffset);
-
-            if (maxScrollOffset <= 0)
+            if (Math.Abs(_lastPlayedVelocityX) >= 0.5)
             {
-                _scrollVelocity = 0;
-                CompositionTarget.Rendering -= OnScrollRendering;
-                _scrollAnimating = false;
-                return;
+                anyActive = true;
+                double next = Math.Clamp(_lastPlayedOffsetX + _lastPlayedVelocityX, 0, _recentGamesMaxScrollX);
+                if (next <= 0 || next >= _recentGamesMaxScrollX) _lastPlayedVelocityX = 0;
+                _lastPlayedOffsetX = next;
+                _lastPlayedVelocityX *= ScrollFriction;
+                _lastPlayedTransform.X = -_lastPlayedOffsetX;
             }
+            else _lastPlayedVelocityX = 0;
 
-            double newOffset = Math.Clamp(_scrollOffsetY + _scrollVelocity, 0, maxScrollOffset);
+            if (Math.Abs(_allGamesVelocityY) >= 0.5)
+            {
+                anyActive = true;
+                double next = Math.Clamp(_allGamesOffsetY + _allGamesVelocityY, 0, _userGamesMaxScrollY);
+                if (next <= 0 || next >= _userGamesMaxScrollY) _allGamesVelocityY = 0;
+                _allGamesOffsetY = next;
+                _allGamesVelocityY *= ScrollFriction;
+                _allGamesTransform.Y = -_allGamesOffsetY;
+                UpdateViewportCulling();
+            }
+            else _allGamesVelocityY = 0;
 
-            if (newOffset <= 0 || newOffset >= maxScrollOffset)
-                _scrollVelocity = 0;
-
-            _scrollOffsetY = newOffset;
-            _scrollVelocity *= ScrollFriction;
-            _scrollTransform.Y = -_scrollOffsetY;
-
-            UpdateViewportCulling();
+            if (!anyActive)
+            {
+                _scrollAnimating = false;
+                CompositionTarget.Rendering -= OnScrollRendering;
+            }
         }
     }
 }

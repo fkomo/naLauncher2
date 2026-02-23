@@ -15,6 +15,7 @@ namespace naLauncher2.Wpf
     {
         public const double ControlWidth = 460;
         public const double ControlHeight = 260;
+        public const double ShadowBlurRadius = 16;
 
         readonly int _originalZIndex;
         readonly Brush _originalBorderBrush;

@@ -12,7 +12,68 @@
     Background="#00202020"
     KeyDown="Window_KeyDown"
     Loaded="Window_Loaded">
-    <Canvas x:Name="ControlsCanvas" Background="#80202020" MouseWheel="ControlsCanvas_MouseWheel">
-        <Canvas x:Name="GameControlsContainer"/>
-    </Canvas>
+    <Grid x:Name="RootGrid" Background="#B0202020">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- New Games (horizontal strip) -->
+        <StackPanel Grid.Row="0" Orientation="Vertical">
+            <Grid Margin="32,32,32,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="New" x:Name="NewGamesLabel" Foreground="White" Opacity="1"
+                           FontSize="16" FontWeight="Normal"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <Rectangle Grid.Column="1" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+            </Grid>
+            <Canvas x:Name="NewGamesCanvas" Height="292" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
+                <Canvas x:Name="NewGamesContainer"/>
+            </Canvas>
+        </StackPanel>
+
+        <!-- Recent Games (horizontal strip) -->
+        <StackPanel Grid.Row="1" Orientation="Vertical">
+            <Grid Margin="32,16,32,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Recent" x:Name="RecentGamesLabel" Foreground="White" Opacity="1"
+                           FontSize="16" FontWeight="Normal"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <Rectangle Grid.Column="1" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+            </Grid>
+            <Canvas x:Name="RecentGamesCanvas" Height="292" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
+                <Canvas x:Name="RecentGamesContainer"/>
+            </Canvas>
+        </StackPanel>
+
+        <!-- User Games (vertical multi-row grid) -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0" Margin="32,16,32,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
+                           FontSize="16" FontWeight="Normal"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <Rectangle Grid.Column="1" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+            </Grid>
+            <Canvas Grid.Row="1" x:Name="UserGamesCanvas" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="VerticalCanvas_MouseWheel">
+                <Canvas x:Name="UserGamesContainer"/>
+            </Canvas>
+        </Grid>
+
+    </Grid>
 </Window>
+
