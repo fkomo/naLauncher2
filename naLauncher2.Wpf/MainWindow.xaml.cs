@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace naLauncher2.Wpf
 {
@@ -98,6 +99,7 @@ namespace naLauncher2.Wpf
                 .ToArray();
 
             UpdateViewportCulling();
+            UpdateScrollThumbs();
         }
 
         double GridContentHeight(int count)
@@ -234,6 +236,29 @@ namespace naLauncher2.Wpf
                 _scrollAnimating = false;
                 CompositionTarget.Rendering -= OnScrollRendering;
             }
+
+            UpdateScrollThumbs();
+        }
+
+        void UpdateScrollThumbs()
+        {
+            UpdateScrollThumb(NewGamesScrollThumb, NewGamesScrollTrack, _newGamesOffsetX, _newGamesMaxScrollX, NewGamesCanvas.ActualWidth);
+            UpdateScrollThumb(RecentGamesScrollThumb, RecentGamesScrollTrack, _lastPlayedOffsetX, _recentGamesMaxScrollX, RecentGamesCanvas.ActualWidth);
+            UpdateScrollThumb(UserGamesScrollThumb, UserGamesScrollTrack, _allGamesOffsetY, _userGamesMaxScrollY, UserGamesCanvas.ActualHeight);
+        }
+
+        static void UpdateScrollThumb(Rectangle thumb, Rectangle track, double offset, double maxScroll, double viewport)
+        {
+            double trackWidth = track.ActualWidth;
+            if (trackWidth <= 0 || maxScroll <= 0)
+            {
+                thumb.Width = 0;
+                return;
+            }
+            double thumbWidth = Math.Max(8, trackWidth * viewport / (viewport + maxScroll));
+            double thumbLeft = (offset / maxScroll) * (trackWidth - thumbWidth);
+            thumb.Width = thumbWidth;
+            thumb.Margin = new Thickness(thumbLeft, 3, 0, 0);
         }
     }
 }

@@ -29,7 +29,8 @@
                 <TextBlock Grid.Column="0" Text="New" x:Name="NewGamesLabel" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="0,0,16,0"/>
-                <Rectangle Grid.Column="1" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="1" x:Name="NewGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="1" x:Name="NewGamesScrollThumb" Height="8" Fill="#ADD8E6" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0"/>
             </Grid>
             <Canvas x:Name="NewGamesCanvas" Height="292" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
                 <Canvas x:Name="NewGamesContainer"/>
@@ -46,7 +47,8 @@
                 <TextBlock Grid.Column="0" Text="Recent" x:Name="RecentGamesLabel" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="0,0,16,0"/>
-                <Rectangle Grid.Column="1" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="1" x:Name="RecentGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="1" x:Name="RecentGamesScrollThumb" Height="8" Fill="#ADD8E6" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0"/>
             </Grid>
             <Canvas x:Name="RecentGamesCanvas" Height="292" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
                 <Canvas x:Name="RecentGamesContainer"/>
@@ -67,7 +69,8 @@
                 <TextBlock Grid.Column="0" Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="0,0,16,0"/>
-                <Rectangle Grid.Column="1" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="1" x:Name="UserGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="1" x:Name="UserGamesScrollThumb" Height="8" Fill="#ADD8E6" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0"/>
             </Grid>
             <Canvas Grid.Row="1" x:Name="UserGamesCanvas" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="VerticalCanvas_MouseWheel">
                 <Canvas x:Name="UserGamesContainer"/>
