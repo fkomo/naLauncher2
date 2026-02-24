@@ -57,7 +57,10 @@ namespace naLauncher2.Wpf
         /// </summary>
         async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            await GameLibrary.Instance.Load(@"c:\Users\filip\AppData\Roaming\Ujeby\naLauncher2\library.json");
+            if (!await LoadLibraryAndSettings())
+                return;
+
+            _userGamesFilterMode = AppSettings.Instance.UserGamesFilterMode;
 
             double screenWidth = RootGrid.ActualWidth;
             _controlsPerRow = (int)((screenWidth + Gap) / (GameInfoControl.ControlWidth + Gap));
@@ -67,7 +70,8 @@ namespace naLauncher2.Wpf
 
             var newGames = GameLibrary.Instance.NewGames().ToArray();
             var recentGames = GameLibrary.Instance.RecentGames().ToArray();
-            var userGames = GameLibrary.Instance.InstalledGames().ToArray();
+
+            var userGames = GetUserGames();
 
             PopulateHorizontalSection(NewGamesContainer, newGames);
             PopulateHorizontalSection(RecentGamesContainer, recentGames);
@@ -76,6 +80,7 @@ namespace naLauncher2.Wpf
             NewGamesCount.Text = $"({newGames.Length})";
             RecentGamesCount.Text = $"({recentGames.Length})";
             UserGamesCount.Text = $"({userGames.Length})";
+            UserGamesLabel.Text = _userGamesFilterMode.ToString();
 
             double shadowOffset = GameInfoControl.ShadowBlurRadius;
             double canvasTopMargin = SectionGap - shadowOffset;
@@ -99,6 +104,56 @@ namespace naLauncher2.Wpf
 
             UpdateViewportCulling();
             UpdateScrollThumbs();
+        }
+
+        string[] GetUserGames()
+        {
+            var all = GameLibrary.Instance.Games.AsEnumerable();
+
+            return (_userGamesFilterMode switch
+            {
+                UserGamesFilterMode.Removed => all.Where(x => !x.Value.Installed),
+                UserGamesFilterMode.Finished => all.Where(x => x.Value.Finished),
+                UserGamesFilterMode.Unfinished => all.Where(x => x.Value.Installed && !x.Value.Finished),
+                UserGamesFilterMode.All => all,
+                _ => all.Where(x => x.Value.Installed),
+            })
+                .Select(x => x.Key)
+                .Order()
+                .ToArray();
+        }
+
+        /// <summary>
+        /// Load app settings and game library from file. If the library path is not set in settings, prompts the user to select a JSON file.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        async Task<bool> LoadLibraryAndSettings()
+        {
+            await AppSettings.Instance.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "settings.json"));
+
+            if (AppSettings.Instance.LibraryPath is null)
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Select game library file",
+                    Filter = "JSON files (*.json)|*.json",
+                    CheckFileExists = true,
+                };
+
+                if (dialog.ShowDialog() != true)
+                {
+                    this.Close();
+                    return false;
+                }
+
+                AppSettings.Instance.LibraryPath = dialog.FileName;
+                await AppSettings.Instance.Save();
+            }
+
+            await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath ?? throw new Exception($"missing {nameof(AppSettings.Instance.LibraryPath)}"));
+
+            return true;
         }
 
         /// <summary>
@@ -337,13 +392,15 @@ namespace naLauncher2.Wpf
         /// <summary>
         /// Applies the selected filter mode from the dropdown and refreshes the User Games grid.
         /// </summary>
-        void UserGamesFilter_Click(object sender, MouseButtonEventArgs e)
+        async void UserGamesFilter_Click(object sender, MouseButtonEventArgs e)
         {
             if (sender is TextBlock tb && tb.Tag is string tag && Enum.TryParse<UserGamesFilterMode>(tag, out var mode))
             {
                 _userGamesFilterMode = mode;
                 UserGamesDropdown.IsOpen = false;
                 RefreshUserGames();
+                AppSettings.Instance.UserGamesFilterMode = _userGamesFilterMode;
+                await AppSettings.Instance.Save();
             }
         }
 
@@ -367,17 +424,7 @@ namespace naLauncher2.Wpf
         void RefreshUserGames()
         {
             var all = GameLibrary.Instance.Games.AsEnumerable();
-            var games = (_userGamesFilterMode switch
-            {
-                UserGamesFilterMode.Removed => all.Where(x => !x.Value.Installed),
-                UserGamesFilterMode.Finished => all.Where(x => x.Value.Finished),
-                UserGamesFilterMode.Unfinished => all.Where(x => x.Value.Installed && !x.Value.Finished),
-                UserGamesFilterMode.All => all,
-                _ => all.Where(x => x.Value.Installed),
-            })
-                .Select(x => x.Key)
-                .Order()
-                .ToArray();
+            var games = GetUserGames();
 
             UserGamesLabel.Text = _userGamesFilterMode.ToString();
             UserGamesContainer.Children.Clear();
