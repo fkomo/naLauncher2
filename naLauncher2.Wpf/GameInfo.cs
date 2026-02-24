@@ -14,5 +14,6 @@
 
         public bool Installed => Shortcut is not null;
         public bool NotPlayed => Played == null || Played.Count == 0;
+        public bool Finished => Completed.HasValue;
     }
 }

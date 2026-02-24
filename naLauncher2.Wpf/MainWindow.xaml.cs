@@ -34,6 +34,8 @@ namespace naLauncher2.Wpf
         bool _scrollAnimating = false;
         int _controlsPerRow;
         double _gridOffset;
+        UserGamesFilterMode _userGamesFilterMode = UserGamesFilterMode.Installed;
+        DateTime _userGamesDropdownLastClosed = DateTime.MinValue;
 
         public MainWindow()
         {
@@ -49,7 +51,7 @@ namespace naLauncher2.Wpf
 
             double screenWidth = RootGrid.ActualWidth;
             _controlsPerRow = (int)((screenWidth + Gap) / (GameInfoControl.ControlWidth + Gap));
-            
+
             double totalWidth = _controlsPerRow * GameInfoControl.ControlWidth + (_controlsPerRow - 1) * Gap;
             _gridOffset = (screenWidth - totalWidth) / 2;
 
@@ -57,27 +59,27 @@ namespace naLauncher2.Wpf
                 .Where(x => x.Value.Installed && x.Value.NotPlayed)
                 .OrderByDescending(x => x.Value.Added)
                 .Select(x => x.Key)
-                .ToList();
+                .ToArray();
 
             var recentGames = GameLibrary.Instance.Games
-                .Where(x => x.Value.Installed && !x.Value.NotPlayed)
+                .Where(x => !x.Value.NotPlayed)
                 .OrderByDescending(x => x.Value.Played.Last())
                 .Select(x => x.Key)
-                .ToList();
+                .ToArray();
 
             var userGames = GameLibrary.Instance.Games
                 .Where(x => x.Value.Installed)
                 .OrderBy(x => x.Key)
                 .Select(x => x.Key)
-                .ToList();
+                .ToArray();
 
             PopulateHorizontalSection(NewGamesContainer, newGames);
             PopulateHorizontalSection(RecentGamesContainer, recentGames);
             PopulateGridSection(UserGamesContainer, userGames);
 
-            NewGamesCount.Text = $"({newGames.Count})";
-            RecentGamesCount.Text = $"({recentGames.Count})";
-            UserGamesCount.Text = $"({userGames.Count})";
+            NewGamesCount.Text = $"({newGames.Length})";
+            RecentGamesCount.Text = $"({recentGames.Length})";
+            UserGamesCount.Text = $"({userGames.Length})";
 
             double shadowOffset = GameInfoControl.ShadowBlurRadius;
             double canvasTopMargin = SectionGap - shadowOffset;
@@ -87,12 +89,12 @@ namespace naLauncher2.Wpf
 
             RootGrid.UpdateLayout();
 
-            double horizontalContentWidth(int n) => n > 0 ? 2 * _gridOffset + n * (GameInfoControl.ControlWidth + Gap) - Gap : 0;
+            double HorizontalContentWidth(int n) => n > 0 ? 2 * _gridOffset + n * (GameInfoControl.ControlWidth + Gap) - Gap : 0;
 
-            _newGamesMaxScrollX = Math.Max(0, horizontalContentWidth(newGames.Count) - screenWidth);
-            _recentGamesMaxScrollX = Math.Max(0, horizontalContentWidth(recentGames.Count) - screenWidth);
+            _newGamesMaxScrollX = Math.Max(0, HorizontalContentWidth(newGames.Length) - screenWidth);
+            _recentGamesMaxScrollX = Math.Max(0, HorizontalContentWidth(recentGames.Length) - screenWidth);
 
-            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Count) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
 
             _visibleControls = UserGamesContainer.Children.OfType<GameInfoControl>()
                 .Select(c => (Control: c, LocalTop: Canvas.GetTop(c)))
@@ -109,11 +111,11 @@ namespace naLauncher2.Wpf
             return GameInfoControl.ShadowBlurRadius + rows * GameInfoControl.ControlHeight + (rows - 1) * Gap + Gap;
         }
 
-        void PopulateHorizontalSection(Canvas container, IList<string> gameIds)
+        void PopulateHorizontalSection(Canvas container, string[] gameIds)
         {
-            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateHorizontalSection)}({gameIds.Count} games)");
+            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateHorizontalSection)}({gameIds.Length} games)");
 
-            for (int i = 0; i < gameIds.Count; i++)
+            for (int i = 0; i < gameIds.Length; i++)
             {
                 var control = new GameInfoControl(gameIds[i]) { CacheMode = new BitmapCache() };
                 container.Children.Add(control);
@@ -122,11 +124,11 @@ namespace naLauncher2.Wpf
             }
         }
 
-        void PopulateGridSection(Canvas container, IList<string> gameIds)
+        void PopulateGridSection(Canvas container, string[] gameIds)
         {
-            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateGridSection)}({gameIds.Count} games)");
+            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateGridSection)}({gameIds.Length} games)");
 
-            for (int i = 0; i < gameIds.Count; i++)
+            for (int i = 0; i < gameIds.Length; i++)
             {
                 var control = new GameInfoControl(gameIds[i]) { CacheMode = new BitmapCache() };
                 container.Children.Add(control);
@@ -223,9 +225,9 @@ namespace naLauncher2.Wpf
             {
                 anyActive = true;
                 double next = Math.Clamp(_allGamesOffsetY + _allGamesVelocityY, 0, _userGamesMaxScrollY);
-                
+
                 if (next <= 0 || next >= _userGamesMaxScrollY) _allGamesVelocityY = 0;
-                
+
                 _allGamesOffsetY = next;
                 _allGamesVelocityY *= ScrollFriction;
                 _allGamesTransform.Y = -_allGamesOffsetY;
@@ -262,6 +264,72 @@ namespace naLauncher2.Wpf
             double thumbLeft = (offset / maxScroll) * (trackWidth - thumbWidth);
             thumb.Width = thumbWidth;
             thumb.Margin = new Thickness(thumbLeft, 3, 0, 0);
+        }
+
+        void UserGamesLabel_Click(object sender, MouseButtonEventArgs e)
+        {
+            if ((DateTime.UtcNow - _userGamesDropdownLastClosed).TotalMilliseconds > 300)
+            {
+                UpdateFilterOptionHighlight();
+                UserGamesDropdown.IsOpen = true;
+            }
+        }
+
+        void UserGamesDropdown_Closed(object? sender, EventArgs e)
+        {
+            _userGamesDropdownLastClosed = DateTime.UtcNow;
+        }
+
+        void UserGamesFilter_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is TextBlock tb && tb.Tag is string tag && Enum.TryParse<UserGamesFilterMode>(tag, out var mode))
+            {
+                _userGamesFilterMode = mode;
+                UserGamesDropdown.IsOpen = false;
+                RefreshUserGames();
+            }
+        }
+
+        void UpdateFilterOptionHighlight()
+        {
+            FilterOptionInstalled.Foreground = _userGamesFilterMode == UserGamesFilterMode.Installed ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionRemoved.Foreground = _userGamesFilterMode == UserGamesFilterMode.Removed ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionFinished.Foreground = _userGamesFilterMode == UserGamesFilterMode.Finished ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionUnfinished.Foreground = _userGamesFilterMode == UserGamesFilterMode.Unfinished ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionAll.Foreground = _userGamesFilterMode == UserGamesFilterMode.All ? Brushes.LightSkyBlue : Brushes.White;
+        }
+
+        void RefreshUserGames()
+        {
+            var all = GameLibrary.Instance.Games.AsEnumerable();
+            var gameIds = (_userGamesFilterMode switch
+            {
+                UserGamesFilterMode.Removed => all.Where(x => !x.Value.Installed),
+                UserGamesFilterMode.Finished => all.Where(x => x.Value.Finished),
+                UserGamesFilterMode.Unfinished => all.Where(x => x.Value.Installed && !x.Value.Finished),
+                UserGamesFilterMode.All => all,
+                _ => all.Where(x => x.Value.Installed),
+            })
+                .Select(x => x.Key)
+                .Order()
+                .ToArray();
+
+            UserGamesLabel.Text = _userGamesFilterMode.ToString();
+            UserGamesContainer.Children.Clear();
+            PopulateGridSection(UserGamesContainer, gameIds);
+            UserGamesCount.Text = $"({gameIds.Length})";
+
+            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(gameIds.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _allGamesOffsetY = 0;
+            _allGamesVelocityY = 0;
+            _allGamesTransform.Y = 0;
+
+            _visibleControls = UserGamesContainer.Children.OfType<GameInfoControl>()
+                .Select(c => (Control: c, LocalTop: Canvas.GetTop(c)))
+                .ToArray();
+
+            UpdateViewportCulling();
+            UpdateScrollThumbs();
         }
     }
 }

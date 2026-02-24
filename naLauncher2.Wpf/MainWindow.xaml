@@ -12,6 +12,20 @@
     Background="#00202020"
     KeyDown="Window_KeyDown"
     Loaded="Window_Loaded">
+    <Window.Resources>
+        <Style x:Key="DropdownItemStyle" TargetType="TextBlock">
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3A3F42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
     <Grid x:Name="RootGrid" Background="#EE181D1F">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -85,7 +99,25 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="SemiBold"
-                           VerticalAlignment="Center" Margin="0,0,0,0"/>
+                           VerticalAlignment="Center" Margin="0,0,0,0"
+                           Cursor="Hand" MouseLeftButtonUp="UserGamesLabel_Click"/>
+                <Popup Grid.Column="0" x:Name="UserGamesDropdown"
+                       PlacementTarget="{Binding ElementName=UserGamesLabel}"
+                       Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
+                       Closed="UserGamesDropdown_Closed">
+                    <Border Margin="12" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" ShadowDepth="4" BlurRadius="12" Opacity="0.8"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock x:Name="FilterOptionInstalled" Style="{StaticResource DropdownItemStyle}" Text="Installed" Tag="Installed" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                            <TextBlock x:Name="FilterOptionRemoved" Style="{StaticResource DropdownItemStyle}" Text="Removed" Tag="Removed" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                            <TextBlock x:Name="FilterOptionFinished" Style="{StaticResource DropdownItemStyle}" Text="Finished" Tag="Finished" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                            <TextBlock x:Name="FilterOptionUnfinished" Style="{StaticResource DropdownItemStyle}" Text="Unfinished" Tag="Unfinished" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                            <TextBlock x:Name="FilterOptionAll" Style="{StaticResource DropdownItemStyle}" Text="All" Tag="All" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                        </StackPanel>
+                    </Border>
+                </Popup>
                 <TextBlock Grid.Column="1" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>

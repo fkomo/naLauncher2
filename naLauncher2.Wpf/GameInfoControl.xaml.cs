@@ -39,7 +39,9 @@ namespace naLauncher2.Wpf
 
             NameLabel.Text = _id;
 
-            LoadImageAsync(GameLibrary.Instance.Games[_id].ImagePath);
+            var game = GameLibrary.Instance.Games[_id];
+
+            LoadImageAsync(game.ImagePath, game.Installed);
         }
 
         void UserControl_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
@@ -79,7 +81,7 @@ namespace naLauncher2.Wpf
             NameLabel.Effect = _originalNameLabelEffect;
         }
 
-        async void LoadImageAsync(string? imagePath)
+        async void LoadImageAsync(string? imagePath, bool isInstalled)
         {
             try
             {
@@ -87,7 +89,9 @@ namespace naLauncher2.Wpf
                 var bitmap = await Task.Run(() => LoadImageBitmap(imagePath) ?? ImageNotFound()!);
 
                 // Update UI on main thread
-                ControlImage.Source = bitmap;
+                ControlImage.Source = isInstalled
+                    ? (BitmapSource)bitmap
+                    : new FormatConvertedBitmap(bitmap, PixelFormats.Gray8, null, 0);
                 LoadingText.Visibility = Visibility.Collapsed;
             }
             catch (Exception ex)
