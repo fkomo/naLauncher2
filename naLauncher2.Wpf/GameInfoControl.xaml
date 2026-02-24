@@ -5,8 +5,12 @@
          xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
          mc:Ignorable="d" 
          Width="460" Height="260"
+         RenderTransformOrigin="0.5,0.5"
          MouseEnter="UserControl_MouseEnter"
          MouseLeave="UserControl_MouseLeave">
+    <UserControl.RenderTransform>
+        <ScaleTransform x:Name="HoverScale"/>
+    </UserControl.RenderTransform>
     <UserControl.Effect>
         <DropShadowEffect x:Name="ShadowEffect" BlurRadius="16" Color="Black" ShadowDepth="0" Opacity="1"/>
     </UserControl.Effect>
@@ -27,6 +31,19 @@
                            FontSize="16"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"/>
+
+                <!-- Glass sheen overlay -->
+                <Rectangle x:Name="GlassOverlay"
+                           IsHitTestVisible="False"
+                           Opacity="0">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#38FFFFFF" Offset="0"/>
+                            <GradientStop Color="#18FFFFFF" Offset="0.45"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.75"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
             </Grid>
 
             <!-- Name label section -->

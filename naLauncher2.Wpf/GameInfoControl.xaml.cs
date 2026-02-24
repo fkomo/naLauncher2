@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 
@@ -63,6 +64,14 @@ namespace naLauncher2.Wpf
                 BlurRadius = 1,
                 ShadowDepth = 0
             };
+
+            // Glass sheen fade in
+            var dur = new Duration(TimeSpan.FromMilliseconds(150));
+            GlassOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(GlassOverlay.Opacity, 1, dur));
+
+            // Subtle scale-up lift
+            HoverScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(HoverScale.ScaleX, 1.03, dur));
+            HoverScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(HoverScale.ScaleY, 1.03, dur));
         }
 
         void UserControl_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
@@ -79,6 +88,14 @@ namespace naLauncher2.Wpf
             // Restore original name label color and effect
             NameLabel.Foreground = _originalNameLabelForeground;
             NameLabel.Effect = _originalNameLabelEffect;
+
+            // Glass sheen fade out
+            var dur = new Duration(TimeSpan.FromMilliseconds(200));
+            GlassOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(GlassOverlay.Opacity, 0, dur));
+
+            // Scale back to normal
+            HoverScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(HoverScale.ScaleX, 1, dur));
+            HoverScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(HoverScale.ScaleY, 1, dur));
         }
 
         async void LoadImageAsync(string? imagePath, bool isInstalled)
