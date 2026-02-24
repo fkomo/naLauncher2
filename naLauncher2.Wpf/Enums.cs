@@ -9,7 +9,7 @@
         All
     }
 
-    internal enum GamesOrder
+    internal enum GamesSortMode
     {
         Title,
         Added,

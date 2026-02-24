@@ -36,6 +36,9 @@ namespace naLauncher2.Wpf
         double _gridOffset;
         UserGamesFilterMode _userGamesFilterMode = UserGamesFilterMode.Installed;
         DateTime _userGamesDropdownLastClosed = DateTime.MinValue;
+        bool _newGamesCollapsed = false;
+        bool _recentGamesCollapsed = false;
+        bool _userGamesCollapsed = false;
 
         public MainWindow()
         {
@@ -55,23 +58,9 @@ namespace naLauncher2.Wpf
             double totalWidth = _controlsPerRow * GameInfoControl.ControlWidth + (_controlsPerRow - 1) * Gap;
             _gridOffset = (screenWidth - totalWidth) / 2;
 
-            var newGames = GameLibrary.Instance.Games
-                .Where(x => x.Value.Installed && x.Value.NotPlayed)
-                .OrderByDescending(x => x.Value.Added)
-                .Select(x => x.Key)
-                .ToArray();
-
-            var recentGames = GameLibrary.Instance.Games
-                .Where(x => !x.Value.NotPlayed)
-                .OrderByDescending(x => x.Value.Played.Last())
-                .Select(x => x.Key)
-                .ToArray();
-
-            var userGames = GameLibrary.Instance.Games
-                .Where(x => x.Value.Installed)
-                .OrderBy(x => x.Key)
-                .Select(x => x.Key)
-                .ToArray();
+            var newGames = GameLibrary.Instance.NewGamesIds();
+            var recentGames = GameLibrary.Instance.RecentGamesIds();
+            var userGames = GameLibrary.Instance.InstalledGamesIds();
 
             PopulateHorizontalSection(NewGamesContainer, newGames);
             PopulateHorizontalSection(RecentGamesContainer, recentGames);
@@ -330,6 +319,37 @@ namespace naLauncher2.Wpf
 
             UpdateViewportCulling();
             UpdateScrollThumbs();
+        }
+
+        void NewGamesToggle_Click(object sender, MouseButtonEventArgs e)
+        {
+            _newGamesCollapsed = !_newGamesCollapsed;
+            NewGamesToggle.Text = _newGamesCollapsed ? "\u25B6" : "\u25BC";
+            NewGamesCanvas.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            NewGamesScrollTrack.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            NewGamesScrollThumb.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            NewGamesDivider.Visibility = _newGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        void RecentGamesToggle_Click(object sender, MouseButtonEventArgs e)
+        {
+            _recentGamesCollapsed = !_recentGamesCollapsed;
+            RecentGamesToggle.Text = _recentGamesCollapsed ? "\u25B6" : "\u25BC";
+            RecentGamesCanvas.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            RecentGamesScrollTrack.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            RecentGamesScrollThumb.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            RecentGamesDivider.Visibility = _recentGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        void UserGamesToggle_Click(object sender, MouseButtonEventArgs e)
+        {
+            _userGamesCollapsed = !_userGamesCollapsed;
+            UserGamesToggle.Text = _userGamesCollapsed ? "\u25B6" : "\u25BC";
+            UserGamesCanvas.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            UserGamesCanvasRow.Height = _userGamesCollapsed ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+            UserGamesScrollTrack.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            UserGamesScrollThumb.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            UserGamesDivider.Visibility = _userGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 }

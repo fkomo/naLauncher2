@@ -10,6 +10,24 @@ namespace naLauncher2.Wpf
     {
         public ConcurrentDictionary<string, GameInfo> Games { get; private set; } = [];
 
+        public string[] NewGamesIds() => Games
+            .Where(x => x.Value.Installed && x.Value.NotPlayed)
+            .OrderByDescending(x => x.Value.Added)
+            .Select(x => x.Key)
+            .ToArray();
+
+        public string[] RecentGamesIds() => Games
+            .Where(x => x.Value.Installed && !x.Value.NotPlayed)
+            .OrderByDescending(x => x.Value.Played.Last())
+            .Select(x => x.Key)
+            .ToArray();
+
+        public string[] InstalledGamesIds() => Games
+            .Where(x => x.Value.Installed)
+            .OrderBy(x => x.Key)
+            .Select(x => x.Key)
+            .ToArray();
+
         string? _libraryPath;
 
         static readonly GameLibrary _instance = new();

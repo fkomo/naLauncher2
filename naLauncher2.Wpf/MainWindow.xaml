@@ -41,12 +41,17 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="New" x:Name="NewGamesLabel" Foreground="White" Opacity="1"
-                           FontSize="16" FontWeight="SemiBold"
-                           VerticalAlignment="Center" Margin="0,0,0,0"/>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="NewGamesToggle" Text="▼" Foreground="White" Opacity="0.5"
+                               FontSize="14" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
+                               MouseLeftButtonUp="NewGamesToggle_Click"/>
+                    <TextBlock Text="New" x:Name="NewGamesLabel" Foreground="White" Opacity="1"
+                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
                 <TextBlock Grid.Column="1" Text="" x:Name="NewGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>
+                <Rectangle Grid.Column="2" x:Name="NewGamesDivider" Height="1" Fill="White" Opacity="0.15" VerticalAlignment="Center" Visibility="Collapsed"/>
                 <Rectangle Grid.Column="2" x:Name="NewGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
                 <Rectangle Grid.Column="2" x:Name="NewGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
@@ -67,12 +72,17 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Recent" x:Name="RecentGamesLabel" Foreground="White" Opacity="1"
-                           FontSize="16" FontWeight="SemiBold"
-                           VerticalAlignment="Center" Margin="0,0,0,0"/>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="RecentGamesToggle" Text="▼" Foreground="White" Opacity="0.5"
+                               FontSize="14" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
+                               MouseLeftButtonUp="RecentGamesToggle_Click"/>
+                    <TextBlock Text="Recent" x:Name="RecentGamesLabel" Foreground="White" Opacity="1"
+                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
                 <TextBlock Grid.Column="1" Text="" x:Name="RecentGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>
+                <Rectangle Grid.Column="2" x:Name="RecentGamesDivider" Height="1" Fill="White" Opacity="0.15" VerticalAlignment="Center" Visibility="Collapsed"/>
                 <Rectangle Grid.Column="2" x:Name="RecentGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
                 <Rectangle Grid.Column="2" x:Name="RecentGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
@@ -89,7 +99,7 @@
         <Grid Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition x:Name="UserGamesCanvasRow" Height="*"/>
             </Grid.RowDefinitions>
             <Grid Grid.Row="0" Margin="32,16,32,0">
                 <Grid.ColumnDefinitions>
@@ -97,10 +107,14 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
-                           FontSize="16" FontWeight="SemiBold"
-                           VerticalAlignment="Center" Margin="0,0,0,0"
-                           Cursor="Hand" MouseLeftButtonUp="UserGamesLabel_Click"/>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="UserGamesToggle" Text="▼" Foreground="White" Opacity="0.5"
+                               FontSize="14" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
+                               MouseLeftButtonUp="UserGamesToggle_Click"/>
+                    <TextBlock Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
+                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                               Cursor="Hand" MouseLeftButtonUp="UserGamesLabel_Click"/>
+                </StackPanel>
                 <Popup Grid.Column="0" x:Name="UserGamesDropdown"
                        PlacementTarget="{Binding ElementName=UserGamesLabel}"
                        Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
@@ -121,6 +135,7 @@
                 <TextBlock Grid.Column="1" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>
+                <Rectangle Grid.Column="2" x:Name="UserGamesDivider" Height="1" Fill="White" Opacity="0.15" VerticalAlignment="Center" Visibility="Collapsed"/>
                 <Rectangle Grid.Column="2" x:Name="UserGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
                 <Rectangle Grid.Column="2" x:Name="UserGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
