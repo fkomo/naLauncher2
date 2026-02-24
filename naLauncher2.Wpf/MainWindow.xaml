@@ -16,7 +16,7 @@
         <Style x:Key="DropdownItemStyle" TargetType="TextBlock">
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="Transparent"/>
             <Style.Triggers>
@@ -26,7 +26,7 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
-    <Grid x:Name="RootGrid" Background="#EE181D1F">
+    <Grid x:Name="RootGrid" Background="#F0181D1F">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>

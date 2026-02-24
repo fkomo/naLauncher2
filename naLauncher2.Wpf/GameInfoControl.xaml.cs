@@ -23,6 +23,7 @@ namespace naLauncher2.Wpf
         readonly Brush _originalBorderBrush;
         readonly Brush _originalNameLabelForeground;
         readonly Effect _originalNameLabelEffect;
+        readonly bool _hasInfoOverlay;
 
         readonly string _id;
         public string Id => _id;
@@ -43,7 +44,44 @@ namespace naLauncher2.Wpf
 
             var game = GameLibrary.Instance.Games[_id];
 
+            if (!string.IsNullOrEmpty(game.Developer))
+                DeveloperText.Text = game.Developer;
+            else
+                DeveloperText.Visibility = Visibility.Collapsed;
+
+            if (game.Genres?.Length > 0)
+                GenresText.Text = string.Join(", ", game.Genres);
+            else
+                GenresText.Visibility = Visibility.Collapsed;
+
+            if (!string.IsNullOrEmpty(game.Summary))
+                SummaryText.Text = game.Summary;
+            else
+                SummaryText.Visibility = Visibility.Collapsed;
+
+            _hasInfoOverlay = !string.IsNullOrEmpty(game.Developer)
+                || (game.Genres?.Length > 0)
+                || !string.IsNullOrEmpty(game.Summary);
+
             LoadImageAsync(game.ImagePath, game.Installed);
+        }
+
+        void NameLabel_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!_hasInfoOverlay)
+                return;
+
+            var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
+            InfoOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(InfoOverlay.Opacity, 1, dur));
+        }
+
+        void NameLabel_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!_hasInfoOverlay)
+                return;
+
+            var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
+            InfoOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(InfoOverlay.Opacity, 0, dur));
         }
 
         void UserControl_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)

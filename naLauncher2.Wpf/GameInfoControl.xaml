@@ -44,17 +44,54 @@
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
+
+                <!-- Info overlay (shown on NameLabel hover) -->
+                <Grid x:Name="InfoOverlay"
+                      IsHitTestVisible="False"
+                      Opacity="0"
+                      ClipToBounds="True">
+                    <Grid.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#00000000" Offset="0"/>
+                            <GradientStop Color="#BB000000" Offset="0.35"/>
+                            <GradientStop Color="#EE000000" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Grid.Background>
+                    <StackPanel VerticalAlignment="Bottom" Margin="10,16,10,10">
+                        <TextBlock x:Name="DeveloperText"
+                                   Foreground="White"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="GenresText"
+                                   Foreground="#FFAAAAAA"
+                                   FontSize="13"
+                                   FontStyle="Italic"
+                                   TextWrapping="Wrap"
+                                   Margin="0,2,0,0"/>
+                        <TextBlock x:Name="SummaryText"
+                                   Foreground="#FFD0D0D0"
+                                   FontSize="13"
+                                   TextWrapping="Wrap"
+                                   MaxHeight="90"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
 
             <!-- Name label section -->
-            <TextBlock Grid.Row="1"
-                       x:Name="NameLabel"
-                       Foreground="#FFCCCCCC"
-                       FontSize="16"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center"
-                       TextTrimming="CharacterEllipsis"
-                       Padding="8,0,8,0"/>
+            <Grid Grid.Row="1"
+                  Background="Transparent"
+                  MouseEnter="NameLabel_MouseEnter"
+                  MouseLeave="NameLabel_MouseLeave">
+                <TextBlock x:Name="NameLabel"
+                           Foreground="#FFCCCCCC"
+                           FontSize="16"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Padding="8,0,8,0"/>
+            </Grid>
         </Grid>
     </Border>
 </UserControl>
