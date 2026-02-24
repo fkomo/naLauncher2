@@ -8,25 +8,22 @@ namespace naLauncher2.Wpf
 {
     internal class GameLibrary
     {
-        public ConcurrentDictionary<string, GameInfo> Games { get; private set; } = [];
+        public Dictionary<string, GameInfo> Games { get; private set; } = [];
 
-        public string[] NewGamesIds() => Games
+        public IEnumerable<string> NewGames() => Games
             .Where(x => x.Value.Installed && x.Value.NotPlayed)
             .OrderByDescending(x => x.Value.Added)
-            .Select(x => x.Key)
-            .ToArray();
+            .Select(x => x.Key);
 
-        public string[] RecentGamesIds() => Games
+        public IEnumerable<string> RecentGames() => Games
             .Where(x => x.Value.Installed && !x.Value.NotPlayed)
             .OrderByDescending(x => x.Value.Played.Last())
-            .Select(x => x.Key)
-            .ToArray();
+            .Select(x => x.Key);
 
-        public string[] InstalledGamesIds() => Games
+        public IEnumerable<string> InstalledGames() => Games
             .Where(x => x.Value.Installed)
             .OrderBy(x => x.Key)
-            .Select(x => x.Key)
-            .ToArray();
+            .Select(x => x.Key);
 
         string? _libraryPath;
 
@@ -47,7 +44,7 @@ namespace naLauncher2.Wpf
             {
                 Debug.WriteLine($"Game library file not found at {path}. Starting with an empty library.");
 
-                Games = new ConcurrentDictionary<string, GameInfo>();
+                Games = new Dictionary<string, GameInfo>();
                 _libraryPath = path;
 
                 return;
@@ -57,7 +54,7 @@ namespace naLauncher2.Wpf
 
             var libraryContent = await File.ReadAllTextAsync(path);
 
-            Games = JsonSerializer.Deserialize<ConcurrentDictionary<string, GameInfo>>(libraryContent, options: _jsonSerializerOptions)
+            Games = JsonSerializer.Deserialize<Dictionary<string, GameInfo>>(libraryContent, options: _jsonSerializerOptions)
                 ?? throw new InvalidOperationException("Failed to deserialize game library.");
 
             _libraryPath = path;
@@ -69,36 +66,6 @@ namespace naLauncher2.Wpf
         {
             if (!string.IsNullOrEmpty(_libraryPath))
                 await File.WriteAllTextAsync(_libraryPath, JsonSerializer.Serialize(Games, options: _jsonSerializerOptions));
-        }
-
-        public async Task LoadSample(int count = 10)
-        {
-            var _random = new Random();
-
-            var images = Directory
-                .EnumerateFiles(@"c:\Users\filip\AppData\Roaming\Ujeby\naLauncher\ImageCache", "*", SearchOption.AllDirectories)
-                .ToArray();
-
-            string GetRandomImagePath()
-            {
-                string path = images[_random.Next(images.Length)];
-
-                while (Games.ContainsKey(Path.GetFileNameWithoutExtension(path)))
-                    path = images[_random.Next(images.Length)];
-
-                return path;
-            }
-
-            for (var i = 0; i < count; i++)
-            {
-                var imagePath = GetRandomImagePath();
-                var title = Path.GetFileNameWithoutExtension(imagePath);
-
-                Games[title] = new GameInfo
-                {
-                    ImagePath = imagePath
-                };
-            }
         }
     }
 }

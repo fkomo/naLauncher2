@@ -40,6 +40,9 @@ namespace naLauncher2.Wpf
         bool _recentGamesCollapsed = false;
         bool _userGamesCollapsed = false;
 
+        /// <summary>
+        /// Initializes the main window and assigns render transforms to scrollable containers.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
@@ -48,6 +51,10 @@ namespace naLauncher2.Wpf
             UserGamesContainer.RenderTransform = _allGamesTransform;
         }
 
+        /// <summary>
+        /// Loads the game library, calculates layout parameters, populates all sections,
+        /// and initializes scroll state when the window finishes loading.
+        /// </summary>
         async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             await GameLibrary.Instance.Load(@"c:\Users\filip\AppData\Roaming\Ujeby\naLauncher2\library.json");
@@ -58,9 +65,9 @@ namespace naLauncher2.Wpf
             double totalWidth = _controlsPerRow * GameInfoControl.ControlWidth + (_controlsPerRow - 1) * Gap;
             _gridOffset = (screenWidth - totalWidth) / 2;
 
-            var newGames = GameLibrary.Instance.NewGamesIds();
-            var recentGames = GameLibrary.Instance.RecentGamesIds();
-            var userGames = GameLibrary.Instance.InstalledGamesIds();
+            var newGames = GameLibrary.Instance.NewGames().ToArray();
+            var recentGames = GameLibrary.Instance.RecentGames().ToArray();
+            var userGames = GameLibrary.Instance.InstalledGames().ToArray();
 
             PopulateHorizontalSection(NewGamesContainer, newGames);
             PopulateHorizontalSection(RecentGamesContainer, recentGames);
@@ -72,6 +79,7 @@ namespace naLauncher2.Wpf
 
             double shadowOffset = GameInfoControl.ShadowBlurRadius;
             double canvasTopMargin = SectionGap - shadowOffset;
+
             NewGamesCanvas.Margin = new Thickness(0, canvasTopMargin, 0, 0);
             RecentGamesCanvas.Margin = new Thickness(0, canvasTopMargin, 0, 0);
             UserGamesCanvas.Margin = new Thickness(0, canvasTopMargin, 0, 0);
@@ -93,6 +101,11 @@ namespace naLauncher2.Wpf
             UpdateScrollThumbs();
         }
 
+        /// <summary>
+        /// Calculates the total pixel height required to display <paramref name="count"/> games in a grid layout.
+        /// </summary>
+        /// <param name="count">Number of game items to lay out.</param>
+        /// <returns>Total content height in pixels, or 0 if the count is zero.</returns>
         double GridContentHeight(int count)
         {
             if (count == 0) return 0;
@@ -100,38 +113,57 @@ namespace naLauncher2.Wpf
             return GameInfoControl.ShadowBlurRadius + rows * GameInfoControl.ControlHeight + (rows - 1) * Gap + Gap;
         }
 
-        void PopulateHorizontalSection(Canvas container, string[] gameIds)
+        /// <summary>
+        /// Creates <see cref="GameInfoControl"/> instances for each game and arranges them
+        /// in a single horizontal row inside the given canvas.
+        /// </summary>
+        /// <param name="container">Target canvas that will hold the controls.</param>
+        /// <param name="games">Ordered array of game to display.</param>
+        void PopulateHorizontalSection(Canvas container, string[] games)
         {
-            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateHorizontalSection)}({gameIds.Length} games)");
+            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateHorizontalSection)}({games.Length} games)");
 
-            for (int i = 0; i < gameIds.Length; i++)
+            for (int i = 0; i < games.Length; i++)
             {
-                var control = new GameInfoControl(gameIds[i]) { CacheMode = new BitmapCache() };
+                var control = new GameInfoControl(games[i]) { CacheMode = new BitmapCache() };
                 container.Children.Add(control);
                 Canvas.SetLeft(control, _gridOffset + i * (GameInfoControl.ControlWidth + Gap));
                 Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius);
             }
         }
 
-        void PopulateGridSection(Canvas container, string[] gameIds)
+        /// <summary>
+        /// Creates <see cref="GameInfoControl"/> instances for each game and arranges them
+        /// in a multi-row grid inside the given canvas.
+        /// </summary>
+        /// <param name="container">Target canvas that will hold the controls.</param>
+        /// <param name="games">Ordered array of games to display.</param>
+        void PopulateGridSection(Canvas container, string[] games)
         {
-            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateGridSection)}({gameIds.Length} games)");
+            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateGridSection)}({games.Length} games)");
 
-            for (int i = 0; i < gameIds.Length; i++)
+            for (int i = 0; i < games.Length; i++)
             {
-                var control = new GameInfoControl(gameIds[i]) { CacheMode = new BitmapCache() };
+                var control = new GameInfoControl(games[i]) { CacheMode = new BitmapCache() };
                 container.Children.Add(control);
                 Canvas.SetLeft(control, _gridOffset + (i % _controlsPerRow) * (GameInfoControl.ControlWidth + Gap));
                 Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius + (i / _controlsPerRow) * (GameInfoControl.ControlHeight + Gap));
             }
         }
 
+        /// <summary>
+        /// Closes the window when the Escape key is pressed.
+        /// </summary>
         void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
                 this.Close();
         }
 
+        /// <summary>
+        /// Shows or collapses user-game controls based on whether they fall within
+        /// the current vertical viewport, plus a one-row buffer above and below.
+        /// </summary>
         void UpdateViewportCulling()
         {
             if (_visibleControls.Length == 0 || UserGamesCanvas.ActualHeight == 0)
@@ -152,6 +184,10 @@ namespace naLauncher2.Wpf
             }
         }
 
+        /// <summary>
+        /// Applies a horizontal scroll impulse to the New Games or Recent Games section
+        /// when the mouse wheel is used over the corresponding canvas.
+        /// </summary>
         void HorizontalCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             double impulse = -e.Delta / 120.0 * ScrollImpulse;
@@ -170,6 +206,10 @@ namespace naLauncher2.Wpf
             e.Handled = true;
         }
 
+        /// <summary>
+        /// Applies a vertical scroll impulse to the User Games section
+        /// when the mouse wheel is used over its canvas.
+        /// </summary>
         void VerticalCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (_userGamesMaxScrollY > 0)
@@ -184,6 +224,11 @@ namespace naLauncher2.Wpf
             e.Handled = true;
         }
 
+        /// <summary>
+        /// Advances the inertia-based scroll animation each frame by applying friction to all
+        /// active velocities, clamping offsets to their valid ranges, and updating scroll thumbs.
+        /// Unregisters itself from <see cref="CompositionTarget.Rendering"/> once all motion stops.
+        /// </summary>
         void OnScrollRendering(object? sender, EventArgs e)
         {
             bool anyActive = false;
@@ -234,6 +279,9 @@ namespace naLauncher2.Wpf
             UpdateScrollThumbs();
         }
 
+        /// <summary>
+        /// Refreshes the position and size of all three scroll thumb indicators.
+        /// </summary>
         void UpdateScrollThumbs()
         {
             UpdateScrollThumb(NewGamesScrollThumb, NewGamesScrollTrack, _newGamesOffsetX, _newGamesMaxScrollX, NewGamesCanvas.ActualWidth);
@@ -241,6 +289,15 @@ namespace naLauncher2.Wpf
             UpdateScrollThumb(UserGamesScrollThumb, UserGamesScrollTrack, _allGamesOffsetY, _userGamesMaxScrollY, UserGamesCanvas.ActualHeight);
         }
 
+        /// <summary>
+        /// Recalculates the width and left margin of a scroll thumb rectangle so that it
+        /// proportionally represents the current scroll position within the track.
+        /// </summary>
+        /// <param name="thumb">The thumb rectangle to update.</param>
+        /// <param name="track">The track rectangle that constrains the thumb.</param>
+        /// <param name="offset">Current scroll offset in pixels.</param>
+        /// <param name="maxScroll">Maximum allowed scroll offset in pixels.</param>
+        /// <param name="viewport">Visible viewport size in pixels.</param>
         static void UpdateScrollThumb(Rectangle thumb, Rectangle track, double offset, double maxScroll, double viewport)
         {
             double trackWidth = track.ActualWidth;
@@ -255,6 +312,10 @@ namespace naLauncher2.Wpf
             thumb.Margin = new Thickness(thumbLeft, 3, 0, 0);
         }
 
+        /// <summary>
+        /// Opens the filter dropdown when the User Games label is clicked,
+        /// guarding against an immediate re-open after the dropdown is closed.
+        /// </summary>
         void UserGamesLabel_Click(object sender, MouseButtonEventArgs e)
         {
             if ((DateTime.UtcNow - _userGamesDropdownLastClosed).TotalMilliseconds > 300)
@@ -264,11 +325,18 @@ namespace naLauncher2.Wpf
             }
         }
 
+        /// <summary>
+        /// Records the UTC timestamp when the filter dropdown closes so that
+        /// accidental immediate re-opens can be suppressed.
+        /// </summary>
         void UserGamesDropdown_Closed(object? sender, EventArgs e)
         {
             _userGamesDropdownLastClosed = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Applies the selected filter mode from the dropdown and refreshes the User Games grid.
+        /// </summary>
         void UserGamesFilter_Click(object sender, MouseButtonEventArgs e)
         {
             if (sender is TextBlock tb && tb.Tag is string tag && Enum.TryParse<UserGamesFilterMode>(tag, out var mode))
@@ -279,6 +347,10 @@ namespace naLauncher2.Wpf
             }
         }
 
+        /// <summary>
+        /// Updates the foreground color of each filter option in the dropdown
+        /// to highlight the currently active filter mode.
+        /// </summary>
         void UpdateFilterOptionHighlight()
         {
             FilterOptionInstalled.Foreground = _userGamesFilterMode == UserGamesFilterMode.Installed ? Brushes.LightSkyBlue : Brushes.White;
@@ -288,10 +360,14 @@ namespace naLauncher2.Wpf
             FilterOptionAll.Foreground = _userGamesFilterMode == UserGamesFilterMode.All ? Brushes.LightSkyBlue : Brushes.White;
         }
 
+        /// <summary>
+        /// Re-queries the game library using the active filter, repopulates the User Games grid,
+        /// and resets scroll state and viewport culling.
+        /// </summary>
         void RefreshUserGames()
         {
             var all = GameLibrary.Instance.Games.AsEnumerable();
-            var gameIds = (_userGamesFilterMode switch
+            var games = (_userGamesFilterMode switch
             {
                 UserGamesFilterMode.Removed => all.Where(x => !x.Value.Installed),
                 UserGamesFilterMode.Finished => all.Where(x => x.Value.Finished),
@@ -305,10 +381,10 @@ namespace naLauncher2.Wpf
 
             UserGamesLabel.Text = _userGamesFilterMode.ToString();
             UserGamesContainer.Children.Clear();
-            PopulateGridSection(UserGamesContainer, gameIds);
-            UserGamesCount.Text = $"({gameIds.Length})";
+            PopulateGridSection(UserGamesContainer, games);
+            UserGamesCount.Text = $"({games.Length})";
 
-            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(gameIds.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(games.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
             _allGamesOffsetY = 0;
             _allGamesVelocityY = 0;
             _allGamesTransform.Y = 0;
@@ -321,6 +397,10 @@ namespace naLauncher2.Wpf
             UpdateScrollThumbs();
         }
 
+        /// <summary>
+        /// Toggles the New Games section between expanded and collapsed states,
+        /// updating the toggle arrow glyph and section visibility accordingly.
+        /// </summary>
         void NewGamesToggle_Click(object sender, MouseButtonEventArgs e)
         {
             _newGamesCollapsed = !_newGamesCollapsed;
@@ -331,6 +411,10 @@ namespace naLauncher2.Wpf
             NewGamesDivider.Visibility = _newGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        /// <summary>
+        /// Toggles the Recent Games section between expanded and collapsed states,
+        /// updating the toggle arrow glyph and section visibility accordingly.
+        /// </summary>
         void RecentGamesToggle_Click(object sender, MouseButtonEventArgs e)
         {
             _recentGamesCollapsed = !_recentGamesCollapsed;
@@ -341,6 +425,10 @@ namespace naLauncher2.Wpf
             RecentGamesDivider.Visibility = _recentGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        /// <summary>
+        /// Toggles the User Games section between expanded and collapsed states,
+        /// adjusting the row height, toggle arrow glyph, and section visibility accordingly.
+        /// </summary>
         void UserGamesToggle_Click(object sender, MouseButtonEventArgs e)
         {
             _userGamesCollapsed = !_userGamesCollapsed;
