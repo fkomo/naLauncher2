@@ -51,9 +51,9 @@
                 <TextBlock Grid.Column="1" Text="" x:Name="NewGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>
-                <Rectangle Grid.Column="2" x:Name="NewGamesDivider" Height="1" Fill="White" Opacity="0.15" VerticalAlignment="Center" Visibility="Collapsed"/>
-                <Rectangle Grid.Column="2" x:Name="NewGamesScrollTrack" Height="4" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="2" x:Name="NewGamesScrollThumb" Height="4" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                <Rectangle Grid.Column="2" x:Name="NewGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="NewGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="NewGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>
@@ -82,9 +82,9 @@
                 <TextBlock Grid.Column="1" Text="" x:Name="RecentGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>
-                <Rectangle Grid.Column="2" x:Name="RecentGamesDivider" Height="1" Fill="White" Opacity="0.15" VerticalAlignment="Center" Visibility="Collapsed"/>
-                <Rectangle Grid.Column="2" x:Name="RecentGamesScrollTrack" Height="4" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="2" x:Name="RecentGamesScrollThumb" Height="4" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                <Rectangle Grid.Column="2" x:Name="RecentGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="RecentGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="RecentGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>
@@ -135,9 +135,9 @@
                 <TextBlock Grid.Column="1" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>
-                <Rectangle Grid.Column="2" x:Name="UserGamesDivider" Height="1" Fill="White" Opacity="0.15" VerticalAlignment="Center" Visibility="Collapsed"/>
-                <Rectangle Grid.Column="2" x:Name="UserGamesScrollTrack" Height="4" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="2" x:Name="UserGamesScrollThumb" Height="4" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                <Rectangle Grid.Column="2" x:Name="UserGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="UserGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="UserGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>

@@ -17,6 +17,7 @@ namespace naLauncher2.Wpf
         public const double ControlWidth = 460;
         public const double ControlHeight = 260;
         public const double ShadowBlurRadius = 16;
+        public const double GlassOverlayDuration = 150;
 
         readonly int _originalZIndex;
         readonly Brush _originalBorderBrush;
@@ -66,7 +67,7 @@ namespace naLauncher2.Wpf
             };
 
             // Glass sheen fade in
-            var dur = new Duration(TimeSpan.FromMilliseconds(150));
+            var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             GlassOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(GlassOverlay.Opacity, 1, dur));
 
             // Subtle scale-up lift
@@ -90,7 +91,7 @@ namespace naLauncher2.Wpf
             NameLabel.Effect = _originalNameLabelEffect;
 
             // Glass sheen fade out
-            var dur = new Duration(TimeSpan.FromMilliseconds(200));
+            var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             GlassOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(GlassOverlay.Opacity, 0, dur));
 
             // Scale back to normal
@@ -119,7 +120,7 @@ namespace naLauncher2.Wpf
             }
         }
 
-        static BitmapImage ImageNotFound() => LoadImageBitmap(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "image-not-found.png"))!;
+        static BitmapImage ImageNotFound() => LoadImageBitmap(Path.Combine(AppContext.BaseDirectory, "Assets", "image-not-found.png"))!;
 
         static BitmapImage? LoadImageBitmap(string? imagePath)
         {

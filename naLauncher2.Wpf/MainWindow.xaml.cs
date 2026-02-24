@@ -80,7 +80,6 @@ namespace naLauncher2.Wpf
 
             var newGames = GameLibrary.Instance.NewGames().ToArray();
             var recentGames = GameLibrary.Instance.RecentGames().ToArray();
-
             var userGames = GetUserGames();
 
             PopulateHorizontalSection(NewGamesContainer, newGames);
@@ -287,9 +286,15 @@ namespace naLauncher2.Wpf
             double impulse = -e.Delta / 120.0 * ScrollImpulse;
 
             if (sender == NewGamesCanvas && _newGamesMaxScrollX > 0)
+            {
                 _newGamesVelocityX = Math.Clamp(_newGamesVelocityX + impulse, -ScrollMaxVelocity, ScrollMaxVelocity);
+                FadeScrollThumb(NewGamesScrollThumb, true);
+            }
             else if (sender == RecentGamesCanvas && _recentGamesMaxScrollX > 0)
+            {
                 _lastPlayedVelocityX = Math.Clamp(_lastPlayedVelocityX + impulse, -ScrollMaxVelocity, ScrollMaxVelocity);
+                FadeScrollThumb(RecentGamesScrollThumb, true);
+            }
 
             if (!_scrollAnimating)
             {
@@ -307,7 +312,10 @@ namespace naLauncher2.Wpf
         void VerticalCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (_userGamesMaxScrollY > 0)
+            {
                 _allGamesVelocityY = Math.Clamp(_allGamesVelocityY + (-e.Delta / 120.0 * ScrollImpulse), -ScrollMaxVelocity, ScrollMaxVelocity);
+                FadeScrollThumb(UserGamesScrollThumb, true);
+            }
 
             if (!_scrollAnimating)
             {
@@ -335,6 +343,7 @@ namespace naLauncher2.Wpf
                 _newGamesOffsetX = next;
                 _newGamesVelocityX *= ScrollFriction;
                 _newGamesTransform.X = -_newGamesOffsetX;
+                if (Math.Abs(_newGamesVelocityX) < 0.5) { _newGamesVelocityX = 0; FadeScrollThumb(NewGamesScrollThumb, false); }
             }
             else _newGamesVelocityX = 0;
 
@@ -346,6 +355,7 @@ namespace naLauncher2.Wpf
                 _lastPlayedOffsetX = next;
                 _lastPlayedVelocityX *= ScrollFriction;
                 _lastPlayedTransform.X = -_lastPlayedOffsetX;
+                if (Math.Abs(_lastPlayedVelocityX) < 0.5) { _lastPlayedVelocityX = 0; FadeScrollThumb(RecentGamesScrollThumb, false); }
             }
             else _lastPlayedVelocityX = 0;
 
@@ -361,6 +371,7 @@ namespace naLauncher2.Wpf
                 _allGamesTransform.Y = -_allGamesOffsetY;
 
                 UpdateViewportCulling();
+                if (Math.Abs(_allGamesVelocityY) < 0.5) { _allGamesVelocityY = 0; FadeScrollThumb(UserGamesScrollThumb, false); }
             }
             else _allGamesVelocityY = 0;
 
@@ -392,6 +403,12 @@ namespace naLauncher2.Wpf
         /// <param name="offset">Current scroll offset in pixels.</param>
         /// <param name="maxScroll">Maximum allowed scroll offset in pixels.</param>
         /// <param name="viewport">Visible viewport size in pixels.</param>
+        static void FadeScrollThumb(Rectangle thumb, bool visible)
+        {
+            thumb.BeginAnimation(UIElement.OpacityProperty,
+                new DoubleAnimation(visible ? 0.8 : 0.0, TimeSpan.FromMilliseconds(visible ? 100 : 500)));
+        }
+
         static void UpdateScrollThumb(Rectangle thumb, Rectangle track, double offset, double maxScroll, double viewport)
         {
             double trackWidth = track.ActualWidth;
@@ -462,15 +479,14 @@ namespace naLauncher2.Wpf
         /// </summary>
         void RefreshUserGames()
         {
-            var all = GameLibrary.Instance.Games.AsEnumerable();
-            var games = GetUserGames();
+            var userGames = GetUserGames();
 
             UserGamesLabel.Text = _userGamesFilterMode.ToString();
             UserGamesContainer.Children.Clear();
-            PopulateGridSection(UserGamesContainer, games);
-            UserGamesCount.Text = $"({games.Length})";
+            PopulateGridSection(UserGamesContainer, userGames);
+            UserGamesCount.Text = $"({userGames.Length})";
 
-            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(games.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
             _allGamesOffsetY = 0;
             _allGamesVelocityY = 0;
             _allGamesTransform.Y = 0;
@@ -539,12 +555,10 @@ namespace naLauncher2.Wpf
         /// <param name="scrollThumb">Scroll thumb indicator to show or hide.</param>
         /// <param name="divider">Divider shown when collapsed, hidden when expanded.</param>
         /// <param name="canvasRow">Optional grid row whose height is set to 0 / Star alongside visibility.</param>
+        /// <param name="onExpand">Optional callback invoked immediately when the section is expanding.</param>
         /// <param name="onViewportChange">Optional callback invoked after expand or after the collapse animation completes.</param>
-        void ToggleGroupSection(
-            Func<bool> getCollapsed, Action<bool> setCollapsed,
-            TextBlock toggle, Canvas canvas,
-            Rectangle scrollTrack, Rectangle scrollThumb, Rectangle divider,
-            RowDefinition? canvasRow = null, Action? onViewportChange = null)
+        static void ToggleGroupSection(Func<bool> getCollapsed, Action<bool> setCollapsed, TextBlock toggle, Canvas canvas, Rectangle scrollTrack, Rectangle scrollThumb, Rectangle divider,
+            RowDefinition? canvasRow = null, Action? onExpand = null, Action? onViewportChange = null)
         {
             bool collapsed = !getCollapsed();
             setCollapsed(collapsed);
@@ -568,6 +582,7 @@ namespace naLauncher2.Wpf
             }
             else
             {
+                onExpand?.Invoke();
                 double fromOpacity = canvas.Visibility == Visibility.Collapsed ? 0 : canvas.Opacity;
                 if (canvasRow != null) canvasRow.Height = new GridLength(1, GridUnitType.Star);
                 canvas.Visibility = Visibility.Visible;
@@ -583,18 +598,22 @@ namespace naLauncher2.Wpf
             ToggleGroupSection(() => _newGamesCollapsed, v => _newGamesCollapsed = v,
                 NewGamesToggle, NewGamesCanvas,
                 NewGamesScrollTrack, NewGamesScrollThumb, NewGamesDivider,
+                onExpand: () => { _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0; },
                 onViewportChange: RefreshUserGamesViewport);
 
         void RecentGamesToggle_Click(object sender, MouseButtonEventArgs e) =>
             ToggleGroupSection(() => _recentGamesCollapsed, v => _recentGamesCollapsed = v,
                 RecentGamesToggle, RecentGamesCanvas,
                 RecentGamesScrollTrack, RecentGamesScrollThumb, RecentGamesDivider,
+                onExpand: () => { _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0; },
                 onViewportChange: RefreshUserGamesViewport);
 
         void UserGamesToggle_Click(object sender, MouseButtonEventArgs e) =>
             ToggleGroupSection(() => _userGamesCollapsed, v => _userGamesCollapsed = v,
                 UserGamesToggle, UserGamesCanvas,
                 UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
-                canvasRow: UserGamesCanvasRow);
+                canvasRow: UserGamesCanvasRow,
+                onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; },
+                onViewportChange: RefreshUserGamesViewport);
     }
 }
