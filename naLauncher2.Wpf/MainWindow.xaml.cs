@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 
 namespace naLauncher2.Wpf
@@ -15,9 +16,10 @@ namespace naLauncher2.Wpf
         const double ScrollFriction = 0.88;
         const double ScrollImpulse = 20;
         const double ScrollMaxVelocity = 400;
+        const double GroupFadeAnimationDuration = 150; // [in miliseconds]
 
-        const double Gap = 16;
-        const double SectionGap = 32;
+        const double Gap = 16; // space between controls, both horizontally and vertically [in pixels]
+        const double SectionGap = 32; // vertical space between sections [in pixels]
 
         // horizontal scroll — New Games
         readonly TranslateTransform _newGamesTransform = new();
@@ -509,36 +511,76 @@ namespace naLauncher2.Wpf
             UserGamesDivider.Visibility = _userGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        /// <summary>
-        /// Toggles the New Games section between expanded and collapsed states,
-        /// updating the toggle arrow glyph and section visibility accordingly.
-        /// </summary>
-        void NewGamesToggle_Click(object sender, MouseButtonEventArgs e)
-        {
-            _newGamesCollapsed = !_newGamesCollapsed;
-            ApplyNewGamesState();
-            RefreshUserGamesViewport();
-        }
+        static DoubleAnimation FadeAnimation(double from, double to) =>
+            new(from, to, new Duration(TimeSpan.FromMilliseconds(GroupFadeAnimationDuration)));
 
         /// <summary>
-        /// Toggles the Recent Games section between expanded and collapsed states,
-        /// updating the toggle arrow glyph and section visibility accordingly.
+        /// Toggles a group section between expanded and collapsed states with a fade animation.
         /// </summary>
-        void RecentGamesToggle_Click(object sender, MouseButtonEventArgs e)
+        /// <param name="getCollapsed">Returns the current collapsed state of the section.</param>
+        /// <param name="setCollapsed">Sets the collapsed state of the section.</param>
+        /// <param name="toggle">Arrow glyph TextBlock to update.</param>
+        /// <param name="canvas">Content canvas to fade in or out.</param>
+        /// <param name="scrollTrack">Scroll track indicator to show or hide.</param>
+        /// <param name="scrollThumb">Scroll thumb indicator to show or hide.</param>
+        /// <param name="divider">Divider shown when collapsed, hidden when expanded.</param>
+        /// <param name="canvasRow">Optional grid row whose height is set to 0 / Star alongside visibility.</param>
+        /// <param name="onViewportChange">Optional callback invoked after expand or after the collapse animation completes.</param>
+        void ToggleGroupSection(
+            Func<bool> getCollapsed, Action<bool> setCollapsed,
+            TextBlock toggle, Canvas canvas,
+            Rectangle scrollTrack, Rectangle scrollThumb, Rectangle divider,
+            RowDefinition? canvasRow = null, Action? onViewportChange = null)
         {
-            _recentGamesCollapsed = !_recentGamesCollapsed;
-            ApplyRecentGamesState();
-            RefreshUserGamesViewport();
+            bool collapsed = !getCollapsed();
+            setCollapsed(collapsed);
+            toggle.Text = collapsed ? "\u25B6" : "\u25BC";
+
+            if (collapsed)
+            {
+                var anim = FadeAnimation(canvas.Opacity, 0);
+                anim.Completed += (s, ea) =>
+                {
+                    if (!getCollapsed()) return;
+                    canvas.BeginAnimation(UIElement.OpacityProperty, null);
+                    canvas.Visibility = Visibility.Collapsed;
+                    if (canvasRow != null) canvasRow.Height = new GridLength(0);
+                    scrollTrack.Visibility = Visibility.Collapsed;
+                    scrollThumb.Visibility = Visibility.Collapsed;
+                    divider.Visibility = Visibility.Visible;
+                    onViewportChange?.Invoke();
+                };
+                canvas.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
+            else
+            {
+                double fromOpacity = canvas.Visibility == Visibility.Collapsed ? 0 : canvas.Opacity;
+                if (canvasRow != null) canvasRow.Height = new GridLength(1, GridUnitType.Star);
+                canvas.Visibility = Visibility.Visible;
+                scrollTrack.Visibility = Visibility.Visible;
+                scrollThumb.Visibility = Visibility.Visible;
+                divider.Visibility = Visibility.Collapsed;
+                canvas.BeginAnimation(UIElement.OpacityProperty, FadeAnimation(fromOpacity, 1));
+                onViewportChange?.Invoke();
+            }
         }
 
-        /// <summary>
-        /// Toggles the User Games section between expanded and collapsed states,
-        /// adjusting the row height, toggle arrow glyph, and section visibility accordingly.
-        /// </summary>
-        void UserGamesToggle_Click(object sender, MouseButtonEventArgs e)
-        {
-            _userGamesCollapsed = !_userGamesCollapsed;
-            ApplyUserGamesState();
-        }
+        void NewGamesToggle_Click(object sender, MouseButtonEventArgs e) =>
+            ToggleGroupSection(() => _newGamesCollapsed, v => _newGamesCollapsed = v,
+                NewGamesToggle, NewGamesCanvas,
+                NewGamesScrollTrack, NewGamesScrollThumb, NewGamesDivider,
+                onViewportChange: RefreshUserGamesViewport);
+
+        void RecentGamesToggle_Click(object sender, MouseButtonEventArgs e) =>
+            ToggleGroupSection(() => _recentGamesCollapsed, v => _recentGamesCollapsed = v,
+                RecentGamesToggle, RecentGamesCanvas,
+                RecentGamesScrollTrack, RecentGamesScrollThumb, RecentGamesDivider,
+                onViewportChange: RefreshUserGamesViewport);
+
+        void UserGamesToggle_Click(object sender, MouseButtonEventArgs e) =>
+            ToggleGroupSection(() => _userGamesCollapsed, v => _userGamesCollapsed = v,
+                UserGamesToggle, UserGamesCanvas,
+                UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
+                canvasRow: UserGamesCanvasRow);
     }
 }
