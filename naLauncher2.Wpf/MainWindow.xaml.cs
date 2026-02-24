@@ -75,9 +75,9 @@ namespace naLauncher2.Wpf
             PopulateHorizontalSection(RecentGamesContainer, recentGames);
             PopulateGridSection(UserGamesContainer, userGames);
 
-            NewGamesLabel.Text = $"New ({newGames.Count})";
-            RecentGamesLabel.Text = $"Recent ({recentGames.Count})";
-            UserGamesLabel.Text = $"Installed ({userGames.Count})";
+            NewGamesCount.Text = $"({newGames.Count})";
+            RecentGamesCount.Text = $"({recentGames.Count})";
+            UserGamesCount.Text = $"({userGames.Count})";
 
             double shadowOffset = GameInfoControl.ShadowBlurRadius;
             double canvasTopMargin = SectionGap - shadowOffset;

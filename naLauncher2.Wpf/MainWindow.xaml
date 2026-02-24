@@ -12,7 +12,7 @@
     Background="#00202020"
     KeyDown="Window_KeyDown"
     Loaded="Window_Loaded">
-    <Grid x:Name="RootGrid" Background="#C0181D1F">
+    <Grid x:Name="RootGrid" Background="#EE181D1F">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -24,13 +24,17 @@
             <Grid Margin="32,32,32,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="New" x:Name="NewGamesLabel" Foreground="White" Opacity="1"
+                           FontSize="16" FontWeight="SemiBold"
+                           VerticalAlignment="Center" Margin="0,0,0,0"/>
+                <TextBlock Grid.Column="1" Text="" x:Name="NewGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
-                           VerticalAlignment="Center" Margin="0,0,16,0"/>
-                <Rectangle Grid.Column="1" x:Name="NewGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="1" x:Name="NewGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                           VerticalAlignment="Center" Margin="8,0,16,0"/>
+                <Rectangle Grid.Column="2" x:Name="NewGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="NewGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>
@@ -46,13 +50,17 @@
             <Grid Margin="32,16,32,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Recent" x:Name="RecentGamesLabel" Foreground="White" Opacity="1"
+                           FontSize="16" FontWeight="SemiBold"
+                           VerticalAlignment="Center" Margin="0,0,0,0"/>
+                <TextBlock Grid.Column="1" Text="" x:Name="RecentGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
-                           VerticalAlignment="Center" Margin="0,0,16,0"/>
-                <Rectangle Grid.Column="1" x:Name="RecentGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="1" x:Name="RecentGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                           VerticalAlignment="Center" Margin="8,0,16,0"/>
+                <Rectangle Grid.Column="2" x:Name="RecentGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="RecentGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>
@@ -72,13 +80,17 @@
             <Grid Grid.Row="0" Margin="32,16,32,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
+                           FontSize="16" FontWeight="SemiBold"
+                           VerticalAlignment="Center" Margin="0,0,0,0"/>
+                <TextBlock Grid.Column="1" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
-                           VerticalAlignment="Center" Margin="0,0,16,0"/>
-                <Rectangle Grid.Column="1" x:Name="UserGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="1" x:Name="UserGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                           VerticalAlignment="Center" Margin="8,0,16,0"/>
+                <Rectangle Grid.Column="2" x:Name="UserGamesScrollTrack" Height="8" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="UserGamesScrollThumb" Height="8" Fill="LightSkyBlue" Opacity="0.8" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>
