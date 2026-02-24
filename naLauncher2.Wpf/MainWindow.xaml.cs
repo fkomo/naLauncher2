@@ -20,6 +20,8 @@ namespace naLauncher2.Wpf
 
         const double Gap = 16; // space between controls, both horizontally and vertically [in pixels]
         const double SectionGap = 32; // vertical space between sections [in pixels]
+        const double GamePlacementDelayMs = 25; // delay between each game placement animation [in milliseconds]
+        const double GamePlacementDurationMs = 200; // duration of game placement animation [in milliseconds]
 
         // horizontal scroll — New Games
         readonly TranslateTransform _newGamesTransform = new();
@@ -205,10 +207,16 @@ namespace naLauncher2.Wpf
 
             for (int i = 0; i < games.Length; i++)
             {
-                var control = new GameInfoControl(games[i]) { CacheMode = new BitmapCache() };
+                var control = new GameInfoControl(games[i]) { CacheMode = new BitmapCache(), Opacity = 0 };
                 container.Children.Add(control);
                 Canvas.SetLeft(control, _gridOffset + i * (GameInfoControl.ControlWidth + Gap));
                 Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius);
+
+                var fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs)))
+                {
+                    BeginTime = TimeSpan.FromMilliseconds(i * GamePlacementDelayMs)
+                };
+                control.BeginAnimation(UIElement.OpacityProperty, fadeIn);
             }
         }
 
@@ -224,10 +232,16 @@ namespace naLauncher2.Wpf
 
             for (int i = 0; i < games.Length; i++)
             {
-                var control = new GameInfoControl(games[i]) { CacheMode = new BitmapCache() };
+                var control = new GameInfoControl(games[i]) { CacheMode = new BitmapCache(), Opacity = 0 };
                 container.Children.Add(control);
                 Canvas.SetLeft(control, _gridOffset + (i % _controlsPerRow) * (GameInfoControl.ControlWidth + Gap));
                 Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius + (i / _controlsPerRow) * (GameInfoControl.ControlHeight + Gap));
+
+                var fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs)))
+                {
+                    BeginTime = TimeSpan.FromMilliseconds(i * GamePlacementDelayMs)
+                };
+                control.BeginAnimation(UIElement.OpacityProperty, fadeIn);
             }
         }
 
