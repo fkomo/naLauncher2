@@ -15,6 +15,7 @@ namespace naLauncher2.Wpf
         const double ScrollFriction = 0.88;
         const double ScrollImpulse = 20;
         const double ScrollMaxVelocity = 400;
+
         const double Gap = 16;
         const double SectionGap = 32;
 
@@ -34,11 +35,13 @@ namespace naLauncher2.Wpf
         bool _scrollAnimating = false;
         int _controlsPerRow;
         double _gridOffset;
+
         UserGamesFilterMode _userGamesFilterMode = UserGamesFilterMode.Installed;
         DateTime _userGamesDropdownLastClosed = DateTime.MinValue;
-        bool _newGamesCollapsed = false;
-        bool _recentGamesCollapsed = false;
-        bool _userGamesCollapsed = false;
+
+        bool _newGamesCollapsed = true;
+        bool _recentGamesCollapsed = true;
+        bool _userGamesCollapsed = true;
 
         /// <summary>
         /// Initializes the main window and assigns render transforms to scrollable containers.
@@ -49,6 +52,9 @@ namespace naLauncher2.Wpf
             NewGamesContainer.RenderTransform = _newGamesTransform;
             RecentGamesContainer.RenderTransform = _lastPlayedTransform;
             UserGamesContainer.RenderTransform = _allGamesTransform;
+            ApplyNewGamesState();
+            ApplyRecentGamesState();
+            ApplyUserGamesState();
         }
 
         /// <summary>
@@ -74,8 +80,25 @@ namespace naLauncher2.Wpf
             var userGames = GetUserGames();
 
             PopulateHorizontalSection(NewGamesContainer, newGames);
+            if (newGames.Length > 0)
+            {
+                _newGamesCollapsed = false;
+                ApplyNewGamesState();
+            }
+
             PopulateHorizontalSection(RecentGamesContainer, recentGames);
+            if (recentGames.Length > 0)
+            {
+                _recentGamesCollapsed = false;
+                ApplyRecentGamesState();
+            }
+
             PopulateGridSection(UserGamesContainer, userGames);
+            if (userGames.Length > 0)
+            {
+                _userGamesCollapsed = false;
+                ApplyUserGamesState();
+            }
 
             NewGamesCount.Text = $"({newGames.Length})";
             RecentGamesCount.Text = $"({recentGames.Length})";
@@ -445,17 +468,56 @@ namespace naLauncher2.Wpf
         }
 
         /// <summary>
+        /// Recalculates the User Games scroll range and viewport culling after the available
+        /// canvas height changes (e.g. when an adjacent section is collapsed or expanded).
+        /// </summary>
+        void RefreshUserGamesViewport()
+        {
+            RootGrid.UpdateLayout();
+            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(_visibleControls.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _allGamesOffsetY = Math.Min(_allGamesOffsetY, _userGamesMaxScrollY);
+            _allGamesTransform.Y = -_allGamesOffsetY;
+            UpdateViewportCulling();
+            UpdateScrollThumbs();
+        }
+
+        void ApplyNewGamesState()
+        {
+            NewGamesToggle.Text = _newGamesCollapsed ? "\u25B6" : "\u25BC";
+            NewGamesCanvas.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            NewGamesScrollTrack.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            NewGamesScrollThumb.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            NewGamesDivider.Visibility = _newGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        void ApplyRecentGamesState()
+        {
+            RecentGamesToggle.Text = _recentGamesCollapsed ? "\u25B6" : "\u25BC";
+            RecentGamesCanvas.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            RecentGamesScrollTrack.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            RecentGamesScrollThumb.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            RecentGamesDivider.Visibility = _recentGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        void ApplyUserGamesState()
+        {
+            UserGamesToggle.Text = _userGamesCollapsed ? "\u25B6" : "\u25BC";
+            UserGamesCanvas.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            UserGamesCanvasRow.Height = _userGamesCollapsed ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+            UserGamesScrollTrack.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            UserGamesScrollThumb.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            UserGamesDivider.Visibility = _userGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>
         /// Toggles the New Games section between expanded and collapsed states,
         /// updating the toggle arrow glyph and section visibility accordingly.
         /// </summary>
         void NewGamesToggle_Click(object sender, MouseButtonEventArgs e)
         {
             _newGamesCollapsed = !_newGamesCollapsed;
-            NewGamesToggle.Text = _newGamesCollapsed ? "\u25B6" : "\u25BC";
-            NewGamesCanvas.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            NewGamesScrollTrack.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            NewGamesScrollThumb.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            NewGamesDivider.Visibility = _newGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
+            ApplyNewGamesState();
+            RefreshUserGamesViewport();
         }
 
         /// <summary>
@@ -465,11 +527,8 @@ namespace naLauncher2.Wpf
         void RecentGamesToggle_Click(object sender, MouseButtonEventArgs e)
         {
             _recentGamesCollapsed = !_recentGamesCollapsed;
-            RecentGamesToggle.Text = _recentGamesCollapsed ? "\u25B6" : "\u25BC";
-            RecentGamesCanvas.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            RecentGamesScrollTrack.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            RecentGamesScrollThumb.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            RecentGamesDivider.Visibility = _recentGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
+            ApplyRecentGamesState();
+            RefreshUserGamesViewport();
         }
 
         /// <summary>
@@ -479,12 +538,7 @@ namespace naLauncher2.Wpf
         void UserGamesToggle_Click(object sender, MouseButtonEventArgs e)
         {
             _userGamesCollapsed = !_userGamesCollapsed;
-            UserGamesToggle.Text = _userGamesCollapsed ? "\u25B6" : "\u25BC";
-            UserGamesCanvas.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            UserGamesCanvasRow.Height = _userGamesCollapsed ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
-            UserGamesScrollTrack.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            UserGamesScrollThumb.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            UserGamesDivider.Visibility = _userGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
+            ApplyUserGamesState();
         }
     }
 }
