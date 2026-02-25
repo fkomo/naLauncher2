@@ -23,6 +23,9 @@ namespace naLauncher2.Wpf
         const double GamePlacementDelayMs = 25; // delay between each game placement animation [in milliseconds]
         const double GamePlacementDurationMs = 200; // duration of game placement animation [in milliseconds]
 
+        static readonly Geometry ToggleCollapsedGeometry = Geometry.Parse("M 0,0 H 10 V 10 H 0 Z M 2,5 H 8 M 5,2 V 8");
+        static readonly Geometry ToggleExpandedGeometry = Geometry.Parse("M 0,0 H 10 V 10 H 0 Z M 2,5 H 8");
+
         // horizontal scroll — New Games
         readonly TranslateTransform _newGamesTransform = new();
         double _newGamesOffsetX, _newGamesVelocityX, _newGamesMaxScrollX;
@@ -637,7 +640,7 @@ namespace naLauncher2.Wpf
 
         void ApplyNewGamesState()
         {
-            NewGamesToggle.Text = _newGamesCollapsed ? "\u25B6" : "\u25BC";
+            NewGamesToggle.Data = _newGamesCollapsed ? ToggleCollapsedGeometry : ToggleExpandedGeometry;
             NewGamesCanvas.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
             NewGamesScrollTrack.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
             NewGamesScrollThumb.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
@@ -646,7 +649,7 @@ namespace naLauncher2.Wpf
 
         void ApplyRecentGamesState()
         {
-            RecentGamesToggle.Text = _recentGamesCollapsed ? "\u25B6" : "\u25BC";
+            RecentGamesToggle.Data = _recentGamesCollapsed ? ToggleCollapsedGeometry : ToggleExpandedGeometry;
             RecentGamesCanvas.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
             RecentGamesScrollTrack.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
             RecentGamesScrollThumb.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
@@ -667,7 +670,7 @@ namespace naLauncher2.Wpf
 
         void ApplyUserGamesState()
         {
-            UserGamesToggle.Text = _userGamesCollapsed ? "\u25B6" : "\u25BC";
+            UserGamesToggle.Data = _userGamesCollapsed ? ToggleCollapsedGeometry : ToggleExpandedGeometry;
             UserGamesCanvas.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
             UserGamesCanvasRow.Height = _userGamesCollapsed ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
             UserGamesScrollTrack.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
@@ -684,7 +687,7 @@ namespace naLauncher2.Wpf
         /// </summary>
         /// <param name="getCollapsed">Returns the current collapsed state of the section.</param>
         /// <param name="setCollapsed">Sets the collapsed state of the section.</param>
-        /// <param name="toggle">Arrow glyph TextBlock to update.</param>
+        /// <param name="toggle">Toggle Path whose geometry is swapped between collapsed and expanded states.</param>
         /// <param name="canvas">Content canvas to fade in or out.</param>
         /// <param name="scrollTrack">Scroll track indicator to show or hide.</param>
         /// <param name="scrollThumb">Scroll thumb indicator to show or hide.</param>
@@ -693,12 +696,12 @@ namespace naLauncher2.Wpf
         /// <param name="onExpand">Optional callback invoked immediately when the section is expanding.</param>
         /// <param name="onCollapse">Optional callback invoked immediately when the section is collapsing.</param>
         /// <param name="onViewportChange">Optional callback invoked after expand or after the collapse animation completes.</param>
-        static void ToggleGroupSection(Func<bool> getCollapsed, Action<bool> setCollapsed, TextBlock toggle, Canvas canvas, Rectangle scrollTrack, Rectangle scrollThumb, Rectangle divider,
+        static void ToggleGroupSection(Func<bool> getCollapsed, Action<bool> setCollapsed, Path toggle, Canvas canvas, Rectangle scrollTrack, Rectangle scrollThumb, Rectangle divider,
             RowDefinition? canvasRow = null, Action? onExpand = null, Action? onCollapse = null, Action? onViewportChange = null)
         {
             bool collapsed = !getCollapsed();
             setCollapsed(collapsed);
-            toggle.Text = collapsed ? "\u25B6" : "\u25BC";
+            toggle.Data = collapsed ? ToggleCollapsedGeometry : ToggleExpandedGeometry;
 
             if (collapsed)
             {
