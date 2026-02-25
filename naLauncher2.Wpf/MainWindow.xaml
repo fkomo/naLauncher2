@@ -59,7 +59,7 @@
                     </Rectangle.Effect>
                 </Rectangle>
             </Grid>
-            <Canvas x:Name="NewGamesCanvas" Height="292" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
+            <Canvas x:Name="NewGamesCanvas" Height="300" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
                 <Canvas x:Name="NewGamesContainer"/>
             </Canvas>
         </StackPanel>
@@ -90,7 +90,7 @@
                     </Rectangle.Effect>
                 </Rectangle>
             </Grid>
-            <Canvas x:Name="RecentGamesCanvas" Height="292" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
+            <Canvas x:Name="RecentGamesCanvas" Height="300" ClipToBounds="True" Margin="0,0,0,0" MouseWheel="HorizontalCanvas_MouseWheel">
                 <Canvas x:Name="RecentGamesContainer"/>
             </Canvas>
         </StackPanel>

@@ -82,14 +82,16 @@ namespace naLauncher2.Wpf
             var recentGames = GameLibrary.Instance.RecentGames().ToArray();
             var userGames = GetUserGames();
 
-            PopulateHorizontalSection(NewGamesContainer, newGames);
+            PopulateHorizontalSection(NewGamesContainer, newGames,
+                id => $"added {TimeAgo(GameLibrary.Instance.Games[id].Added)}");
             if (newGames.Length > 0)
             {
                 _newGamesCollapsed = false;
                 ApplyNewGamesState();
             }
 
-            PopulateHorizontalSection(RecentGamesContainer, recentGames);
+            PopulateHorizontalSection(RecentGamesContainer, recentGames,
+                id => $"played {TimeAgo(GameLibrary.Instance.Games[id].LastPlayed!.Value)}");
             if (recentGames.Length > 0)
             {
                 _recentGamesCollapsed = false;
@@ -195,27 +197,66 @@ namespace naLauncher2.Wpf
         }
 
         /// <summary>
+        /// Returns a human-readable "X ago" string for the given point in time.
+        /// </summary>
+        static string TimeAgo(DateTime dt)
+        {
+            var span = DateTime.Now - dt;
+            if (span.TotalDays >= 365) { int n = (int)(span.TotalDays / 365); return $"{n} {(n == 1 ? "year" : "years")} ago"; }
+            if (span.TotalDays >= 30)  { int n = (int)(span.TotalDays / 30);  return $"{n} {(n == 1 ? "month" : "months")} ago"; }
+            if (span.TotalDays >= 7)   { int n = (int)(span.TotalDays / 7);   return $"{n} {(n == 1 ? "week" : "weeks")} ago"; }
+            if (span.TotalDays >= 1)   { int n = (int)span.TotalDays;         return $"{n} {(n == 1 ? "day" : "days")} ago"; }
+            if (span.TotalHours >= 1)  { int n = (int)span.TotalHours;        return $"{n} {(n == 1 ? "hour" : "hours")} ago"; }
+            return "just now";
+        }
+
+        /// <summary>
         /// Creates <see cref="GameInfoControl"/> instances for each game and arranges them
         /// in a single horizontal row inside the given canvas.
         /// </summary>
         /// <param name="container">Target canvas that will hold the controls.</param>
         /// <param name="games">Ordered array of game to display.</param>
-        void PopulateHorizontalSection(Canvas container, string[] games)
+        /// <param name="subLabelSelector">Optional delegate that returns a sub-label string for a given game id.</param>
+        void PopulateHorizontalSection(Canvas container, string[] games, Func<string, string?>? subLabelSelector = null)
         {
             using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateHorizontalSection)}({games.Length} games)");
 
+            double subLabelY = GameInfoControl.ShadowBlurRadius + GameInfoControl.ControlHeight + 8;
+
             for (int i = 0; i < games.Length; i++)
             {
+                double x = _gridOffset + i * (GameInfoControl.ControlWidth + Gap);
+                var delay = new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs));
+                var beginTime = TimeSpan.FromMilliseconds(i * GamePlacementDelayMs);
+
                 var control = new GameInfoControl(games[i]) { CacheMode = new BitmapCache(), Opacity = 0 };
                 container.Children.Add(control);
-                Canvas.SetLeft(control, _gridOffset + i * (GameInfoControl.ControlWidth + Gap));
+                Canvas.SetLeft(control, x);
                 Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius);
+                control.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, delay) { BeginTime = beginTime });
 
-                var fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs)))
+                if (subLabelSelector is not null)
                 {
-                    BeginTime = TimeSpan.FromMilliseconds(i * GamePlacementDelayMs)
-                };
-                control.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+                    var labelText = subLabelSelector(games[i]);
+                    if (!string.IsNullOrEmpty(labelText))
+                    {
+                        var subLabel = new TextBlock
+                        {
+                            Text = labelText,
+                            Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
+                            FontSize = 11,
+                            FontStyle = FontStyles.Italic,
+                            Width = GameInfoControl.ControlWidth,
+                            TextAlignment = TextAlignment.Center,
+                            TextTrimming = TextTrimming.CharacterEllipsis,
+                            Opacity = 0,
+                        };
+                        container.Children.Add(subLabel);
+                        Canvas.SetLeft(subLabel, x);
+                        Canvas.SetTop(subLabel, subLabelY);
+                        subLabel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, delay) { BeginTime = beginTime });
+                    }
+                }
             }
         }
 
