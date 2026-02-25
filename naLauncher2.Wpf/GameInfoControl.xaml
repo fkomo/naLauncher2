@@ -69,12 +69,17 @@
                                    FontStyle="Italic"
                                    TextWrapping="Wrap"
                                    Margin="0,2,0,0"/>
-                        <TextBlock x:Name="SummaryText"
-                                   Foreground="#FFD0D0D0"
-                                   FontSize="13"
-                                   TextWrapping="Wrap"
-                                   MaxHeight="90"
-                                   Margin="0,6,0,0"/>
+                        <ScrollViewer x:Name="SummaryScroller"
+                                     MaxHeight="90"
+                                     Margin="0,6,0,0"
+                                     VerticalScrollBarVisibility="Hidden"
+                                     HorizontalScrollBarVisibility="Disabled"
+                                     Focusable="False">
+                            <TextBlock x:Name="SummaryText"
+                                       Foreground="#FFD0D0D0"
+                                       FontSize="13"
+                                       TextWrapping="Wrap"/>
+                        </ScrollViewer>
                     </StackPanel>
                 </Grid>
             </Grid>

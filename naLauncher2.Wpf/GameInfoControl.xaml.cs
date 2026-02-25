@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -18,9 +19,16 @@ namespace naLauncher2.Wpf
         public const double ControlHeight = 260;
         public const double ShadowBlurRadius = 16;
         public const double GlassOverlayDuration = 150;
+        public const double OnHoverScale = 1.05;
+        public const double SummaryScrollSpeed = 10.0; // pixels per second
+        public const double SummaryScrollDelay = 2000.0; // milliseconds before scroll starts
 
         readonly int _originalZIndex;
         readonly Brush _originalBorderBrush;
+
+        DispatcherTimer? _summaryDelayTimer;
+        DispatcherTimer? _summaryScrollTimer;
+        DateTime _lastScrollTick;
         readonly Brush _originalNameLabelForeground;
         readonly Effect _originalNameLabelEffect;
         readonly bool _hasInfoOverlay;
@@ -50,14 +58,14 @@ namespace naLauncher2.Wpf
                 DeveloperText.Visibility = Visibility.Collapsed;
 
             if (game.Genres?.Length > 0)
-                GenresText.Text = string.Join(", ", game.Genres);
+                GenresText.Text = string.Join(" | ", game.Genres);
             else
                 GenresText.Visibility = Visibility.Collapsed;
 
             if (!string.IsNullOrEmpty(game.Summary))
                 SummaryText.Text = game.Summary;
             else
-                SummaryText.Visibility = Visibility.Collapsed;
+                SummaryScroller.Visibility = Visibility.Collapsed;
 
             _hasInfoOverlay = !string.IsNullOrEmpty(game.Developer)
                 || (game.Genres?.Length > 0)
@@ -73,6 +81,7 @@ namespace naLauncher2.Wpf
 
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             InfoOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(InfoOverlay.Opacity, 1, dur));
+            StartSummaryScroll();
         }
 
         void NameLabel_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
@@ -82,6 +91,7 @@ namespace naLauncher2.Wpf
 
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             InfoOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(InfoOverlay.Opacity, 0, dur));
+            StopSummaryScroll();
         }
 
         void UserControl_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
@@ -109,8 +119,8 @@ namespace naLauncher2.Wpf
             GlassOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(GlassOverlay.Opacity, 1, dur));
 
             // Subtle scale-up lift
-            HoverScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(HoverScale.ScaleX, 1.03, dur));
-            HoverScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(HoverScale.ScaleY, 1.03, dur));
+            HoverScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(HoverScale.ScaleX, OnHoverScale, dur));
+            HoverScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(HoverScale.ScaleY, OnHoverScale, dur));
         }
 
         void UserControl_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
@@ -135,6 +145,77 @@ namespace naLauncher2.Wpf
             // Scale back to normal
             HoverScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(HoverScale.ScaleX, 1, dur));
             HoverScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(HoverScale.ScaleY, 1, dur));
+
+            StopSummaryScroll();
+        }
+
+        void StartSummaryScroll()
+        {
+            StopSummaryScroll();
+
+            if (SummaryScroller.Visibility != Visibility.Visible)
+                return;
+
+            SummaryScroller.ScrollToTop();
+
+            if (SummaryScroller.ScrollableHeight <= 0)
+                return;
+
+            _summaryDelayTimer = new DispatcherTimer(DispatcherPriority.Render)
+            {
+                Interval = TimeSpan.FromMilliseconds(SummaryScrollDelay)
+            };
+            _summaryDelayTimer.Tick += SummaryDelayTimer_Tick;
+            _summaryDelayTimer.Start();
+        }
+
+        void SummaryDelayTimer_Tick(object? sender, EventArgs e)
+        {
+            _summaryDelayTimer!.Stop();
+            _summaryDelayTimer.Tick -= SummaryDelayTimer_Tick;
+            _summaryDelayTimer = null;
+
+            _lastScrollTick = DateTime.UtcNow;
+            _summaryScrollTimer = new DispatcherTimer(DispatcherPriority.Render)
+            {
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+            _summaryScrollTimer.Tick += SummaryScrollTimer_Tick;
+            _summaryScrollTimer.Start();
+        }
+
+        void StopSummaryScroll()
+        {
+            if (_summaryDelayTimer is not null)
+            {
+                _summaryDelayTimer.Stop();
+                _summaryDelayTimer.Tick -= SummaryDelayTimer_Tick;
+                _summaryDelayTimer = null;
+            }
+
+            if (_summaryScrollTimer is null)
+                return;
+
+            _summaryScrollTimer.Stop();
+            _summaryScrollTimer.Tick -= SummaryScrollTimer_Tick;
+            _summaryScrollTimer = null;
+        }
+
+        void SummaryScrollTimer_Tick(object? sender, EventArgs e)
+        {
+            var now = DateTime.UtcNow;
+            var delta = (now - _lastScrollTick).TotalSeconds;
+            _lastScrollTick = now;
+
+            var newOffset = SummaryScroller.VerticalOffset + SummaryScrollSpeed * delta;
+            if (newOffset >= SummaryScroller.ScrollableHeight)
+            {
+                SummaryScroller.ScrollToBottom();
+                StopSummaryScroll();
+                return;
+            }
+
+            SummaryScroller.ScrollToVerticalOffset(newOffset);
         }
 
         async void LoadImageAsync(string? imagePath, bool isInstalled)
