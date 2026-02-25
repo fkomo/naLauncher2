@@ -151,7 +151,7 @@ namespace naLauncher2.Wpf
 
             var filtered = _userGamesFilterMode switch
             {
-                UserGamesFilterMode.Removed => all.Where(x => !x.Value.Installed),
+                UserGamesFilterMode.Removed => all.Where(x => x.Value.Removed),
                 UserGamesFilterMode.Finished => all.Where(x => x.Value.Finished),
                 UserGamesFilterMode.Unfinished => all.Where(x => x.Value.Installed && !x.Value.Finished),
                 UserGamesFilterMode.All => all,

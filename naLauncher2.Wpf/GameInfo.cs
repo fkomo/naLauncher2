@@ -13,6 +13,7 @@
         public string[] Genres { get; set; } = [];
 
         public bool Installed => Shortcut is not null;
+        public bool Removed => !Installed;
         public bool NotPlayed => Played == null || Played.Count == 0;
         public bool Finished => Completed.HasValue;
         public DateTime? LastPlayed => Played.Count > 0 ? Played.Last() : null;

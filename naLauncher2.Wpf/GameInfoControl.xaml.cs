@@ -35,6 +35,7 @@ namespace naLauncher2.Wpf
 
         readonly string _id;
         public string Id => _id;
+        readonly bool _isRemoved;
 
         public GameInfoControl(string id)
         {
@@ -51,6 +52,7 @@ namespace naLauncher2.Wpf
             NameLabel.Text = _id;
 
             var game = GameLibrary.Instance.Games[_id];
+            _isRemoved = game.Removed;
 
             if (!string.IsNullOrEmpty(game.Developer))
                 DeveloperText.Text = game.Developer;
@@ -69,7 +71,15 @@ namespace naLauncher2.Wpf
 
             _hasInfoOverlay = !string.IsNullOrEmpty(game.Developer)
                 || (game.Genres?.Length > 0)
-                || !string.IsNullOrEmpty(game.Summary);
+                || !string.IsNullOrEmpty(game.Summary)
+                || game.Rating.HasValue;
+
+            if (game.Rating.HasValue)
+            {
+                RatingBadge.Background = new SolidColorBrush(GetMetacriticColor(game.Rating.Value));
+                RatingText.Text = game.Rating.Value.ToString();
+                RatingBadge.Visibility = Visibility.Visible;
+            }
 
             LoadImageAsync(game.ImagePath, game.Installed);
         }
@@ -96,8 +106,8 @@ namespace naLauncher2.Wpf
 
         void UserControl_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
-            // Change cursor to hand
-            this.Cursor = System.Windows.Input.Cursors.Hand;
+            if (!_isRemoved)
+                this.Cursor = System.Windows.Input.Cursors.Hand;
 
             // Bring control to front by setting highest z-index
             Canvas.SetZIndex(this, 1000);
@@ -118,15 +128,18 @@ namespace naLauncher2.Wpf
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             GlassOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(GlassOverlay.Opacity, 1, dur));
 
-            // Subtle scale-up lift
-            HoverScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(HoverScale.ScaleX, OnHoverScale, dur));
-            HoverScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(HoverScale.ScaleY, OnHoverScale, dur));
+            if (!_isRemoved)
+            {
+                // Subtle scale-up lift
+                HoverScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(HoverScale.ScaleX, OnHoverScale, dur));
+                HoverScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(HoverScale.ScaleY, OnHoverScale, dur));
+            }
         }
 
         void UserControl_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
-            // Restore cursor to arrow
-            this.Cursor = System.Windows.Input.Cursors.Arrow;
+            if (!_isRemoved)
+                this.Cursor = System.Windows.Input.Cursors.Arrow;
 
             // Restore original z-index
             Canvas.SetZIndex(this, _originalZIndex);
@@ -142,9 +155,12 @@ namespace naLauncher2.Wpf
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             GlassOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(GlassOverlay.Opacity, 0, dur));
 
-            // Scale back to normal
-            HoverScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(HoverScale.ScaleX, 1, dur));
-            HoverScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(HoverScale.ScaleY, 1, dur));
+            if (!_isRemoved)
+            {
+                // Scale back to normal
+                HoverScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(HoverScale.ScaleX, 1, dur));
+                HoverScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(HoverScale.ScaleY, 1, dur));
+            }
 
             StopSummaryScroll();
         }

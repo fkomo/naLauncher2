@@ -57,15 +57,31 @@
                             <GradientStop Color="#EE000000" Offset="1"/>
                         </LinearGradientBrush>
                     </Grid.Background>
+
+                    <!-- Rating badge (metacritic-style colored square, top-right) -->
+                    <Border x:Name="RatingBadge"
+                            Width="32" Height="32"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,8,8,0"
+                            IsHitTestVisible="False"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="RatingText"
+                                   Foreground="White"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"/>
+                    </Border>
+
                     <StackPanel VerticalAlignment="Bottom" Margin="10,16,10,10">
                         <TextBlock x:Name="DeveloperText"
                                    Foreground="White"
-                                   FontSize="15"
+                                   FontSize="16"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis"/>
                         <TextBlock x:Name="GenresText"
                                    Foreground="#FFAAAAAA"
-                                   FontSize="13"
+                                   FontSize="14"
                                    FontStyle="Italic"
                                    TextWrapping="Wrap"
                                    Margin="0,2,0,0"/>
@@ -77,7 +93,7 @@
                                      Focusable="False">
                             <TextBlock x:Name="SummaryText"
                                        Foreground="#FFD0D0D0"
-                                       FontSize="13"
+                                       FontSize="14"
                                        TextWrapping="Wrap"/>
                         </ScrollViewer>
                     </StackPanel>
