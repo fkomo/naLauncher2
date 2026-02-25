@@ -11,11 +11,10 @@
 
     internal enum GamesSortMode
     {
-        Title,
-        Added,
-        Removed,
-        Finished,
-        Played,
-        Rating,
+        Title, // GameLibrary.Games[Key]
+        Added, // GameInfo.Added
+        Finished, // GameInfo.Completed
+        Played, // GameInfo.Played.Count
+        Rating, // GameInfo.Rating 
     }
 }

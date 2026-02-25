@@ -105,6 +105,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
@@ -135,9 +136,34 @@
                 <TextBlock Grid.Column="1" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>
-                <Rectangle Grid.Column="2" x:Name="UserGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="2" x:Name="UserGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="2" x:Name="UserGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock x:Name="UserGamesOrderDirectionToggle" Text="▲" Foreground="White" Opacity="0.5"
+                               FontSize="14" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
+                               MouseLeftButtonUp="UserGamesOrderDirectionToggle_Click"/>
+                    <TextBlock x:Name="UserGamesOrderLabel" Text="Title" Foreground="White" Opacity="1"
+                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                               Cursor="Hand" MouseLeftButtonUp="UserGamesOrderLabel_Click"/>
+                </StackPanel>
+                <Popup Grid.Column="2" x:Name="UserGamesOrderDropdown"
+                       PlacementTarget="{Binding ElementName=UserGamesOrderLabel}"
+                       Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
+                       Closed="UserGamesOrderDropdown_Closed">
+                    <Border Margin="12" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" ShadowDepth="4" BlurRadius="12" Opacity="0.8"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock x:Name="SortOptionTitle" Style="{StaticResource DropdownItemStyle}" Text="Title" Tag="Title" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                            <TextBlock x:Name="SortOptionAdded" Style="{StaticResource DropdownItemStyle}" Text="Added" Tag="Added" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                            <TextBlock x:Name="SortOptionFinished" Style="{StaticResource DropdownItemStyle}" Text="Finished" Tag="Finished" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                            <TextBlock x:Name="SortOptionPlayed" Style="{StaticResource DropdownItemStyle}" Text="Played" Tag="Played" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                            <TextBlock x:Name="SortOptionRating" Style="{StaticResource DropdownItemStyle}" Text="Rating" Tag="Rating" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+                <Rectangle Grid.Column="3" x:Name="UserGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="3" x:Name="UserGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="3" x:Name="UserGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>

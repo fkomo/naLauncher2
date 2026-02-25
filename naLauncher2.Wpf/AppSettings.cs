@@ -7,6 +7,8 @@ namespace naLauncher2.Wpf
     {
         public string? LibraryPath { get; set; }
         public UserGamesFilterMode UserGamesFilterMode { get; set; } = UserGamesFilterMode.Installed;
+        public GamesSortMode UserGamesSortMode { get; set; } = GamesSortMode.Title;
+        public bool UserGamesSortDescending { get; set; } = false;
 
 
         static readonly AppSettings _instance = new();
@@ -35,6 +37,8 @@ namespace naLauncher2.Wpf
             {
                 LibraryPath = loaded.LibraryPath;
                 UserGamesFilterMode = loaded.UserGamesFilterMode;
+                UserGamesSortMode = loaded.UserGamesSortMode;
+                UserGamesSortDescending = loaded.UserGamesSortDescending;
             }
         }
 

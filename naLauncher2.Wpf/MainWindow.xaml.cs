@@ -43,6 +43,10 @@ namespace naLauncher2.Wpf
         UserGamesFilterMode _userGamesFilterMode = UserGamesFilterMode.Installed;
         DateTime _userGamesDropdownLastClosed = DateTime.MinValue;
 
+        GamesSortMode _userGamesSortMode = GamesSortMode.Title;
+        bool _userGamesSortDescending = false;
+        DateTime _userGamesOrderDropdownLastClosed = DateTime.MinValue;
+
         bool _newGamesCollapsed = true;
         bool _recentGamesCollapsed = true;
         bool _userGamesCollapsed = true;
@@ -71,6 +75,8 @@ namespace naLauncher2.Wpf
                 return;
 
             _userGamesFilterMode = AppSettings.Instance.UserGamesFilterMode;
+            _userGamesSortMode = AppSettings.Instance.UserGamesSortMode;
+            _userGamesSortDescending = AppSettings.Instance.UserGamesSortDescending;
 
             double screenWidth = RootGrid.ActualWidth;
             _controlsPerRow = (int)((screenWidth + Gap) / (GameInfoControl.ControlWidth + Gap));
@@ -109,6 +115,8 @@ namespace naLauncher2.Wpf
             RecentGamesCount.Text = $"({recentGames.Length})";
             UserGamesCount.Text = $"({userGames.Length})";
             UserGamesLabel.Text = _userGamesFilterMode.ToString();
+            UserGamesOrderLabel.Text = _userGamesSortMode.ToString();
+            UserGamesOrderDirectionToggle.Text = _userGamesSortDescending ? "\u25BC" : "\u25B2";
 
             double shadowOffset = GameInfoControl.ShadowBlurRadius;
             double canvasTopMargin = SectionGap - shadowOffset;
@@ -138,16 +146,26 @@ namespace naLauncher2.Wpf
         {
             var all = GameLibrary.Instance.Games.AsEnumerable();
 
-            return (_userGamesFilterMode switch
+            var filtered = _userGamesFilterMode switch
             {
                 UserGamesFilterMode.Removed => all.Where(x => !x.Value.Installed),
                 UserGamesFilterMode.Finished => all.Where(x => x.Value.Finished),
                 UserGamesFilterMode.Unfinished => all.Where(x => x.Value.Installed && !x.Value.Finished),
                 UserGamesFilterMode.All => all,
                 _ => all.Where(x => x.Value.Installed),
-            })
+            };
+
+            var sorted = _userGamesSortMode switch
+            {
+                GamesSortMode.Added => filtered.OrderBy(x => x.Value.Added),
+                GamesSortMode.Finished => filtered.OrderBy(x => x.Value.Completed),
+                GamesSortMode.Played => filtered.OrderBy(x => x.Value.Played.Count),
+                GamesSortMode.Rating => filtered.OrderBy(x => x.Value.Rating),
+                _ => filtered.OrderBy(x => x.Key),
+            };
+
+            return (_userGamesSortDescending ? sorted.Reverse() : (IEnumerable<KeyValuePair<string, GameInfo>>)sorted)
                 .Select(x => x.Key)
-                .Order()
                 .ToArray();
         }
 
@@ -496,6 +514,15 @@ namespace naLauncher2.Wpf
                 _userGamesFilterMode = mode;
                 UserGamesDropdown.IsOpen = false;
                 RefreshUserGames();
+
+                if (_userGamesCollapsed)
+                    ToggleGroupSection(() => _userGamesCollapsed, v => _userGamesCollapsed = v,
+                        UserGamesToggle, UserGamesCanvas,
+                        UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
+                        canvasRow: UserGamesCanvasRow,
+                        onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; UpdateUserGamesHeaderControls(); },
+                        onViewportChange: RefreshUserGamesViewport);
+
                 AppSettings.Instance.UserGamesFilterMode = _userGamesFilterMode;
                 await AppSettings.Instance.Save();
             }
@@ -512,6 +539,60 @@ namespace naLauncher2.Wpf
             FilterOptionFinished.Foreground = _userGamesFilterMode == UserGamesFilterMode.Finished ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionUnfinished.Foreground = _userGamesFilterMode == UserGamesFilterMode.Unfinished ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionAll.Foreground = _userGamesFilterMode == UserGamesFilterMode.All ? Brushes.LightSkyBlue : Brushes.White;
+        }
+
+        void UpdateSortOptionHighlight()
+        {
+            SortOptionTitle.Foreground = _userGamesSortMode == GamesSortMode.Title ? Brushes.LightSkyBlue : Brushes.White;
+            SortOptionAdded.Foreground = _userGamesSortMode == GamesSortMode.Added ? Brushes.LightSkyBlue : Brushes.White;
+            SortOptionFinished.Foreground = _userGamesSortMode == GamesSortMode.Finished ? Brushes.LightSkyBlue : Brushes.White;
+            SortOptionPlayed.Foreground = _userGamesSortMode == GamesSortMode.Played ? Brushes.LightSkyBlue : Brushes.White;
+            SortOptionRating.Foreground = _userGamesSortMode == GamesSortMode.Rating ? Brushes.LightSkyBlue : Brushes.White;
+        }
+
+        void UserGamesOrderLabel_Click(object sender, MouseButtonEventArgs e)
+        {
+            if ((DateTime.UtcNow - _userGamesOrderDropdownLastClosed).TotalMilliseconds > 300)
+            {
+                UpdateSortOptionHighlight();
+                UserGamesOrderDropdown.IsOpen = true;
+            }
+        }
+
+        void UserGamesOrderDropdown_Closed(object? sender, EventArgs e)
+        {
+            _userGamesOrderDropdownLastClosed = DateTime.UtcNow;
+        }
+
+        async void UserGamesOrder_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is TextBlock tb && tb.Tag is string tag && Enum.TryParse<GamesSortMode>(tag, out var mode))
+            {
+                _userGamesSortMode = mode;
+                UserGamesOrderDropdown.IsOpen = false;
+                UserGamesOrderLabel.Text = _userGamesSortMode.ToString();
+                RefreshUserGames();
+
+                if (_userGamesCollapsed)
+                    ToggleGroupSection(() => _userGamesCollapsed, v => _userGamesCollapsed = v,
+                        UserGamesToggle, UserGamesCanvas,
+                        UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
+                        canvasRow: UserGamesCanvasRow,
+                        onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; UpdateUserGamesHeaderControls(); },
+                        onViewportChange: RefreshUserGamesViewport);
+
+                AppSettings.Instance.UserGamesSortMode = _userGamesSortMode;
+                await AppSettings.Instance.Save();
+            }
+        }
+
+        async void UserGamesOrderDirectionToggle_Click(object sender, MouseButtonEventArgs e)
+        {
+            _userGamesSortDescending = !_userGamesSortDescending;
+            UserGamesOrderDirectionToggle.Text = _userGamesSortDescending ? "\u25BC" : "\u25B2";
+            RefreshUserGames();
+            AppSettings.Instance.UserGamesSortDescending = _userGamesSortDescending;
+            await AppSettings.Instance.Save();
         }
 
         /// <summary>
@@ -572,6 +653,18 @@ namespace naLauncher2.Wpf
             RecentGamesDivider.Visibility = _recentGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        void UpdateUserGamesHeaderControls()
+        {
+            bool enabled = !_userGamesCollapsed;
+            UserGamesCount.Opacity = enabled ? 1.0 : 0.3;
+            UserGamesLabel.IsHitTestVisible = enabled;
+            UserGamesLabel.Opacity = enabled ? 1.0 : 0.3;
+            UserGamesOrderLabel.IsHitTestVisible = enabled;
+            UserGamesOrderLabel.Opacity = enabled ? 1.0 : 0.3;
+            UserGamesOrderDirectionToggle.IsHitTestVisible = enabled;
+            UserGamesOrderDirectionToggle.Opacity = enabled ? 0.5 : 0.3;
+        }
+
         void ApplyUserGamesState()
         {
             UserGamesToggle.Text = _userGamesCollapsed ? "\u25B6" : "\u25BC";
@@ -580,6 +673,7 @@ namespace naLauncher2.Wpf
             UserGamesScrollTrack.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
             UserGamesScrollThumb.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
             UserGamesDivider.Visibility = _userGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
+            UpdateUserGamesHeaderControls();
         }
 
         static DoubleAnimation FadeAnimation(double from, double to) =>
@@ -597,9 +691,10 @@ namespace naLauncher2.Wpf
         /// <param name="divider">Divider shown when collapsed, hidden when expanded.</param>
         /// <param name="canvasRow">Optional grid row whose height is set to 0 / Star alongside visibility.</param>
         /// <param name="onExpand">Optional callback invoked immediately when the section is expanding.</param>
+        /// <param name="onCollapse">Optional callback invoked immediately when the section is collapsing.</param>
         /// <param name="onViewportChange">Optional callback invoked after expand or after the collapse animation completes.</param>
         static void ToggleGroupSection(Func<bool> getCollapsed, Action<bool> setCollapsed, TextBlock toggle, Canvas canvas, Rectangle scrollTrack, Rectangle scrollThumb, Rectangle divider,
-            RowDefinition? canvasRow = null, Action? onExpand = null, Action? onViewportChange = null)
+            RowDefinition? canvasRow = null, Action? onExpand = null, Action? onCollapse = null, Action? onViewportChange = null)
         {
             bool collapsed = !getCollapsed();
             setCollapsed(collapsed);
@@ -607,6 +702,7 @@ namespace naLauncher2.Wpf
 
             if (collapsed)
             {
+                onCollapse?.Invoke();
                 var anim = FadeAnimation(canvas.Opacity, 0);
                 anim.Completed += (s, ea) =>
                 {
@@ -654,7 +750,8 @@ namespace naLauncher2.Wpf
                 UserGamesToggle, UserGamesCanvas,
                 UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
                 canvasRow: UserGamesCanvasRow,
-                onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; },
+                onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; UpdateUserGamesHeaderControls(); },
+                onCollapse: UpdateUserGamesHeaderControls,
                 onViewportChange: RefreshUserGamesViewport);
     }
 }
