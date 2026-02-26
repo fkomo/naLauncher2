@@ -44,11 +44,9 @@ namespace naLauncher2.Wpf
         double _gridOffset;
 
         UserGamesFilterMode _userGamesFilterMode = UserGamesFilterMode.Installed;
-        DateTime _userGamesDropdownLastClosed = DateTime.MinValue;
 
         GamesSortMode _userGamesSortMode = GamesSortMode.Title;
         bool _userGamesSortDescending = false;
-        DateTime _userGamesOrderDropdownLastClosed = DateTime.MinValue;
 
         string _userGamesTitleFilter = string.Empty;
         bool _newGamesCollapsed = true;
@@ -531,26 +529,31 @@ namespace naLauncher2.Wpf
             thumb.Margin = new Thickness(thumbLeft, 3, 0, 0);
         }
 
-        /// <summary>
-        /// Opens the filter dropdown when the User Games label is clicked,
-        /// guarding against an immediate re-open after the dropdown is closed.
-        /// </summary>
-        void UserGamesLabel_Click(object sender, MouseButtonEventArgs e)
+        void ShowDropdown(Border panel, FrameworkElement anchor)
         {
-            if ((DateTime.UtcNow - _userGamesDropdownLastClosed).TotalMilliseconds > 300)
-            {
-                UpdateFilterOptionHighlight();
-                UserGamesDropdown.IsOpen = true;
-            }
+            Point pos = anchor.TransformToAncestor(RootGrid).Transform(new Point(0, anchor.ActualHeight + 4));
+            Canvas.SetLeft(panel, pos.X);
+            Canvas.SetTop(panel, pos.Y);
+            UserGamesFilterPanel.Visibility = Visibility.Collapsed;
+            UserGamesOrderPanel.Visibility = Visibility.Collapsed;
+            panel.Visibility = Visibility.Visible;
+            DropdownOverlay.Visibility = Visibility.Visible;
         }
 
-        /// <summary>
-        /// Records the UTC timestamp when the filter dropdown closes so that
-        /// accidental immediate re-opens can be suppressed.
-        /// </summary>
-        void UserGamesDropdown_Closed(object? sender, EventArgs e)
+        void HideDropdowns()
         {
-            _userGamesDropdownLastClosed = DateTime.UtcNow;
+            DropdownOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        void DropdownOverlay_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+        }
+
+        void UserGamesLabel_Click(object sender, MouseButtonEventArgs e)
+        {
+            UpdateFilterOptionHighlight();
+            ShowDropdown(UserGamesFilterPanel, UserGamesLabel);
         }
 
         /// <summary>
@@ -561,7 +564,7 @@ namespace naLauncher2.Wpf
             if (sender is TextBlock tb && tb.Tag is string tag && Enum.TryParse<UserGamesFilterMode>(tag, out var mode))
             {
                 _userGamesFilterMode = mode;
-                UserGamesDropdown.IsOpen = false;
+                HideDropdowns();
                 RefreshUserGames();
 
                 if (_userGamesCollapsed)
@@ -601,16 +604,8 @@ namespace naLauncher2.Wpf
 
         void UserGamesOrderLabel_Click(object sender, MouseButtonEventArgs e)
         {
-            if ((DateTime.UtcNow - _userGamesOrderDropdownLastClosed).TotalMilliseconds > 300)
-            {
-                UpdateSortOptionHighlight();
-                UserGamesOrderDropdown.IsOpen = true;
-            }
-        }
-
-        void UserGamesOrderDropdown_Closed(object? sender, EventArgs e)
-        {
-            _userGamesOrderDropdownLastClosed = DateTime.UtcNow;
+            UpdateSortOptionHighlight();
+            ShowDropdown(UserGamesOrderPanel, UserGamesOrderLabel);
         }
 
         async void UserGamesOrder_Click(object sender, MouseButtonEventArgs e)
@@ -618,7 +613,7 @@ namespace naLauncher2.Wpf
             if (sender is TextBlock tb && tb.Tag is string tag && Enum.TryParse<GamesSortMode>(tag, out var mode))
             {
                 _userGamesSortMode = mode;
-                UserGamesOrderDropdown.IsOpen = false;
+                HideDropdowns();
                 UserGamesOrderLabel.Text = _userGamesSortMode.ToString();
                 RefreshUserGames();
 

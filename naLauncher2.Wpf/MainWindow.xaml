@@ -127,23 +127,6 @@
                                FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                                Cursor="Hand" MouseLeftButtonUp="UserGamesLabel_Click"/>
                 </StackPanel>
-                <Popup Grid.Column="0" x:Name="UserGamesDropdown"
-                       PlacementTarget="{Binding ElementName=UserGamesLabel}"
-                       Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
-                       Closed="UserGamesDropdown_Closed">
-                    <Border Margin="12" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160">
-                        <Border.Effect>
-                            <DropShadowEffect Color="Black" ShadowDepth="4" BlurRadius="12" Opacity="0.8"/>
-                        </Border.Effect>
-                        <StackPanel>
-                            <TextBlock x:Name="FilterOptionInstalled" Style="{StaticResource DropdownItemStyle}" Text="Installed" Tag="Installed" MouseLeftButtonUp="UserGamesFilter_Click"/>
-                            <TextBlock x:Name="FilterOptionRemoved" Style="{StaticResource DropdownItemStyle}" Text="Removed" Tag="Removed" MouseLeftButtonUp="UserGamesFilter_Click"/>
-                            <TextBlock x:Name="FilterOptionFinished" Style="{StaticResource DropdownItemStyle}" Text="Finished" Tag="Finished" MouseLeftButtonUp="UserGamesFilter_Click"/>
-                            <TextBlock x:Name="FilterOptionUnfinished" Style="{StaticResource DropdownItemStyle}" Text="Unfinished" Tag="Unfinished" MouseLeftButtonUp="UserGamesFilter_Click"/>
-                            <TextBlock x:Name="FilterOptionAll" Style="{StaticResource DropdownItemStyle}" Text="All" Tag="All" MouseLeftButtonUp="UserGamesFilter_Click"/>
-                        </StackPanel>
-                    </Border>
-                </Popup>
                 <TextBlock Grid.Column="1" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,8,0"/>
@@ -155,23 +138,6 @@
                                FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                                Cursor="Hand" MouseLeftButtonUp="UserGamesOrderLabel_Click"/>
                 </StackPanel>
-                <Popup Grid.Column="2" x:Name="UserGamesOrderDropdown"
-                       PlacementTarget="{Binding ElementName=UserGamesOrderLabel}"
-                       Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
-                       Closed="UserGamesOrderDropdown_Closed">
-                    <Border Margin="12" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160">
-                        <Border.Effect>
-                            <DropShadowEffect Color="Black" ShadowDepth="4" BlurRadius="12" Opacity="0.8"/>
-                        </Border.Effect>
-                        <StackPanel>
-                            <TextBlock x:Name="SortOptionTitle" Style="{StaticResource DropdownItemStyle}" Text="Title" Tag="Title" MouseLeftButtonUp="UserGamesOrder_Click"/>
-                            <TextBlock x:Name="SortOptionAdded" Style="{StaticResource DropdownItemStyle}" Text="Added" Tag="Added" MouseLeftButtonUp="UserGamesOrder_Click"/>
-                            <TextBlock x:Name="SortOptionFinished" Style="{StaticResource DropdownItemStyle}" Text="Finished" Tag="Finished" MouseLeftButtonUp="UserGamesOrder_Click"/>
-                            <TextBlock x:Name="SortOptionPlayed" Style="{StaticResource DropdownItemStyle}" Text="Played" Tag="Played" MouseLeftButtonUp="UserGamesOrder_Click"/>
-                            <TextBlock x:Name="SortOptionRating" Style="{StaticResource DropdownItemStyle}" Text="Rating" Tag="Rating" MouseLeftButtonUp="UserGamesOrder_Click"/>
-                        </StackPanel>
-                    </Border>
-                </Popup>
                 <Grid Grid.Column="3" VerticalAlignment="Center" Margin="8,0,8,0">
                     <TextBox x:Name="UserGamesTitleFilter"
                              Background="Transparent"
@@ -198,6 +164,31 @@
                 <Canvas x:Name="UserGamesContainer"/>
             </Canvas>
         </Grid>
+
+        <!-- Dropdown overlay: spans all rows, always in the visual tree, no HWND overhead -->
+        <Canvas x:Name="DropdownOverlay" Grid.RowSpan="3"
+                Panel.ZIndex="100" Background="Transparent"
+                Visibility="Collapsed"
+                MouseLeftButtonUp="DropdownOverlay_Click">
+            <Border x:Name="UserGamesFilterPanel" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock x:Name="FilterOptionInstalled" Style="{StaticResource DropdownItemStyle}" Text="Installed" Tag="Installed" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                    <TextBlock x:Name="FilterOptionRemoved" Style="{StaticResource DropdownItemStyle}" Text="Removed" Tag="Removed" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                    <TextBlock x:Name="FilterOptionFinished" Style="{StaticResource DropdownItemStyle}" Text="Finished" Tag="Finished" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                    <TextBlock x:Name="FilterOptionUnfinished" Style="{StaticResource DropdownItemStyle}" Text="Unfinished" Tag="Unfinished" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                    <TextBlock x:Name="FilterOptionAll" Style="{StaticResource DropdownItemStyle}" Text="All" Tag="All" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                </StackPanel>
+            </Border>
+            <Border x:Name="UserGamesOrderPanel" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock x:Name="SortOptionTitle" Style="{StaticResource DropdownItemStyle}" Text="Title" Tag="Title" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                    <TextBlock x:Name="SortOptionAdded" Style="{StaticResource DropdownItemStyle}" Text="Added" Tag="Added" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                    <TextBlock x:Name="SortOptionFinished" Style="{StaticResource DropdownItemStyle}" Text="Finished" Tag="Finished" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                    <TextBlock x:Name="SortOptionPlayed" Style="{StaticResource DropdownItemStyle}" Text="Played" Tag="Played" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                    <TextBlock x:Name="SortOptionRating" Style="{StaticResource DropdownItemStyle}" Text="Rating" Tag="Rating" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                </StackPanel>
+            </Border>
+        </Canvas>
 
     </Grid>
 </Window>
