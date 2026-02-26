@@ -577,6 +577,20 @@ namespace naLauncher2.Wpf
 
         static void ConsumeClick(object sender, MouseButtonEventArgs e) => e.Handled = true;
 
+        async void RootGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var control = FindAncestorOrSelf<GameInfoControl>((DependencyObject)e.OriginalSource);
+            if (control is null)
+                return;
+
+            if (!GameLibrary.Instance.Games.TryGetValue(control.Id, out var game) || !game.Installed)
+                return;
+
+            e.Handled = true;
+
+            await RunGame(game);
+        }
+
         void RootGrid_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
             var control = FindAncestorOrSelf<GameInfoControl>((DependencyObject)e.OriginalSource);
@@ -588,13 +602,8 @@ namespace naLauncher2.Wpf
             e.Handled = true;
         }
 
-        async void GameContextMenu_Run_Click(object sender, MouseButtonEventArgs e)
+        async Task RunGame(GameInfo game)
         {
-            HideDropdowns();
-
-            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game) || !game.Installed)
-                return;
-
             try
             {
                 Process.Start(new ProcessStartInfo(game.Shortcut!) { UseShellExecute = true });
@@ -605,8 +614,20 @@ namespace naLauncher2.Wpf
             }
 
             game.Played.Add(DateTime.Now);
+            
             await GameLibrary.Instance.Save();
+
             RefreshAllSections();
+        }
+
+        async void GameContextMenu_Run_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game) || !game.Installed)
+                return;
+
+            await RunGame(game);
         }
 
         async void GameContextMenu_Uninstall_Click(object sender, MouseButtonEventArgs e)
@@ -624,10 +645,12 @@ namespace naLauncher2.Wpf
                 System.IO.File.Delete(game.Shortcut);
 
             game.Shortcut = null;
+
             await GameLibrary.Instance.Save();
-            RefreshAllSections();
 
             Process.Start(new ProcessStartInfo("appwiz.cpl") { UseShellExecute = true });
+
+            RefreshAllSections();
         }
 
         async void GameContextMenu_Delete_Click(object sender, MouseButtonEventArgs e)
@@ -642,7 +665,9 @@ namespace naLauncher2.Wpf
                 return;
 
             GameLibrary.Instance.Games.Remove(_contextMenuTargetId);
+            
             await GameLibrary.Instance.Save();
+
             RefreshAllSections();
         }
 
@@ -658,7 +683,9 @@ namespace naLauncher2.Wpf
                 return;
 
             game.Completed = DateTime.Now;
+            
             await GameLibrary.Instance.Save();
+
             RefreshAllSections();
         }
 
@@ -679,7 +706,9 @@ namespace naLauncher2.Wpf
 
             GameLibrary.Instance.Games[newName] = game;
             GameLibrary.Instance.Games.Remove(_contextMenuTargetId);
+
             await GameLibrary.Instance.Save();
+            
             RefreshAllSections();
         }
 

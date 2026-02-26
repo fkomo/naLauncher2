@@ -27,7 +27,7 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
-    <Grid x:Name="RootGrid" Background="#F0181D1F" MouseRightButtonUp="RootGrid_MouseRightButtonUp">
+    <Grid x:Name="RootGrid" Background="#F0181D1F" MouseRightButtonUp="RootGrid_MouseRightButtonUp" MouseLeftButtonUp="RootGrid_MouseLeftButtonUp">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
