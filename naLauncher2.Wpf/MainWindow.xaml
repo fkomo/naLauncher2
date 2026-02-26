@@ -62,7 +62,7 @@
 
         <!-- Recent Games (horizontal strip) -->
         <StackPanel x:Name="RecentGamesSection" Grid.Row="1" Orientation="Vertical" Visibility="Collapsed">
-            <Grid Margin="32,16,32,0">
+            <Grid x:Name="RecentGamesHeaderGrid" Margin="32,16,32,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -92,21 +92,22 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition x:Name="UserGamesCanvasRow" Height="*"/>
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0" Margin="32,16,32,0">
+            <Grid x:Name="UserGamesHeaderGrid" Grid.Row="0" Margin="32,16,32,0">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
+                <TextBlock Grid.Column="1" Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                            Cursor="Hand" MouseLeftButtonUp="UserGamesLabel_Click"/>
-                <TextBlock Grid.Column="1" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
+                <TextBlock Grid.Column="2" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,8,0"/>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
                     <TextBlock x:Name="UserGamesOrderDirectionToggle" Text="▲" Foreground="White" Opacity="0.5"
                                FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
                                MouseLeftButtonUp="UserGamesOrderDirectionToggle_Click"/>
@@ -114,22 +115,35 @@
                                FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                                Cursor="Hand" MouseLeftButtonUp="UserGamesOrderLabel_Click"/>
                 </StackPanel>
-                <Grid Grid.Column="3" VerticalAlignment="Center" Margin="8,0,8,0">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="CollapsedNewLabel" Text="New"
+                               Foreground="#888888" FontSize="16" FontWeight="SemiBold"
+                               VerticalAlignment="Center" Cursor="Hand"
+                               Visibility="Collapsed" Margin="0,0,8,0"
+                               MouseLeftButtonUp="CollapsedNewLabel_Click"/>
+                    <TextBlock x:Name="CollapsedRecentLabel" Text="Recent"
+                               Foreground="#888888" FontSize="16" FontWeight="SemiBold"
+                               VerticalAlignment="Center" Cursor="Hand"
+                               Visibility="Collapsed" Margin="0,0,8,0"
+                               MouseLeftButtonUp="CollapsedRecentLabel_Click"/>
+                </StackPanel>
+                <Grid Grid.Column="4" VerticalAlignment="Center" Margin="8,0,8,0">
                     <TextBox x:Name="UserGamesTitleFilter"
                              Background="Transparent"
                              Foreground="White"
                              CaretBrush="White"
                              SelectionBrush="LightSkyBlue"
-                             BorderBrush="#44FFFFFF"
-                             BorderThickness="0,0,0,1"
+                             BorderThickness="0"
                              FontSize="16"
-                             Padding="4,2,2,2"
+                             Padding="4,0,2,0"
                              MinWidth="200"
                              Visibility="Collapsed"
                              TextChanged="UserGamesTitleFilter_TextChanged"/>
+                    <Rectangle Height="1" Fill="#44FFFFFF" VerticalAlignment="Bottom"
+                               Visibility="{Binding Visibility, ElementName=UserGamesTitleFilter}"/>
                 </Grid>
-                <Rectangle Grid.Column="4" x:Name="UserGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="4" x:Name="UserGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                <Rectangle Grid.Column="5" x:Name="UserGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="5" x:Name="UserGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>

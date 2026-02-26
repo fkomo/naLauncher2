@@ -75,8 +75,6 @@ namespace naLauncher2.Wpf
             if (!await LoadLibraryAndSettings())
                 return;
 
-            NewGamesSection.Visibility = Visibility.Visible;
-            RecentGamesSection.Visibility = Visibility.Visible;
             UserGamesSection.Visibility = Visibility.Visible;
 
             _userGamesFilterMode = AppSettings.Instance.UserGamesFilterMode;
@@ -96,18 +94,14 @@ namespace naLauncher2.Wpf
             PopulateHorizontalSection(NewGamesContainer, newGames,
                 id => $"added {TimeAgo(GameLibrary.Instance.Games[id].Added)}");
             if (newGames.Length > 0)
-            {
                 _newGamesCollapsed = false;
-                ApplyNewGamesState();
-            }
+            ApplyNewGamesState();
 
             PopulateHorizontalSection(RecentGamesContainer, recentGames,
                 id => $"played {TimeAgo(GameLibrary.Instance.Games[id].LastPlayed!.Value)}");
             if (recentGames.Length > 0)
-            {
                 _recentGamesCollapsed = false;
-                ApplyRecentGamesState();
-            }
+            ApplyRecentGamesState();
 
             PopulateGridSection(UserGamesContainer, userGames);
 
@@ -344,21 +338,13 @@ namespace naLauncher2.Wpf
                 {
                     case Key.D1:
                     case Key.NumPad1:
-                        ToggleGroupSection(() => _newGamesCollapsed, v => _newGamesCollapsed = v,
-                            NewGamesCanvas,
-                            NewGamesScrollThumb,
-                            onExpand: () => { _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0; },
-                            onViewportChange: RefreshUserGamesViewport);
+                        ToggleNewGames();
                         e.Handled = true;
                         break;
 
                     case Key.D2:
                     case Key.NumPad2:
-                        ToggleGroupSection(() => _recentGamesCollapsed, v => _recentGamesCollapsed = v,
-                            RecentGamesCanvas,
-                            RecentGamesScrollThumb,
-                            onExpand: () => { _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0; },
-                            onViewportChange: RefreshUserGamesViewport);
+                        ToggleRecentGames();
                         e.Handled = true;
                         break;
                 }
@@ -917,14 +903,35 @@ namespace naLauncher2.Wpf
 
         void ApplyNewGamesState()
         {
-            NewGamesCanvas.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            NewGamesScrollThumb.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            bool show = !_newGamesCollapsed;
+            NewGamesSection.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            NewGamesCanvas.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            NewGamesScrollThumb.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            CollapsedNewLabel.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+            UpdateUserGamesHeaderMargin();
+            UpdateRecentGamesHeaderMargin();
         }
 
         void ApplyRecentGamesState()
         {
-            RecentGamesCanvas.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            RecentGamesScrollThumb.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
+            bool show = !_recentGamesCollapsed;
+            RecentGamesSection.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            RecentGamesCanvas.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            RecentGamesScrollThumb.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            CollapsedRecentLabel.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+            UpdateUserGamesHeaderMargin();
+        }
+
+        void UpdateUserGamesHeaderMargin()
+        {
+            double top = _newGamesCollapsed && _recentGamesCollapsed ? 32 : 16;
+            UserGamesHeaderGrid.Margin = new Thickness(32, top, 32, 0);
+        }
+
+        void UpdateRecentGamesHeaderMargin()
+        {
+            double top = _newGamesCollapsed ? 32 : 16;
+            RecentGamesHeaderGrid.Margin = new Thickness(32, top, 32, 0);
         }
 
         void UpdateUserGamesHeaderControls()
@@ -1019,18 +1026,62 @@ namespace naLauncher2.Wpf
             }
         }
 
-        void NewGamesLabel_Click(object sender, MouseButtonEventArgs e) =>
+        void ToggleNewGames()
+        {
             ToggleGroupSection(() => _newGamesCollapsed, v => _newGamesCollapsed = v,
                 NewGamesCanvas,
                 NewGamesScrollThumb,
-                onExpand: () => { _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0; },
-                onViewportChange: RefreshUserGamesViewport);
+                onExpand: () =>
+                {
+                    _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0;
+                    CollapsedNewLabel.Visibility = Visibility.Collapsed;
+                    NewGamesSection.Visibility = Visibility.Visible;
+                    UpdateUserGamesHeaderMargin();
+                    UpdateRecentGamesHeaderMargin();
+                },
+                onViewportChange: () =>
+                {
+                    if (_newGamesCollapsed)
+                    {
+                        NewGamesSection.Visibility = Visibility.Collapsed;
+                        CollapsedNewLabel.Visibility = Visibility.Visible;
+                    }
+                    UpdateUserGamesHeaderMargin();
+                    UpdateRecentGamesHeaderMargin();
+                    RefreshUserGamesViewport();
+                });
+        }
 
-        void RecentGamesLabel_Click(object sender, MouseButtonEventArgs e) =>
+        void ToggleRecentGames()
+        {
             ToggleGroupSection(() => _recentGamesCollapsed, v => _recentGamesCollapsed = v,
                 RecentGamesCanvas,
                 RecentGamesScrollThumb,
-                onExpand: () => { _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0; },
-                onViewportChange: RefreshUserGamesViewport);
+                onExpand: () =>
+                {
+                    _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0;
+                    CollapsedRecentLabel.Visibility = Visibility.Collapsed;
+                    RecentGamesSection.Visibility = Visibility.Visible;
+                    UpdateUserGamesHeaderMargin();
+                },
+                onViewportChange: () =>
+                {
+                    if (_recentGamesCollapsed)
+                    {
+                        RecentGamesSection.Visibility = Visibility.Collapsed;
+                        CollapsedRecentLabel.Visibility = Visibility.Visible;
+                    }
+                    UpdateUserGamesHeaderMargin();
+                    RefreshUserGamesViewport();
+                });
+        }
+
+        void NewGamesLabel_Click(object sender, MouseButtonEventArgs e) => ToggleNewGames();
+
+        void RecentGamesLabel_Click(object sender, MouseButtonEventArgs e) => ToggleRecentGames();
+
+        void CollapsedNewLabel_Click(object sender, MouseButtonEventArgs e) => ToggleNewGames();
+
+        void CollapsedRecentLabel_Click(object sender, MouseButtonEventArgs e) => ToggleRecentGames();
     }
 }
