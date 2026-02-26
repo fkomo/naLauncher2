@@ -4,8 +4,7 @@
     { 
         Installed, 
         Removed, 
-        Finished, 
-        Unfinished, 
+        Completed, 
         All
     }
 
@@ -13,7 +12,7 @@
     {
         Title, // GameLibrary.Games[Key]
         Added, // GameInfo.Added
-        Finished, // GameInfo.Completed
+        Completed, // GameInfo.Completed
         Played, // GameInfo.Played.Count
         Rating, // GameInfo.Rating 
     }

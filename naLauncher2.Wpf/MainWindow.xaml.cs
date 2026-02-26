@@ -1,4 +1,5 @@
 using naLauncher2.Wpf.Common;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,9 +23,6 @@ namespace naLauncher2.Wpf
         const double SectionGap = 32; // vertical space between sections [in pixels]
         const double GamePlacementDelayMs = 25; // delay between each game placement animation [in milliseconds]
         const double GamePlacementDurationMs = 200; // duration of game placement animation [in milliseconds]
-
-        static readonly Geometry ToggleCollapsedGeometry = Geometry.Parse("M 0,0 H 10 V 10 H 0 Z M 2,5 H 8 M 5,2 V 8");
-        static readonly Geometry ToggleExpandedGeometry = Geometry.Parse("M 0,0 H 10 V 10 H 0 Z M 2,5 H 8");
 
         // horizontal scroll — New Games
         readonly TranslateTransform _newGamesTransform = new();
@@ -51,7 +49,8 @@ namespace naLauncher2.Wpf
         string _userGamesTitleFilter = string.Empty;
         bool _newGamesCollapsed = true;
         bool _recentGamesCollapsed = true;
-        bool _userGamesCollapsed = true;
+
+        string? _contextMenuTargetId;
 
         /// <summary>
         /// Initializes the main window and assigns render transforms to scrollable containers.
@@ -75,6 +74,10 @@ namespace naLauncher2.Wpf
         {
             if (!await LoadLibraryAndSettings())
                 return;
+
+            NewGamesSection.Visibility = Visibility.Visible;
+            RecentGamesSection.Visibility = Visibility.Visible;
+            UserGamesSection.Visibility = Visibility.Visible;
 
             _userGamesFilterMode = AppSettings.Instance.UserGamesFilterMode;
             _userGamesSortMode = AppSettings.Instance.UserGamesSortMode;
@@ -107,11 +110,6 @@ namespace naLauncher2.Wpf
             }
 
             PopulateGridSection(UserGamesContainer, userGames);
-            if (userGames.Length > 0)
-            {
-                _userGamesCollapsed = false;
-                ApplyUserGamesState();
-            }
 
             NewGamesCount.Text = $"({newGames.Length})";
             RecentGamesCount.Text = $"({recentGames.Length})";
@@ -151,8 +149,7 @@ namespace naLauncher2.Wpf
             var filtered = _userGamesFilterMode switch
             {
                 UserGamesFilterMode.Removed => all.Where(x => x.Value.Removed),
-                UserGamesFilterMode.Finished => all.Where(x => x.Value.Finished),
-                UserGamesFilterMode.Unfinished => all.Where(x => x.Value.Installed && !x.Value.Finished),
+                UserGamesFilterMode.Completed => all.Where(x => x.Value.Completed.HasValue),
                 UserGamesFilterMode.All => all,
                 _ => all.Where(x => x.Value.Installed),
             };
@@ -163,7 +160,7 @@ namespace naLauncher2.Wpf
             var sorted = _userGamesSortMode switch
             {
                 GamesSortMode.Added => filtered.OrderBy(x => x.Value.Added),
-                GamesSortMode.Finished => filtered.OrderBy(x => x.Value.Completed),
+                GamesSortMode.Completed => filtered.OrderBy(x => x.Value.Completed),
                 GamesSortMode.Played => filtered.OrderBy(x => x.Value.Played.Count),
                 GamesSortMode.Rating => filtered.OrderBy(x => x.Value.Rating),
                 _ => filtered.OrderBy(x => x.Key),
@@ -183,26 +180,35 @@ namespace naLauncher2.Wpf
         {
             await AppSettings.Instance.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "settings.json"));
 
-            if (AppSettings.Instance.LibraryPath is null)
+            if (AppSettings.Instance.LibraryPath is null || !System.IO.File.Exists(AppSettings.Instance.LibraryPath))
             {
-                var dialog = new Microsoft.Win32.OpenFileDialog
-                {
-                    Title = "Select game library file",
-                    Filter = "JSON files (*.json)|*.json",
-                    CheckFileExists = true,
-                };
-
-                if (dialog.ShowDialog() != true)
+                var setupDialog = new LibrarySetupDialog { Owner = this };
+                if (setupDialog.ShowDialog() != true)
                 {
                     this.Close();
                     return false;
                 }
 
-                AppSettings.Instance.LibraryPath = dialog.FileName;
+                AppSettings.Instance.LibraryPath = setupDialog.SelectedPath;
+
                 await AppSettings.Instance.Save();
             }
 
-            await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath ?? throw new Exception($"missing {nameof(AppSettings.Instance.LibraryPath)}"));
+            await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath ?? throw new Exception($"missing library file {nameof(AppSettings.Instance.LibraryPath)}"));
+
+            if (GameLibrary.Instance.Sources.Length == 0)
+            {
+                var folderDialog = new Microsoft.Win32.OpenFolderDialog
+                {
+                    Title = "Select a source folder for your games",
+                };
+
+                if (folderDialog.ShowDialog(this) == true)
+                {
+                    GameLibrary.Instance.Sources = [folderDialog.FolderName];
+                    await GameLibrary.Instance.Save();
+                }
+            }
 
             return true;
         }
@@ -226,10 +232,10 @@ namespace naLauncher2.Wpf
         {
             var span = DateTime.Now - dt;
             if (span.TotalDays >= 365) { int n = (int)(span.TotalDays / 365); return $"{n} {(n == 1 ? "year" : "years")} ago"; }
-            if (span.TotalDays >= 30)  { int n = (int)(span.TotalDays / 30);  return $"{n} {(n == 1 ? "month" : "months")} ago"; }
-            if (span.TotalDays >= 7)   { int n = (int)(span.TotalDays / 7);   return $"{n} {(n == 1 ? "week" : "weeks")} ago"; }
-            if (span.TotalDays >= 1)   { int n = (int)span.TotalDays;         return $"{n} {(n == 1 ? "day" : "days")} ago"; }
-            if (span.TotalHours >= 1)  { int n = (int)span.TotalHours;        return $"{n} {(n == 1 ? "hour" : "hours")} ago"; }
+            if (span.TotalDays >= 30) { int n = (int)(span.TotalDays / 30); return $"{n} {(n == 1 ? "month" : "months")} ago"; }
+            if (span.TotalDays >= 7) { int n = (int)(span.TotalDays / 7); return $"{n} {(n == 1 ? "week" : "weeks")} ago"; }
+            if (span.TotalDays >= 1) { int n = (int)span.TotalDays; return $"{n} {(n == 1 ? "day" : "days")} ago"; }
+            if (span.TotalHours >= 1) { int n = (int)span.TotalHours; return $"{n} {(n == 1 ? "hour" : "hours")} ago"; }
             return "just now";
         }
 
@@ -327,8 +333,8 @@ namespace naLauncher2.Wpf
                     case Key.D1:
                     case Key.NumPad1:
                         ToggleGroupSection(() => _newGamesCollapsed, v => _newGamesCollapsed = v,
-                            NewGamesToggle, NewGamesCanvas,
-                            NewGamesScrollTrack, NewGamesScrollThumb, NewGamesDivider,
+                            NewGamesCanvas,
+                            NewGamesScrollThumb,
                             onExpand: () => { _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0; },
                             onViewportChange: RefreshUserGamesViewport);
                         e.Handled = true;
@@ -337,21 +343,9 @@ namespace naLauncher2.Wpf
                     case Key.D2:
                     case Key.NumPad2:
                         ToggleGroupSection(() => _recentGamesCollapsed, v => _recentGamesCollapsed = v,
-                            RecentGamesToggle, RecentGamesCanvas,
-                            RecentGamesScrollTrack, RecentGamesScrollThumb, RecentGamesDivider,
+                            RecentGamesCanvas,
+                            RecentGamesScrollThumb,
                             onExpand: () => { _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0; },
-                            onViewportChange: RefreshUserGamesViewport);
-                        e.Handled = true;
-                        break;
-
-                    case Key.D3:
-                    case Key.NumPad3:
-                        ToggleGroupSection(() => _userGamesCollapsed, v => _userGamesCollapsed = v,
-                            UserGamesToggle, UserGamesCanvas,
-                            UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
-                            canvasRow: UserGamesCanvasRow,
-                            onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; UpdateUserGamesHeaderControls(); },
-                            onCollapse: UpdateUserGamesHeaderControls,
                             onViewportChange: RefreshUserGamesViewport);
                         e.Handled = true;
                         break;
@@ -505,10 +499,6 @@ namespace naLauncher2.Wpf
         /// proportionally represents the current scroll position within the track.
         /// </summary>
         /// <param name="thumb">The thumb rectangle to update.</param>
-        /// <param name="track">The track rectangle that constrains the thumb.</param>
-        /// <param name="offset">Current scroll offset in pixels.</param>
-        /// <param name="maxScroll">Maximum allowed scroll offset in pixels.</param>
-        /// <param name="viewport">Visible viewport size in pixels.</param>
         static void FadeScrollThumb(Rectangle thumb, bool visible)
         {
             thumb.BeginAnimation(UIElement.OpacityProperty,
@@ -536,6 +526,7 @@ namespace naLauncher2.Wpf
             Canvas.SetTop(panel, pos.Y);
             UserGamesFilterPanel.Visibility = Visibility.Collapsed;
             UserGamesOrderPanel.Visibility = Visibility.Collapsed;
+            GameContextMenuPanel.Visibility = Visibility.Collapsed;
             panel.Visibility = Visibility.Visible;
             DropdownOverlay.Visibility = Visibility.Visible;
         }
@@ -548,6 +539,219 @@ namespace naLauncher2.Wpf
         void DropdownOverlay_Click(object sender, MouseButtonEventArgs e)
         {
             HideDropdowns();
+        }
+
+        void DropdownOverlay_RightClick(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+            e.Handled = true;
+        }
+
+        void ShowGameContextMenu(Point pos)
+        {
+            Canvas.SetLeft(GameContextMenuPanel, pos.X);
+            Canvas.SetTop(GameContextMenuPanel, pos.Y);
+            UserGamesFilterPanel.Visibility = Visibility.Collapsed;
+            UserGamesOrderPanel.Visibility = Visibility.Collapsed;
+            GameContextMenuPanel.Visibility = Visibility.Visible;
+            DropdownOverlay.Visibility = Visibility.Visible;
+
+            if (_contextMenuTargetId is not null && GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
+            {
+                SetMenuItemEnabled(ContextMenuRun, game.Installed);
+                SetMenuItemEnabled(ContextMenuUninstall, game.Installed);
+                SetMenuItemEnabled(ContextMenuDelete, !game.Installed);
+                SetMenuItemEnabled(ContextMenuMarkAsCompleted, !game.Completed.HasValue);
+                SetMenuItemEnabled(ContextMenuRename, true);
+            }
+        }
+
+        static void SetMenuItemEnabled(System.Windows.Controls.TextBlock item, bool enabled)
+        {
+            item.Opacity = enabled ? 1.0 : 0.3;
+            item.RemoveHandler(UIElement.PreviewMouseLeftButtonUpEvent, (MouseButtonEventHandler)ConsumeClick);
+            if (!enabled)
+                item.AddHandler(UIElement.PreviewMouseLeftButtonUpEvent, (MouseButtonEventHandler)ConsumeClick);
+        }
+
+        static void ConsumeClick(object sender, MouseButtonEventArgs e) => e.Handled = true;
+
+        void RootGrid_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var control = FindAncestorOrSelf<GameInfoControl>((DependencyObject)e.OriginalSource);
+            if (control is null)
+                return;
+
+            _contextMenuTargetId = control.Id;
+            ShowGameContextMenu(e.GetPosition(RootGrid));
+            e.Handled = true;
+        }
+
+        async void GameContextMenu_Run_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game) || !game.Installed)
+                return;
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(game.Shortcut!) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error running game '{_contextMenuTargetId}': {ex}");
+            }
+
+            game.Played.Add(DateTime.Now);
+            await GameLibrary.Instance.Save();
+            RefreshAllSections();
+        }
+
+        async void GameContextMenu_Uninstall_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game) || !game.Installed)
+                return;
+
+            var dialog = new ConfirmationDialog($"Uninstall \"{_contextMenuTargetId}\"?") { Owner = this };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            if (game.Shortcut is not null && System.IO.File.Exists(game.Shortcut) && game.Shortcut.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                System.IO.File.Delete(game.Shortcut);
+
+            game.Shortcut = null;
+            await GameLibrary.Instance.Save();
+            RefreshAllSections();
+
+            Process.Start(new ProcessStartInfo("appwiz.cpl") { UseShellExecute = true });
+        }
+
+        async void GameContextMenu_Delete_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.ContainsKey(_contextMenuTargetId))
+                return;
+
+            var dialog = new ConfirmationDialog($"Delete \"{_contextMenuTargetId}\" from the library?") { Owner = this };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            GameLibrary.Instance.Games.Remove(_contextMenuTargetId);
+            await GameLibrary.Instance.Save();
+            RefreshAllSections();
+        }
+
+        async void GameContextMenu_MarkAsCompleted_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
+                return;
+
+            var dialog = new ConfirmationDialog($"Mark \"{_contextMenuTargetId}\" as completed?") { Owner = this };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            game.Completed = DateTime.Now;
+            await GameLibrary.Instance.Save();
+            RefreshAllSections();
+        }
+
+        async void GameContextMenu_Rename_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
+                return;
+
+            var dialog = new InputDialog(_contextMenuTargetId) { Owner = this };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            var newName = dialog.InputText.Trim();
+            if (string.IsNullOrEmpty(newName) || newName == _contextMenuTargetId || GameLibrary.Instance.Games.ContainsKey(newName))
+                return;
+
+            GameLibrary.Instance.Games[newName] = game;
+            GameLibrary.Instance.Games.Remove(_contextMenuTargetId);
+            await GameLibrary.Instance.Save();
+            RefreshAllSections();
+        }
+
+        void RefreshAllSections()
+        {
+            var newGames = GameLibrary.Instance.NewGames().ToArray();
+            var recentGames = GameLibrary.Instance.RecentGames().ToArray();
+            var userGames = GetUserGames();
+
+            NewGamesContainer.Children.Clear();
+            PopulateHorizontalSection(NewGamesContainer, newGames,
+                id => $"added {TimeAgo(GameLibrary.Instance.Games[id].Added)}");
+            if (newGames.Length > 0 && _newGamesCollapsed)
+            {
+                _newGamesCollapsed = false;
+                ApplyNewGamesState();
+            }
+            else if (newGames.Length == 0 && !_newGamesCollapsed)
+            {
+                _newGamesCollapsed = true;
+                ApplyNewGamesState();
+            }
+
+            RecentGamesContainer.Children.Clear();
+            PopulateHorizontalSection(RecentGamesContainer, recentGames,
+                id => $"played {TimeAgo(GameLibrary.Instance.Games[id].LastPlayed!.Value)}");
+            if (recentGames.Length > 0 && _recentGamesCollapsed)
+            {
+                _recentGamesCollapsed = false;
+                ApplyRecentGamesState();
+            }
+            else if (recentGames.Length == 0 && !_recentGamesCollapsed)
+            {
+                _recentGamesCollapsed = true;
+                ApplyRecentGamesState();
+            }
+
+            UserGamesContainer.Children.Clear();
+            PopulateGridSection(UserGamesContainer, userGames);
+
+            NewGamesCount.Text = $"({newGames.Length})";
+            RecentGamesCount.Text = $"({recentGames.Length})";
+            UserGamesCount.Text = $"({userGames.Length})";
+
+            RootGrid.UpdateLayout();
+
+            double screenWidth = RootGrid.ActualWidth;
+            double HorizontalContentWidth(int n) => n > 0 ? 2 * _gridOffset + n * (GameInfoControl.ControlWidth + Gap) - Gap : 0;
+
+            _newGamesMaxScrollX = Math.Max(0, HorizontalContentWidth(newGames.Length) - screenWidth);
+            _recentGamesMaxScrollX = Math.Max(0, HorizontalContentWidth(recentGames.Length) - screenWidth);
+            _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0;
+            _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0;
+
+            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0;
+
+            _visibleControls = UserGamesContainer.Children.OfType<GameInfoControl>()
+                .Select(c => (Control: c, LocalTop: Canvas.GetTop(c)))
+                .ToArray();
+
+            UpdateViewportCulling();
+            UpdateScrollThumbs();
+        }
+
+        static T? FindAncestorOrSelf<T>(DependencyObject obj) where T : DependencyObject
+        {
+            while (obj is not null)
+            {
+                if (obj is T t) return t;
+                obj = VisualTreeHelper.GetParent(obj);
+            }
+            return null;
         }
 
         void UserGamesLabel_Click(object sender, MouseButtonEventArgs e)
@@ -567,14 +771,6 @@ namespace naLauncher2.Wpf
                 HideDropdowns();
                 RefreshUserGames();
 
-                if (_userGamesCollapsed)
-                    ToggleGroupSection(() => _userGamesCollapsed, v => _userGamesCollapsed = v,
-                        UserGamesToggle, UserGamesCanvas,
-                        UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
-                        canvasRow: UserGamesCanvasRow,
-                        onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; UpdateUserGamesHeaderControls(); },
-                        onViewportChange: RefreshUserGamesViewport);
-
                 AppSettings.Instance.UserGamesFilterMode = _userGamesFilterMode;
                 await AppSettings.Instance.Save();
             }
@@ -588,8 +784,7 @@ namespace naLauncher2.Wpf
         {
             FilterOptionInstalled.Foreground = _userGamesFilterMode == UserGamesFilterMode.Installed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionRemoved.Foreground = _userGamesFilterMode == UserGamesFilterMode.Removed ? Brushes.LightSkyBlue : Brushes.White;
-            FilterOptionFinished.Foreground = _userGamesFilterMode == UserGamesFilterMode.Finished ? Brushes.LightSkyBlue : Brushes.White;
-            FilterOptionUnfinished.Foreground = _userGamesFilterMode == UserGamesFilterMode.Unfinished ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionCompleted.Foreground = _userGamesFilterMode == UserGamesFilterMode.Completed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionAll.Foreground = _userGamesFilterMode == UserGamesFilterMode.All ? Brushes.LightSkyBlue : Brushes.White;
         }
 
@@ -597,7 +792,7 @@ namespace naLauncher2.Wpf
         {
             SortOptionTitle.Foreground = _userGamesSortMode == GamesSortMode.Title ? Brushes.LightSkyBlue : Brushes.White;
             SortOptionAdded.Foreground = _userGamesSortMode == GamesSortMode.Added ? Brushes.LightSkyBlue : Brushes.White;
-            SortOptionFinished.Foreground = _userGamesSortMode == GamesSortMode.Finished ? Brushes.LightSkyBlue : Brushes.White;
+            SortOptionCompleted.Foreground = _userGamesSortMode == GamesSortMode.Completed ? Brushes.LightSkyBlue : Brushes.White;
             SortOptionPlayed.Foreground = _userGamesSortMode == GamesSortMode.Played ? Brushes.LightSkyBlue : Brushes.White;
             SortOptionRating.Foreground = _userGamesSortMode == GamesSortMode.Rating ? Brushes.LightSkyBlue : Brushes.White;
         }
@@ -616,14 +811,6 @@ namespace naLauncher2.Wpf
                 HideDropdowns();
                 UserGamesOrderLabel.Text = _userGamesSortMode.ToString();
                 RefreshUserGames();
-
-                if (_userGamesCollapsed)
-                    ToggleGroupSection(() => _userGamesCollapsed, v => _userGamesCollapsed = v,
-                        UserGamesToggle, UserGamesCanvas,
-                        UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
-                        canvasRow: UserGamesCanvasRow,
-                        onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; UpdateUserGamesHeaderControls(); },
-                        onViewportChange: RefreshUserGamesViewport);
 
                 AppSettings.Instance.UserGamesSortMode = _userGamesSortMode;
                 await AppSettings.Instance.Save();
@@ -689,41 +876,27 @@ namespace naLauncher2.Wpf
 
         void ApplyNewGamesState()
         {
-            NewGamesToggle.Data = _newGamesCollapsed ? ToggleCollapsedGeometry : ToggleExpandedGeometry;
             NewGamesCanvas.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            NewGamesScrollTrack.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
             NewGamesScrollThumb.Visibility = _newGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            NewGamesDivider.Visibility = _newGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
         }
 
         void ApplyRecentGamesState()
         {
-            RecentGamesToggle.Data = _recentGamesCollapsed ? ToggleCollapsedGeometry : ToggleExpandedGeometry;
             RecentGamesCanvas.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            RecentGamesScrollTrack.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
             RecentGamesScrollThumb.Visibility = _recentGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            RecentGamesDivider.Visibility = _recentGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
         }
 
         void UpdateUserGamesHeaderControls()
         {
-            bool enabled = !_userGamesCollapsed;
-            UserGamesCount.Opacity = enabled ? 1.0 : 0.3;
-            UserGamesLabel.IsHitTestVisible = enabled;
-            UserGamesLabel.Opacity = enabled ? 1.0 : 0.3;
-            UserGamesOrderLabel.IsHitTestVisible = enabled;
-            UserGamesOrderLabel.Opacity = enabled ? 1.0 : 0.3;
-            UserGamesOrderDirectionToggle.IsHitTestVisible = enabled;
-            UserGamesOrderDirectionToggle.Opacity = enabled ? 0.5 : 0.3;
-            if (enabled)
-            {
-                if (UserGamesTitleFilter.Text.Length > 0)
-                    ShowFilterTextBox();
-            }
-            else
-            {
-                HideFilterTextBox();
-            }
+            UserGamesCount.Opacity = 1.0;
+            UserGamesLabel.IsHitTestVisible = true;
+            UserGamesLabel.Opacity = 1.0;
+            UserGamesOrderLabel.IsHitTestVisible = true;
+            UserGamesOrderLabel.Opacity = 1.0;
+            UserGamesOrderDirectionToggle.IsHitTestVisible = true;
+            UserGamesOrderDirectionToggle.Opacity = 0.5;
+            if (UserGamesTitleFilter.Text.Length > 0)
+                ShowFilterTextBox();
         }
 
         void ShowFilterTextBox()
@@ -740,7 +913,7 @@ namespace naLauncher2.Wpf
 
         void Window_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            if (!_userGamesCollapsed && UserGamesTitleFilter.Visibility != Visibility.Visible
+            if (UserGamesTitleFilter.Visibility != Visibility.Visible
                 && (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt)) == ModifierKeys.None
                 && e.Text.All(c => !char.IsControl(c) && !char.IsWhiteSpace(c)))
             {
@@ -754,12 +927,6 @@ namespace naLauncher2.Wpf
 
         void ApplyUserGamesState()
         {
-            UserGamesToggle.Data = _userGamesCollapsed ? ToggleCollapsedGeometry : ToggleExpandedGeometry;
-            UserGamesCanvas.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            UserGamesCanvasRow.Height = _userGamesCollapsed ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
-            UserGamesScrollTrack.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            UserGamesScrollThumb.Visibility = _userGamesCollapsed ? Visibility.Collapsed : Visibility.Visible;
-            UserGamesDivider.Visibility = _userGamesCollapsed ? Visibility.Visible : Visibility.Collapsed;
             UpdateUserGamesHeaderControls();
         }
 
@@ -771,21 +938,18 @@ namespace naLauncher2.Wpf
         /// </summary>
         /// <param name="getCollapsed">Returns the current collapsed state of the section.</param>
         /// <param name="setCollapsed">Sets the collapsed state of the section.</param>
-        /// <param name="toggle">Toggle Path whose geometry is swapped between collapsed and expanded states.</param>
         /// <param name="canvas">Content canvas to fade in or out.</param>
-        /// <param name="scrollTrack">Scroll track indicator to show or hide.</param>
         /// <param name="scrollThumb">Scroll thumb indicator to show or hide.</param>
         /// <param name="divider">Divider shown when collapsed, hidden when expanded.</param>
         /// <param name="canvasRow">Optional grid row whose height is set to 0 / Star alongside visibility.</param>
         /// <param name="onExpand">Optional callback invoked immediately when the section is expanding.</param>
         /// <param name="onCollapse">Optional callback invoked immediately when the section is collapsing.</param>
         /// <param name="onViewportChange">Optional callback invoked after expand or after the collapse animation completes.</param>
-        static void ToggleGroupSection(Func<bool> getCollapsed, Action<bool> setCollapsed, Path toggle, Canvas canvas, Rectangle scrollTrack, Rectangle scrollThumb, Rectangle divider,
+        static void ToggleGroupSection(Func<bool> getCollapsed, Action<bool> setCollapsed, Canvas canvas, Rectangle scrollThumb,
             RowDefinition? canvasRow = null, Action? onExpand = null, Action? onCollapse = null, Action? onViewportChange = null)
         {
             bool collapsed = !getCollapsed();
             setCollapsed(collapsed);
-            toggle.Data = collapsed ? ToggleCollapsedGeometry : ToggleExpandedGeometry;
 
             if (collapsed)
             {
@@ -797,9 +961,7 @@ namespace naLauncher2.Wpf
                     canvas.BeginAnimation(UIElement.OpacityProperty, null);
                     canvas.Visibility = Visibility.Collapsed;
                     if (canvasRow != null) canvasRow.Height = new GridLength(0);
-                    scrollTrack.Visibility = Visibility.Collapsed;
                     scrollThumb.Visibility = Visibility.Collapsed;
-                    divider.Visibility = Visibility.Visible;
                     onViewportChange?.Invoke();
                 };
                 canvas.BeginAnimation(UIElement.OpacityProperty, anim);
@@ -810,35 +972,24 @@ namespace naLauncher2.Wpf
                 double fromOpacity = canvas.Visibility == Visibility.Collapsed ? 0 : canvas.Opacity;
                 if (canvasRow != null) canvasRow.Height = new GridLength(1, GridUnitType.Star);
                 canvas.Visibility = Visibility.Visible;
-                scrollTrack.Visibility = Visibility.Visible;
                 scrollThumb.Visibility = Visibility.Visible;
-                divider.Visibility = Visibility.Collapsed;
                 canvas.BeginAnimation(UIElement.OpacityProperty, FadeAnimation(fromOpacity, 1));
                 onViewportChange?.Invoke();
             }
         }
 
-        void NewGamesToggle_Click(object sender, MouseButtonEventArgs e) =>
+        void NewGamesLabel_Click(object sender, MouseButtonEventArgs e) =>
             ToggleGroupSection(() => _newGamesCollapsed, v => _newGamesCollapsed = v,
-                NewGamesToggle, NewGamesCanvas,
-                NewGamesScrollTrack, NewGamesScrollThumb, NewGamesDivider,
+                NewGamesCanvas,
+                NewGamesScrollThumb,
                 onExpand: () => { _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0; },
                 onViewportChange: RefreshUserGamesViewport);
 
-        void RecentGamesToggle_Click(object sender, MouseButtonEventArgs e) =>
+        void RecentGamesLabel_Click(object sender, MouseButtonEventArgs e) =>
             ToggleGroupSection(() => _recentGamesCollapsed, v => _recentGamesCollapsed = v,
-                RecentGamesToggle, RecentGamesCanvas,
-                RecentGamesScrollTrack, RecentGamesScrollThumb, RecentGamesDivider,
+                RecentGamesCanvas,
+                RecentGamesScrollThumb,
                 onExpand: () => { _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0; },
-                onViewportChange: RefreshUserGamesViewport);
-
-        void UserGamesToggle_Click(object sender, MouseButtonEventArgs e) =>
-            ToggleGroupSection(() => _userGamesCollapsed, v => _userGamesCollapsed = v,
-                UserGamesToggle, UserGamesCanvas,
-                UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
-                canvasRow: UserGamesCanvasRow,
-                onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; UpdateUserGamesHeaderControls(); },
-                onCollapse: UpdateUserGamesHeaderControls,
                 onViewportChange: RefreshUserGamesViewport);
     }
 }

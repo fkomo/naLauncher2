@@ -27,7 +27,7 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
-    <Grid x:Name="RootGrid" Background="#F0181D1F">
+    <Grid x:Name="RootGrid" Background="#F0181D1F" MouseRightButtonUp="RootGrid_MouseRightButtonUp">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -35,28 +35,20 @@
         </Grid.RowDefinitions>
 
         <!-- New Games (horizontal strip) -->
-        <StackPanel Grid.Row="0" Orientation="Vertical">
+        <StackPanel x:Name="NewGamesSection" Grid.Row="0" Orientation="Vertical" Visibility="Collapsed">
             <Grid Margin="32,32,32,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Path x:Name="NewGamesToggle"
-                          Data="M 0,0 H 10 V 10 H 0 Z M 2,5 H 8 M 5,2 V 8"
-                          Stroke="White" StrokeThickness="1.3" Fill="Transparent"
-                          Width="12" Height="12" Stretch="Uniform"
-                          Opacity="0.5" Cursor="Hand" VerticalAlignment="Center" Margin="0,1,10,0"
-                          MouseLeftButtonUp="NewGamesToggle_Click"/>
-                    <TextBlock Text="New" x:Name="NewGamesLabel" Foreground="White" Opacity="1"
-                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                </StackPanel>
+                <TextBlock Grid.Column="0" Text="New" x:Name="NewGamesLabel" Foreground="White" Opacity="1"
+                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Cursor="Hand" MouseLeftButtonUp="NewGamesLabel_Click"/>
                 <TextBlock Grid.Column="1" Text="" x:Name="NewGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>
-                <Rectangle Grid.Column="2" x:Name="NewGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="2" x:Name="NewGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="NewGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
                 <Rectangle Grid.Column="2" x:Name="NewGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
@@ -69,28 +61,20 @@
         </StackPanel>
 
         <!-- Recent Games (horizontal strip) -->
-        <StackPanel Grid.Row="1" Orientation="Vertical">
+        <StackPanel x:Name="RecentGamesSection" Grid.Row="1" Orientation="Vertical" Visibility="Collapsed">
             <Grid Margin="32,16,32,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Path x:Name="RecentGamesToggle"
-                          Data="M 0,0 H 10 V 10 H 0 Z M 2,5 H 8 M 5,2 V 8"
-                          Stroke="White" StrokeThickness="1.3" Fill="Transparent"
-                          Width="12" Height="12" Stretch="Uniform"
-                          Opacity="0.5" Cursor="Hand" VerticalAlignment="Center" Margin="0,1,10,0"
-                          MouseLeftButtonUp="RecentGamesToggle_Click"/>
-                    <TextBlock Text="Recent" x:Name="RecentGamesLabel" Foreground="White" Opacity="1"
-                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                </StackPanel>
+                <TextBlock Grid.Column="0" Text="Recent" x:Name="RecentGamesLabel" Foreground="White" Opacity="1"
+                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Cursor="Hand" MouseLeftButtonUp="RecentGamesLabel_Click"/>
                 <TextBlock Grid.Column="1" Text="" x:Name="RecentGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,16,0"/>
-                <Rectangle Grid.Column="2" x:Name="RecentGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="2" x:Name="RecentGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="RecentGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
                 <Rectangle Grid.Column="2" x:Name="RecentGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
@@ -103,7 +87,7 @@
         </StackPanel>
 
         <!-- User Games (vertical multi-row grid) -->
-        <Grid Grid.Row="2">
+        <Grid x:Name="UserGamesSection" Grid.Row="2" Visibility="Collapsed">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition x:Name="UserGamesCanvasRow" Height="*"/>
@@ -116,17 +100,9 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Path x:Name="UserGamesToggle"
-                          Data="M 0,0 H 10 V 10 H 0 Z M 2,5 H 8 M 5,2 V 8"
-                          Stroke="White" StrokeThickness="1.3" Fill="Transparent"
-                          Width="12" Height="12" Stretch="Uniform"
-                          Opacity="0.5" Cursor="Hand" VerticalAlignment="Center" Margin="0,1,10,0"
-                          MouseLeftButtonUp="UserGamesToggle_Click"/>
-                    <TextBlock Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
-                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
-                               Cursor="Hand" MouseLeftButtonUp="UserGamesLabel_Click"/>
-                </StackPanel>
+                <TextBlock Grid.Column="0" Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
+                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Cursor="Hand" MouseLeftButtonUp="UserGamesLabel_Click"/>
                 <TextBlock Grid.Column="1" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,8,0"/>
@@ -152,8 +128,7 @@
                              Visibility="Collapsed"
                              TextChanged="UserGamesTitleFilter_TextChanged"/>
                 </Grid>
-                <Rectangle Grid.Column="4" x:Name="UserGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="4" x:Name="UserGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="4" x:Name="UserGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
                 <Rectangle Grid.Column="4" x:Name="UserGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
@@ -169,13 +144,13 @@
         <Canvas x:Name="DropdownOverlay" Grid.RowSpan="3"
                 Panel.ZIndex="100" Background="Transparent"
                 Visibility="Collapsed"
-                MouseLeftButtonUp="DropdownOverlay_Click">
+                MouseLeftButtonUp="DropdownOverlay_Click"
+                MouseRightButtonUp="DropdownOverlay_RightClick">
             <Border x:Name="UserGamesFilterPanel" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160" Visibility="Collapsed">
                 <StackPanel>
                     <TextBlock x:Name="FilterOptionInstalled" Style="{StaticResource DropdownItemStyle}" Text="Installed" Tag="Installed" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionRemoved" Style="{StaticResource DropdownItemStyle}" Text="Removed" Tag="Removed" MouseLeftButtonUp="UserGamesFilter_Click"/>
-                    <TextBlock x:Name="FilterOptionFinished" Style="{StaticResource DropdownItemStyle}" Text="Finished" Tag="Finished" MouseLeftButtonUp="UserGamesFilter_Click"/>
-                    <TextBlock x:Name="FilterOptionUnfinished" Style="{StaticResource DropdownItemStyle}" Text="Unfinished" Tag="Unfinished" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                    <TextBlock x:Name="FilterOptionCompleted" Style="{StaticResource DropdownItemStyle}" Text="Completed" Tag="Completed" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionAll" Style="{StaticResource DropdownItemStyle}" Text="All" Tag="All" MouseLeftButtonUp="UserGamesFilter_Click"/>
                 </StackPanel>
             </Border>
@@ -183,9 +158,19 @@
                 <StackPanel>
                     <TextBlock x:Name="SortOptionTitle" Style="{StaticResource DropdownItemStyle}" Text="Title" Tag="Title" MouseLeftButtonUp="UserGamesOrder_Click"/>
                     <TextBlock x:Name="SortOptionAdded" Style="{StaticResource DropdownItemStyle}" Text="Added" Tag="Added" MouseLeftButtonUp="UserGamesOrder_Click"/>
-                    <TextBlock x:Name="SortOptionFinished" Style="{StaticResource DropdownItemStyle}" Text="Finished" Tag="Finished" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                    <TextBlock x:Name="SortOptionCompleted" Style="{StaticResource DropdownItemStyle}" Text="Completed" Tag="Completed" MouseLeftButtonUp="UserGamesOrder_Click"/>
                     <TextBlock x:Name="SortOptionPlayed" Style="{StaticResource DropdownItemStyle}" Text="Played" Tag="Played" MouseLeftButtonUp="UserGamesOrder_Click"/>
                     <TextBlock x:Name="SortOptionRating" Style="{StaticResource DropdownItemStyle}" Text="Rating" Tag="Rating" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                </StackPanel>
+            </Border>
+            <Border x:Name="GameContextMenuPanel" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock x:Name="ContextMenuRun" Style="{StaticResource DropdownItemStyle}" Text="Run" MouseLeftButtonUp="GameContextMenu_Run_Click"/>
+                    <TextBlock x:Name="ContextMenuUninstall" Style="{StaticResource DropdownItemStyle}" Text="Uninstall" MouseLeftButtonUp="GameContextMenu_Uninstall_Click"/>
+                    <Rectangle Height="1" Fill="#FF404448" Margin="0,4,0,4"/>
+                    <TextBlock x:Name="ContextMenuDelete" Style="{StaticResource DropdownItemStyle}" Text="Delete" MouseLeftButtonUp="GameContextMenu_Delete_Click"/>
+                    <TextBlock x:Name="ContextMenuMarkAsCompleted" Style="{StaticResource DropdownItemStyle}" Text="Mark as Completed" MouseLeftButtonUp="GameContextMenu_MarkAsCompleted_Click"/>
+                    <TextBlock x:Name="ContextMenuRename" Style="{StaticResource DropdownItemStyle}" Text="Rename" MouseLeftButtonUp="GameContextMenu_Rename_Click"/>
                 </StackPanel>
             </Border>
         </Canvas>

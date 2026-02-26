@@ -1,14 +1,16 @@
 ﻿using naLauncher2.Wpf.Common;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace naLauncher2.Wpf
 {
     internal class GameLibrary
     {
-        public Dictionary<string, GameInfo> Games { get; private set; } = [];
+        public string[] Sources { get; set; } = [];
+
+        public Dictionary<string, GameInfo> Games { get; set; } = [];
 
         public IEnumerable<string> NewGames() => Games
             .Where(x => x.Value.Installed && x.Value.NotPlayed)
@@ -33,7 +35,9 @@ namespace naLauncher2.Wpf
         {
             PropertyNameCaseInsensitive = true,
             IgnoreReadOnlyFields = true,
-            WriteIndented = false
+            WriteIndented = false,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            IgnoreReadOnlyProperties = true,
         };
 
         public static GameLibrary Instance => _instance;
@@ -44,7 +48,9 @@ namespace naLauncher2.Wpf
             {
                 Debug.WriteLine($"Game library file not found at {path}. Starting with an empty library.");
 
-                Games = new Dictionary<string, GameInfo>();
+                Games = [];
+                Sources = [];
+
                 _libraryPath = path;
 
                 return;
@@ -54,18 +60,26 @@ namespace naLauncher2.Wpf
 
             var libraryContent = await File.ReadAllTextAsync(path);
 
-            Games = JsonSerializer.Deserialize<Dictionary<string, GameInfo>>(libraryContent, options: _jsonSerializerOptions)
+            var loaded = JsonSerializer.Deserialize<GameLibrary>(libraryContent, options: _jsonSerializerOptions)
                 ?? throw new InvalidOperationException("Failed to deserialize game library.");
 
             _libraryPath = path;
 
-            Debug.WriteLine($"Loaded {Games.Count} games from library.");
+            Games = loaded.Games ?? [];
+            Sources = loaded.Sources ?? [];
+
+            Debug.WriteLine($"Game library loaded with {Games.Count} games.");
+
+            await Save();
         }
 
         public async Task Save()
         {
             if (!string.IsNullOrEmpty(_libraryPath))
-                await File.WriteAllTextAsync(_libraryPath, JsonSerializer.Serialize(Games, options: _jsonSerializerOptions));
+            {
+                await File.WriteAllTextAsync(_libraryPath, JsonSerializer.Serialize(this, options: _jsonSerializerOptions));
+                Debug.WriteLine($"Game library saved with {Games.Count} games.");
+            }
         }
     }
 }

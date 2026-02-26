@@ -1,0 +1,46 @@
+<Window x:Class="naLauncher2.Wpf.InputDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        MinWidth="320"
+        KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <Style x:Key="ButtonStyle" TargetType="TextBlock">
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3A3F42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Border Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1">
+        <StackPanel>
+            <TextBlock Text="Rename" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="24,20,24,16"
+                       Cursor="SizeAll" MouseLeftButtonDown="Border_MouseLeftButtonDown"/>
+            <TextBox x:Name="InputBox"
+                     Background="Transparent"
+                     Foreground="White"
+                     CaretBrush="White"
+                     SelectionBrush="LightSkyBlue"
+                     BorderBrush="#44FFFFFF"
+                     BorderThickness="0,0,0,1"
+                     FontSize="14"
+                     Padding="4,4"
+                     Margin="24,0,24,20"/>
+            <Rectangle Height="1" Fill="#FF404448"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Style="{StaticResource ButtonStyle}" Text="Save" Foreground="LightSkyBlue" MouseLeftButtonUp="Save_Click"/>
+                <TextBlock Style="{StaticResource ButtonStyle}" Text="Cancel" MouseLeftButtonUp="Cancel_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
