@@ -312,11 +312,53 @@ namespace naLauncher2.Wpf
 
         /// <summary>
         /// Closes the window when the Escape key is pressed.
+        /// Ctrl+1/2/3 toggle the New, Recent and User Games groups respectively.
         /// </summary>
         void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
+            {
                 this.Close();
+                return;
+            }
+
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    case Key.D1:
+                    case Key.NumPad1:
+                        ToggleGroupSection(() => _newGamesCollapsed, v => _newGamesCollapsed = v,
+                            NewGamesToggle, NewGamesCanvas,
+                            NewGamesScrollTrack, NewGamesScrollThumb, NewGamesDivider,
+                            onExpand: () => { _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0; },
+                            onViewportChange: RefreshUserGamesViewport);
+                        e.Handled = true;
+                        break;
+
+                    case Key.D2:
+                    case Key.NumPad2:
+                        ToggleGroupSection(() => _recentGamesCollapsed, v => _recentGamesCollapsed = v,
+                            RecentGamesToggle, RecentGamesCanvas,
+                            RecentGamesScrollTrack, RecentGamesScrollThumb, RecentGamesDivider,
+                            onExpand: () => { _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0; },
+                            onViewportChange: RefreshUserGamesViewport);
+                        e.Handled = true;
+                        break;
+
+                    case Key.D3:
+                    case Key.NumPad3:
+                        ToggleGroupSection(() => _userGamesCollapsed, v => _userGamesCollapsed = v,
+                            UserGamesToggle, UserGamesCanvas,
+                            UserGamesScrollTrack, UserGamesScrollThumb, UserGamesDivider,
+                            canvasRow: UserGamesCanvasRow,
+                            onExpand: () => { _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0; UpdateUserGamesHeaderControls(); },
+                            onCollapse: UpdateUserGamesHeaderControls,
+                            onViewportChange: RefreshUserGamesViewport);
+                        e.Handled = true;
+                        break;
+                }
+            }
         }
 
         /// <summary>
