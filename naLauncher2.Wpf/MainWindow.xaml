@@ -11,6 +11,7 @@
     AllowsTransparency="True"
     Background="#00202020"
     KeyDown="Window_KeyDown"
+    PreviewTextInput="Window_PreviewTextInput"
     Loaded="Window_Loaded">
     <Window.Resources>
         <Style x:Key="DropdownItemStyle" TargetType="TextBlock">
@@ -112,6 +113,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
@@ -145,7 +147,7 @@
                 <TextBlock Grid.Column="1" Text="" x:Name="UserGamesCount" Foreground="White" Opacity="1"
                            FontSize="16" FontWeight="Normal"
                            VerticalAlignment="Center" Margin="8,0,8,0"/>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
                     <TextBlock x:Name="UserGamesOrderDirectionToggle" Text="▲" Foreground="White" Opacity="0.5"
                                FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
                                MouseLeftButtonUp="UserGamesOrderDirectionToggle_Click"/>
@@ -170,9 +172,23 @@
                         </StackPanel>
                     </Border>
                 </Popup>
-                <Rectangle Grid.Column="3" x:Name="UserGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="3" x:Name="UserGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="3" x:Name="UserGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                <Grid Grid.Column="3" VerticalAlignment="Center" Margin="8,0,8,0">
+                    <TextBox x:Name="UserGamesTitleFilter"
+                             Background="Transparent"
+                             Foreground="White"
+                             CaretBrush="White"
+                             SelectionBrush="LightSkyBlue"
+                             BorderBrush="#44FFFFFF"
+                             BorderThickness="0,0,0,1"
+                             FontSize="16"
+                             Padding="4,2,2,2"
+                             MinWidth="200"
+                             Visibility="Collapsed"
+                             TextChanged="UserGamesTitleFilter_TextChanged"/>
+                </Grid>
+                <Rectangle Grid.Column="4" x:Name="UserGamesDivider" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="4" x:Name="UserGamesScrollTrack" Height="1" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="4" x:Name="UserGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>

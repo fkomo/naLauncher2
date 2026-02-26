@@ -50,6 +50,7 @@ namespace naLauncher2.Wpf
         bool _userGamesSortDescending = false;
         DateTime _userGamesOrderDropdownLastClosed = DateTime.MinValue;
 
+        string _userGamesTitleFilter = string.Empty;
         bool _newGamesCollapsed = true;
         bool _recentGamesCollapsed = true;
         bool _userGamesCollapsed = true;
@@ -157,6 +158,9 @@ namespace naLauncher2.Wpf
                 UserGamesFilterMode.All => all,
                 _ => all.Where(x => x.Value.Installed),
             };
+
+            if (!string.IsNullOrEmpty(_userGamesTitleFilter))
+                filtered = filtered.Where(x => x.Key.Contains(_userGamesTitleFilter, StringComparison.OrdinalIgnoreCase));
 
             var sorted = _userGamesSortMode switch
             {
@@ -598,6 +602,14 @@ namespace naLauncher2.Wpf
             await AppSettings.Instance.Save();
         }
 
+        void UserGamesTitleFilter_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _userGamesTitleFilter = UserGamesTitleFilter.Text;
+            RefreshUserGames();
+            if (UserGamesTitleFilter.Text.Length == 0)
+                HideFilterTextBox();
+        }
+
         /// <summary>
         /// Re-queries the game library using the active filter, repopulates the User Games grid,
         /// and resets scroll state and viewport culling.
@@ -666,6 +678,41 @@ namespace naLauncher2.Wpf
             UserGamesOrderLabel.Opacity = enabled ? 1.0 : 0.3;
             UserGamesOrderDirectionToggle.IsHitTestVisible = enabled;
             UserGamesOrderDirectionToggle.Opacity = enabled ? 0.5 : 0.3;
+            if (enabled)
+            {
+                if (UserGamesTitleFilter.Text.Length > 0)
+                    ShowFilterTextBox();
+            }
+            else
+            {
+                HideFilterTextBox();
+            }
+        }
+
+        void ShowFilterTextBox()
+        {
+            UserGamesTitleFilter.Visibility = Visibility.Visible;
+            UserGamesTitleFilter.Focus();
+        }
+
+        void HideFilterTextBox()
+        {
+            UserGamesTitleFilter.Visibility = Visibility.Collapsed;
+            Focus();
+        }
+
+        void Window_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (!_userGamesCollapsed && UserGamesTitleFilter.Visibility != Visibility.Visible
+                && (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt)) == ModifierKeys.None
+                && e.Text.All(c => !char.IsControl(c) && !char.IsWhiteSpace(c)))
+            {
+                UserGamesTitleFilter.Visibility = Visibility.Visible;
+                UserGamesTitleFilter.Focus();
+                UserGamesTitleFilter.Text = e.Text;
+                UserGamesTitleFilter.CaretIndex = UserGamesTitleFilter.Text.Length;
+                e.Handled = true;
+            }
         }
 
         void ApplyUserGamesState()
