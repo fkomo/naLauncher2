@@ -140,6 +140,26 @@
             </Canvas>
         </Grid>
 
+        <!-- Settings button -->
+        <TextBlock x:Name="SettingsButton" Grid.RowSpan="3"
+                   Text="&#xE713;" FontSize="20" FontFamily="Segoe MDL2 Assets"
+                   HorizontalAlignment="Right" VerticalAlignment="Top"
+                   Margin="0,16,16,0" Panel.ZIndex="50"
+                   Cursor="Hand"
+                   MouseLeftButtonUp="SettingsButton_Click">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Opacity" Value="0.5"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Opacity" Value="1"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
         <!-- Dropdown overlay: spans all rows, always in the visual tree, no HWND overhead -->
         <Canvas x:Name="DropdownOverlay" Grid.RowSpan="3"
                 Panel.ZIndex="100" Background="Transparent"

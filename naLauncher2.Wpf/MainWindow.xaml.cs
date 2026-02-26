@@ -172,45 +172,56 @@ namespace naLauncher2.Wpf
         }
 
         /// <summary>
-        /// Load app settings and game library from file. If the library path is not set in settings, prompts the user to select a JSON file.
+        /// Load app settings and game library from file. If the library path is not set in settings,
+        /// opens the settings dialog so the user can configure it.
         /// </summary>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
         async Task<bool> LoadLibraryAndSettings()
         {
             await AppSettings.Instance.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "settings.json"));
 
             if (AppSettings.Instance.LibraryPath is null || !System.IO.File.Exists(AppSettings.Instance.LibraryPath))
             {
-                var setupDialog = new LibrarySetupDialog { Owner = this };
-                if (setupDialog.ShowDialog() != true)
+                var settingsDialog = new SettingsDialog(AppSettings.Instance.LibraryPath, []) { Owner = this };
+                if (settingsDialog.ShowDialog() != true || settingsDialog.SelectedLibraryPath is null)
                 {
                     this.Close();
                     return false;
                 }
 
-                AppSettings.Instance.LibraryPath = setupDialog.SelectedPath;
-
+                AppSettings.Instance.LibraryPath = settingsDialog.SelectedLibraryPath;
                 await AppSettings.Instance.Save();
+
+                await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath);
+
+                GameLibrary.Instance.Sources = settingsDialog.SelectedSources;
+                await GameLibrary.Instance.Save();
+
+                return true;
             }
 
             await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath ?? throw new Exception($"missing library file {nameof(AppSettings.Instance.LibraryPath)}"));
 
-            if (GameLibrary.Instance.Sources.Length == 0)
-            {
-                var folderDialog = new Microsoft.Win32.OpenFolderDialog
-                {
-                    Title = "Select a source folder for your games",
-                };
-
-                if (folderDialog.ShowDialog(this) == true)
-                {
-                    GameLibrary.Instance.Sources = [folderDialog.FolderName];
-                    await GameLibrary.Instance.Save();
-                }
-            }
-
             return true;
+        }
+
+        async void SettingsButton_Click(object sender, MouseButtonEventArgs e)
+        {
+            var dialog = new SettingsDialog(AppSettings.Instance.LibraryPath, GameLibrary.Instance.Sources) { Owner = this };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            bool libraryChanged = dialog.SelectedLibraryPath != AppSettings.Instance.LibraryPath;
+            AppSettings.Instance.LibraryPath = dialog.SelectedLibraryPath;
+            await AppSettings.Instance.Save();
+
+            if (libraryChanged && dialog.SelectedLibraryPath is not null)
+                await GameLibrary.Instance.Load(dialog.SelectedLibraryPath);
+
+            GameLibrary.Instance.Sources = dialog.SelectedSources;
+
+            await GameLibrary.Instance.Save();
+
+            RefreshAllSections();
         }
 
         /// <summary>

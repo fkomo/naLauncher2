@@ -1,0 +1,117 @@
+<Window x:Class="naLauncher2.Wpf.SettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        SizeToContent="Height"
+        Width="520"
+        WindowStartupLocation="CenterOwner"
+        KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <Style x:Key="ButtonStyle" TargetType="TextBlock">
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3A3F42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="SmallButtonStyle" TargetType="TextBlock">
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3A3F42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ListItemStyle" TargetType="TextBlock">
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3A3F42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Border Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1">
+        <StackPanel>
+            <TextBlock Text="Settings" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="24,20,24,20"
+                       Cursor="SizeAll" MouseLeftButtonDown="Border_MouseLeftButtonDown"/>
+
+            <TextBlock Text="LIBRARY PATH" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="SemiBold" Margin="24,0,24,8"/>
+            <Grid Margin="24,0,24,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" BorderBrush="#44FFFFFF" BorderThickness="0,0,0,1" Padding="4,4">
+                    <TextBlock x:Name="LibraryPathText" Foreground="White" FontSize="13"
+                               TextTrimming="CharacterEllipsis" Opacity="0.8" Text="(not set)"/>
+                </Border>
+                <TextBlock Grid.Column="1" Style="{StaticResource SmallButtonStyle}" Text="Open…"
+                           Foreground="LightSkyBlue" Margin="8,0,0,0"
+                           MouseLeftButtonUp="OpenLibrary_Click"/>
+                <TextBlock Grid.Column="2" Style="{StaticResource SmallButtonStyle}" Text="New…"
+                           Foreground="LightSkyBlue" Margin="4,0,0,0"
+                           MouseLeftButtonUp="NewLibrary_Click"/>
+            </Grid>
+
+            <TextBlock Text="SOURCE DIRECTORIES" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="SemiBold" Margin="24,0,24,8"/>
+            <Border Margin="24,0,24,20" BorderBrush="#FF404448" BorderThickness="1">
+                <StackPanel>
+                    <ItemsControl x:Name="SourcesList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding}" Foreground="White" FontSize="13"
+                                               Padding="12,10" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="1" Text="✕" Padding="12,10" Cursor="Hand"
+                                               Tag="{Binding}" MouseLeftButtonUp="RemoveSource_Click">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Opacity" Value="1"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Style="{StaticResource ListItemStyle}" Text="+ Add Source Directory"
+                               Foreground="LightSkyBlue"
+                               MouseLeftButtonUp="AddSource_Click"/>
+                </StackPanel>
+            </Border>
+
+            <Rectangle Height="1" Fill="#FF404448"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Style="{StaticResource ButtonStyle}" Text="Save" Foreground="LightSkyBlue" MouseLeftButtonUp="Save_Click"/>
+                <TextBlock Style="{StaticResource ButtonStyle}" Text="Cancel" MouseLeftButtonUp="Cancel_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
