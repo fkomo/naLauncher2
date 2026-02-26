@@ -299,9 +299,10 @@ namespace naLauncher2.Wpf
         {
             using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateGridSection)}({games.Length} games)");
 
+            bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
             for (int i = 0; i < games.Length; i++)
             {
-                var control = new GameInfoControl(games[i]) { CacheMode = new BitmapCache(), Opacity = 0 };
+                var control = new GameInfoControl(games[i], isRatingSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
                 container.Children.Add(control);
                 Canvas.SetLeft(control, _gridOffset + (i % _controlsPerRow) * (GameInfoControl.ControlWidth + Gap));
                 Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius + (i / _controlsPerRow) * (GameInfoControl.ControlHeight + Gap));

@@ -36,10 +36,13 @@ namespace naLauncher2.Wpf
         readonly string _id;
         public string Id => _id;
         readonly bool _isRemoved;
+        readonly bool _hasRating;
+        readonly bool _isRatingSortActive;
 
-        public GameInfoControl(string id)
+        public GameInfoControl(string id, bool isRatingSortActive = false)
         {
             _id = id;
+            _isRatingSortActive = isRatingSortActive;
 
             InitializeComponent();
 
@@ -76,9 +79,11 @@ namespace naLauncher2.Wpf
 
             if (game.Rating.HasValue)
             {
+                _hasRating = true;
                 RatingBadge.Background = new SolidColorBrush(GetMetacriticColor(game.Rating.Value));
                 RatingText.Text = game.Rating.Value.ToString();
-                RatingBadge.Visibility = Visibility.Visible;
+                if (_isRatingSortActive)
+                    RatingBadge.Visibility = Visibility.Visible;
             }
 
             LoadImageAsync(game.ImagePath, game.Installed);
@@ -91,6 +96,8 @@ namespace naLauncher2.Wpf
 
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             InfoOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(InfoOverlay.Opacity, 1, dur));
+            if (_hasRating && !_isRatingSortActive)
+                RatingBadge.Visibility = Visibility.Visible;
             StartSummaryScroll();
         }
 
@@ -101,6 +108,8 @@ namespace naLauncher2.Wpf
 
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             InfoOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(InfoOverlay.Opacity, 0, dur));
+            if (!_isRatingSortActive)
+                RatingBadge.Visibility = Visibility.Collapsed;
             StopSummaryScroll();
         }
 
@@ -285,13 +294,13 @@ namespace naLauncher2.Wpf
         static Color GetMetacriticColor(int score)
         {
             if (score >= 75)
-                return Color.FromArgb(0xff, 0x66, 0xcc, 0x33);
+                return Color.FromArgb(0xff, 0x00, 0xce, 0x7a);
 
             else if (score < 50)
-                return Color.FromArgb(0xff, 0xff, 0x00, 0x00);
+                return Color.FromArgb(0xff, 0xff, 0x6b, 0x73);
 
             else
-                return Color.FromArgb(0xff, 0xff, 0xcc, 0x33);
+                return Color.FromArgb(0xff, 0xff, 0xbd, 0x3f);
         }
     }
 }
