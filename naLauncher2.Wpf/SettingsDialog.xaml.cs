@@ -100,7 +100,7 @@ namespace naLauncher2.Wpf
         {
             if (SelectedLibraryPath == null)
             {
-                MessageBox.Show(this, "Please select a game library file.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                new MessageDialog("Error", "Please select a game library file.") { Owner = this }.ShowDialog();
                 return;
             }
 
