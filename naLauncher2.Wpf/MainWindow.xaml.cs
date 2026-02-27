@@ -172,50 +172,34 @@ namespace naLauncher2.Wpf
         async Task<bool> LoadLibraryAndSettings()
         {
             await AppSettings.Instance.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "settings.json"));
-
-            if (AppSettings.Instance.LibraryPath is null || !System.IO.File.Exists(AppSettings.Instance.LibraryPath))
+            if (AppSettings.Instance.LibraryPathMissing)
             {
-                var settingsDialog = new SettingsDialog(AppSettings.Instance.LibraryPath, []) { Owner = this };
+                var settingsDialog = new SettingsDialog() { Owner = this };
                 if (settingsDialog.ShowDialog() != true || settingsDialog.SelectedLibraryPath is null)
                 {
                     this.Close();
                     return false;
                 }
-
-                AppSettings.Instance.LibraryPath = settingsDialog.SelectedLibraryPath;
-                await AppSettings.Instance.Save();
-
-                await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath);
-
-                GameLibrary.Instance.Sources = settingsDialog.SelectedSources;
-                await GameLibrary.Instance.Save();
-
-                return true;
             }
 
-            await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath ?? throw new Exception($"missing library file {nameof(AppSettings.Instance.LibraryPath)}"));
+            await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath!);
 
             return true;
         }
 
         async void SettingsButton_Click(object sender, MouseButtonEventArgs e)
         {
-            var dialog = new SettingsDialog(AppSettings.Instance.LibraryPath, GameLibrary.Instance.Sources) { Owner = this };
+            var libraryPathBefore = AppSettings.Instance.LibraryPath;
+
+            var dialog = new SettingsDialog() { Owner = this };
             if (dialog.ShowDialog() != true)
                 return;
 
-            bool libraryChanged = dialog.SelectedLibraryPath != AppSettings.Instance.LibraryPath;
-            AppSettings.Instance.LibraryPath = dialog.SelectedLibraryPath;
-            await AppSettings.Instance.Save();
-
-            if (libraryChanged && dialog.SelectedLibraryPath is not null)
-                await GameLibrary.Instance.Load(dialog.SelectedLibraryPath);
-
-            GameLibrary.Instance.Sources = dialog.SelectedSources;
-
-            await GameLibrary.Instance.Save();
-
-            RefreshAllSections();
+            if (libraryPathBefore != AppSettings.Instance.LibraryPath)
+            {
+                await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath!);
+                RefreshAllSections();
+            }
         }
 
         /// <summary>

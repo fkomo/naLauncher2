@@ -8,8 +8,6 @@ namespace naLauncher2.Wpf
 {
     internal class GameLibrary
     {
-        public string[] Sources { get; set; } = [];
-
         public Dictionary<string, GameInfo> Games { get; set; } = [];
 
         public IEnumerable<string> NewGames() => Games
@@ -49,9 +47,10 @@ namespace naLauncher2.Wpf
                 Debug.WriteLine($"Game library file not found at {path}. Starting with an empty library.");
 
                 Games = [];
-                Sources = [];
 
                 _libraryPath = path;
+
+                await Save();
 
                 return;
             }
@@ -66,11 +65,8 @@ namespace naLauncher2.Wpf
             _libraryPath = path;
 
             Games = loaded.Games ?? [];
-            Sources = loaded.Sources ?? [];
 
             Debug.WriteLine($"Game library loaded with {Games.Count} games.");
-
-            await Save();
         }
 
         public async Task Save()

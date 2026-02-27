@@ -6,16 +6,24 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\na-launcher.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="Assets\image-not-found.png" />
+    <None Remove="Assets\na-launcher.ico" />
+    <None Remove="Assets\na-launcher.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\image-not-found.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <EmbeddedResource Include="Assets\image-not-found.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\na-launcher.ico" />
+    <EmbeddedResource Include="Assets\na-launcher.png" />
   </ItemGroup>
 
 </Project>

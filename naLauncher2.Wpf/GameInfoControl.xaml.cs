@@ -264,7 +264,18 @@ namespace naLauncher2.Wpf
             }
         }
 
-        static BitmapImage ImageNotFound() => LoadImageBitmap(Path.Combine(AppContext.BaseDirectory, "Assets", "image-not-found.png"))!;
+        static BitmapImage ImageNotFound()
+        {
+            using var stream = System.Reflection.Assembly.GetExecutingAssembly()
+                .GetManifestResourceStream("naLauncher2.Wpf.Assets.image-not-found.png")!;
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.StreamSource = stream;
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
 
         static BitmapImage? LoadImageBitmap(string? imagePath)
         {

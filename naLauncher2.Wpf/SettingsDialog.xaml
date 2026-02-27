@@ -51,7 +51,7 @@
             <TextBlock Text="Settings" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="24,20,24,20"
                        Cursor="SizeAll" MouseLeftButtonDown="Border_MouseLeftButtonDown"/>
 
-            <TextBlock Text="LIBRARY PATH" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="SemiBold" Margin="24,0,24,8"/>
+            <TextBlock Text="LIBRARY PATH" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="Bold" Margin="24,0,24,8"/>
             <Grid Margin="24,0,24,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -68,6 +68,21 @@
                 <TextBlock Grid.Column="2" Style="{StaticResource SmallButtonStyle}" Text="New…"
                            Foreground="LightSkyBlue" Margin="4,0,0,0"
                            MouseLeftButtonUp="NewLibrary_Click"/>
+            </Grid>
+
+            <TextBlock Text="IMAGE CACHE PATH" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="SemiBold" Margin="24,0,24,8"/>
+            <Grid Margin="24,0,24,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" BorderBrush="#44FFFFFF" BorderThickness="0,0,0,1" Padding="4,4">
+                    <TextBlock x:Name="ImageCachePathText" Foreground="White" FontSize="13"
+                            TextTrimming="CharacterEllipsis" Opacity="0.8" Text="(default)"/>
+                </Border>
+                <TextBlock Grid.Column="1" Style="{StaticResource SmallButtonStyle}" Text="Browse&#x2026;"
+                        Foreground="LightSkyBlue" Margin="8,0,0,0"
+                        MouseLeftButtonUp="BrowseImageCache_Click"/>
             </Grid>
 
             <TextBlock Text="SOURCE DIRECTORIES" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="SemiBold" Margin="24,0,24,8"/>

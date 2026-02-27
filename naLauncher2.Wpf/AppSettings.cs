@@ -1,25 +1,34 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace naLauncher2.Wpf
 {
     internal class AppSettings
     {
         public string? LibraryPath { get; set; }
-        public UserGamesFilterMode UserGamesFilterMode { get; set; } = UserGamesFilterMode.Installed;
-        public GamesSortMode UserGamesSortMode { get; set; } = GamesSortMode.Title;
+        public string[] Sources { get; set; } = [];
+        public string? ImageCachePath { get; set; }
         public bool UserGamesSortDescending { get; set; } = false;
+        public GamesSortMode UserGamesSortMode { get; set; } = GamesSortMode.Title;
+        public UserGamesFilterMode UserGamesFilterMode { get; set; } = UserGamesFilterMode.Installed;
+
+        public bool LibraryPathMissing => LibraryPath == null || !File.Exists(LibraryPath);
 
 
         static readonly AppSettings _instance = new();
         public static AppSettings Instance => _instance;
 
+
         string? _settingsPath;
 
-        static readonly JsonSerializerOptions _jsonOptions = new()
+        static readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             PropertyNameCaseInsensitive = true,
-            WriteIndented = false
+            IgnoreReadOnlyFields = true,
+            WriteIndented = false,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            IgnoreReadOnlyProperties = true,
         };
 
         /// <summary>
@@ -32,13 +41,15 @@ namespace naLauncher2.Wpf
                 return;
 
             var content = await File.ReadAllTextAsync(path);
-            var loaded = JsonSerializer.Deserialize<AppSettings>(content, _jsonOptions);
+            var loaded = JsonSerializer.Deserialize<AppSettings>(content, _jsonSerializerOptions);
             if (loaded != null)
             {
                 LibraryPath = loaded.LibraryPath;
                 UserGamesFilterMode = loaded.UserGamesFilterMode;
                 UserGamesSortMode = loaded.UserGamesSortMode;
                 UserGamesSortDescending = loaded.UserGamesSortDescending;
+                Sources = loaded.Sources;
+                ImageCachePath = loaded.ImageCachePath;
             }
         }
 
@@ -48,7 +59,7 @@ namespace naLauncher2.Wpf
         public async Task Save()
         {
             if (!string.IsNullOrEmpty(_settingsPath))
-                await File.WriteAllTextAsync(_settingsPath, JsonSerializer.Serialize(this, _jsonOptions));
+                await File.WriteAllTextAsync(_settingsPath, JsonSerializer.Serialize(this, _jsonSerializerOptions));
         }
     }
 }
