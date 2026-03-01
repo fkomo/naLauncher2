@@ -187,7 +187,7 @@ namespace naLauncher2.Wpf
             return changed;
         }
 
-        public async Task<bool> RefreshMissingGameData()
+        public async Task<bool> RefreshMissingGameData(IProgress<(int current, int total)>? progress = null)
         {
             if (AppSettings.Instance.TwitchDev == null)
                 return false;
@@ -208,11 +208,12 @@ namespace naLauncher2.Wpf
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameData)}()");
 
             var igdbClient = new Api.IgdbClient(AppSettings.Instance.TwitchDev);
-            
+
             var changed = false;
 
-            foreach (var game in gamesToUpdate)
+            for (int i = 0; i < gamesToUpdate.Length; i++)
             {
+                var game = gamesToUpdate[i];
                 var gameData = await igdbClient.GetGameData(game);
                 if (gameData != null)
                 {
@@ -222,6 +223,7 @@ namespace naLauncher2.Wpf
 
                     await Save(silent: true);
                 }
+                progress?.Report((i + 1, gamesToUpdate.Length));
             }
 
             return changed;

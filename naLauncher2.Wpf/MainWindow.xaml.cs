@@ -53,6 +53,8 @@ namespace naLauncher2.Wpf
 
         string? _contextMenuTargetId;
 
+        bool _isRefreshing = false;
+
         /// <summary>
         /// Initializes the main window and assigns render transforms to scrollable containers.
         /// </summary>
@@ -207,6 +209,12 @@ namespace naLauncher2.Wpf
 
         async void RefreshButton_Click(object sender, MouseButtonEventArgs e)
         {
+            if (_isRefreshing)
+                return;
+
+            _isRefreshing = true;
+            RefreshButton.Cursor = Cursors.Arrow;
+
             var spin = new DoubleAnimation(0, 360, new Duration(TimeSpan.FromMilliseconds(800)))
             {
                 RepeatBehavior = RepeatBehavior.Forever
@@ -214,28 +222,47 @@ namespace naLauncher2.Wpf
             RefreshButtonRotate.BeginAnimation(RotateTransform.AngleProperty, spin);
 
             var glow = new DropShadowEffect { Color = Colors.LightSkyBlue, BlurRadius = GameInfoControl.ShadowBlurRadius, ShadowDepth = 0, Opacity = 0 };
+
             RefreshButton.Effect = glow;
             RefreshButton.Foreground = Brushes.LightSkyBlue;
             RefreshButton.Opacity = 1;
+
+            RefreshProgressText.Effect = glow;
+            RefreshProgressText.Foreground = Brushes.LightSkyBlue;
+            RefreshProgressText.Opacity = 1;
+
             glow.BeginAnimation(DropShadowEffect.OpacityProperty,
                 new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(200))));
 
             if (await GameLibrary.Instance.RefreshMissingGameImages())
                 RefreshAllSections();
 
-            if (await GameLibrary.Instance.RefreshMissingGameData())
+            var igdbProgress = new Progress<(int current, int total)>(p =>
+            {
+                RefreshProgressText.Text = $"{p.current} / {p.total}";
+                RefreshProgressText.Visibility = Visibility.Visible;
+            });
+            if (await GameLibrary.Instance.RefreshMissingGameData(igdbProgress))
                 RefreshAllSections();
+            RefreshProgressText.Visibility = Visibility.Collapsed;
 
             RefreshButtonRotate.BeginAnimation(RotateTransform.AngleProperty, null);
             RefreshButtonRotate.Angle = 0;
 
             var glowOut = new DoubleAnimation(glow.Opacity, 0, new Duration(TimeSpan.FromMilliseconds(200)));
             glowOut.Completed += (_, _) =>
-            {
-                RefreshButton.Effect = null;
-                RefreshButton.ClearValue(TextBlock.ForegroundProperty);
-                RefreshButton.ClearValue(UIElement.OpacityProperty);
-            };
+                    {
+                        RefreshButton.Effect = null;
+                        RefreshButton.ClearValue(TextBlock.ForegroundProperty);
+                        RefreshButton.ClearValue(UIElement.OpacityProperty);
+                        RefreshButton.Cursor = Cursors.Hand;
+
+                        RefreshProgressText.Effect = null;
+                        RefreshProgressText.ClearValue(TextBlock.ForegroundProperty);
+                        RefreshProgressText.ClearValue(UIElement.OpacityProperty);
+
+                        _isRefreshing = false;
+                    };
             glow.BeginAnimation(DropShadowEffect.OpacityProperty, glowOut);
         }
 
