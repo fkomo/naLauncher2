@@ -1,0 +1,137 @@
+<Window x:Class="naLauncher2.Wpf.GamePropertiesDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        SizeToContent="Height"
+        Width="560"
+        WindowStartupLocation="CenterOwner"
+        KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <Style x:Key="SmallButtonStyle" TargetType="TextBlock">
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3A3F42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ButtonStyle" TargetType="TextBlock">
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3A3F42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Opacity" Value="0.5"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="24,0,24,6"/>
+        </Style>
+        <Style x:Key="FieldStyle" TargetType="TextBox">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="#44FFFFFF"/>
+            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="SelectionBrush" Value="LightSkyBlue"/>
+            <Setter Property="Padding" Value="4,4"/>
+            <Setter Property="Margin" Value="24,0,24,16"/>
+        </Style>
+        <Style x:Key="ReadOnlyValueStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Opacity" Value="0.6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="24,0,24,16"/>
+            <Setter Property="Padding" Value="4,4"/>
+        </Style>
+    </Window.Resources>
+    <Border Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1">
+        <StackPanel>
+            <TextBlock Text="Properties" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="24,20,24,20"
+                       Cursor="SizeAll" MouseLeftButtonDown="Border_MouseLeftButtonDown"/>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="TITLE"/>
+            <TextBox x:Name="TitleBox" Style="{StaticResource FieldStyle}"/>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="DEVELOPER"/>
+            <TextBox x:Name="DeveloperBox" Style="{StaticResource FieldStyle}"/>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="GENRES (comma-separated)"/>
+            <TextBox x:Name="GenresBox" Style="{StaticResource FieldStyle}"/>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="RATING (0–100)"/>
+            <TextBox x:Name="RatingBox" Style="{StaticResource FieldStyle}"/>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="SUMMARY"/>
+            <TextBox x:Name="SummaryBox" Style="{StaticResource FieldStyle}"
+                     TextWrapping="Wrap" AcceptsReturn="True"
+                     Height="80" VerticalScrollBarVisibility="Auto"/>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="IMAGE PATH"/>
+            <Grid Margin="24,0,24,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="ImagePathBox" Grid.Column="0"
+                         Foreground="White" FontSize="13" Background="Transparent"
+                         BorderThickness="0,0,0,1" BorderBrush="#44FFFFFF"
+                         CaretBrush="White" SelectionBrush="LightSkyBlue"
+                         Padding="4,4" TextWrapping="NoWrap"/>
+                <TextBlock Grid.Column="1" Style="{StaticResource SmallButtonStyle}" Text="Browse&#x2026;"
+                           Foreground="LightSkyBlue" Margin="8,0,0,0"
+                           MouseLeftButtonUp="BrowseImagePath_Click"/>
+            </Grid>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="SHORTCUT"/>
+            <TextBlock x:Name="ShortcutText" Style="{StaticResource ReadOnlyValueStyle}" TextTrimming="CharacterEllipsis"/>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="ADDED"/>
+            <TextBlock x:Name="AddedText" Style="{StaticResource ReadOnlyValueStyle}"/>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="COMPLETED"/>
+            <TextBlock x:Name="CompletedText" Style="{StaticResource ReadOnlyValueStyle}"/>
+
+            <TextBlock Style="{StaticResource LabelStyle}" Text="PLAY HISTORY"/>
+            <TextBlock x:Name="PlayedText" Style="{StaticResource ReadOnlyValueStyle}"/>
+
+            <TextBlock x:Name="ExtensionsLabel" Style="{StaticResource LabelStyle}" Text="EXTENSIONS" Visibility="Collapsed"/>
+            <ItemsControl x:Name="ExtensionsList" Margin="24,0,24,16" Visibility="Collapsed">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="160"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Key}" Foreground="White" Opacity="0.5"
+                                       FontSize="12" Padding="0,2"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Value}" Foreground="White" Opacity="0.8"
+                                       FontSize="12" Padding="4,2" TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Rectangle Height="1" Fill="#FF404448"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Style="{StaticResource ButtonStyle}" Text="Save" Foreground="LightSkyBlue" MouseLeftButtonUp="Save_Click"/>
+                <TextBlock Style="{StaticResource ButtonStyle}" Text="Cancel" MouseLeftButtonUp="Cancel_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

@@ -581,7 +581,7 @@ namespace naLauncher2.Wpf
                 SetMenuItemEnabled(ContextMenuUninstall, game.Installed);
                 SetMenuItemEnabled(ContextMenuDelete, !game.Installed);
                 SetMenuItemEnabled(ContextMenuMarkAsCompleted, !game.Completed.HasValue);
-                SetMenuItemEnabled(ContextMenuRename, true);
+                SetMenuItemEnabled(ContextMenuProperties, true);
             }
         }
 
@@ -714,31 +714,40 @@ namespace naLauncher2.Wpf
             RefreshAllSections();
         }
 
-        async void GameContextMenu_Rename_Click(object sender, MouseButtonEventArgs e)
+        async void GameContextMenu_Properties_Click(object sender, MouseButtonEventArgs e)
         {
             HideDropdowns();
 
             if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
                 return;
 
-            var dialog = new InputDialog(_contextMenuTargetId) { Owner = this };
+            var dialog = new GamePropertiesDialog(_contextMenuTargetId, game) { Owner = this };
             if (dialog.ShowDialog() != true)
                 return;
 
-            var newName = dialog.InputText.Trim();
-            if (string.IsNullOrEmpty(newName) || newName == _contextMenuTargetId || GameLibrary.Instance.Games.ContainsKey(newName))
+            var newName = dialog.NewId;
+            if (string.IsNullOrEmpty(newName))
                 return;
 
-            if (!GameLibrary.Instance.Games.Remove(_contextMenuTargetId, out _))
+            if (newName != _contextMenuTargetId)
             {
-                new MessageDialog("Error", $"Failed to remove '{_contextMenuTargetId}' from library.").ShowDialog();
-                return;
+                if (GameLibrary.Instance.Games.ContainsKey(newName))
+                {
+                    new MessageDialog("Error", $"A game named '{newName}' already exists.") { Owner = this }.ShowDialog();
+                    return;
+                }
+
+                if (!GameLibrary.Instance.Games.Remove(_contextMenuTargetId, out _))
+                {
+                    new MessageDialog("Error", $"Failed to remove '{_contextMenuTargetId}' from library.") { Owner = this }.ShowDialog();
+                    return;
+                }
+
+                GameLibrary.Instance.Games[newName] = game;
             }
 
-            GameLibrary.Instance.Games[newName] = game;
-
             await GameLibrary.Instance.Save();
-            
+
             RefreshAllSections();
         }
 

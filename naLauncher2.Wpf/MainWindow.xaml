@@ -228,7 +228,8 @@
                     <Rectangle Height="1" Fill="#FF404448" Margin="0,4,0,4"/>
                     <TextBlock x:Name="ContextMenuDelete" Style="{StaticResource DropdownItemStyle}" Text="Delete" MouseLeftButtonUp="GameContextMenu_Delete_Click"/>
                     <TextBlock x:Name="ContextMenuMarkAsCompleted" Style="{StaticResource DropdownItemStyle}" Text="Mark as Completed" MouseLeftButtonUp="GameContextMenu_MarkAsCompleted_Click"/>
-                    <TextBlock x:Name="ContextMenuRename" Style="{StaticResource DropdownItemStyle}" Text="Rename" MouseLeftButtonUp="GameContextMenu_Rename_Click"/>
+                    <Rectangle Height="1" Fill="#FF404448" Margin="0,4,0,4"/>
+                    <TextBlock x:Name="ContextMenuProperties" Style="{StaticResource DropdownItemStyle}" Text="Properties" MouseLeftButtonUp="GameContextMenu_Properties_Click"/>
                 </StackPanel>
             </Border>
         </Canvas>
