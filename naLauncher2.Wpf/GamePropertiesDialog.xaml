@@ -117,11 +117,25 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="160"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="{Binding Key}" Foreground="White" Opacity="0.5"
                                        FontSize="12" Padding="0,2"/>
                             <TextBlock Grid.Column="1" Text="{Binding Value}" Foreground="White" Opacity="0.8"
                                        FontSize="12" Padding="4,2" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="2" Text="✕" Tag="{Binding Key}"
+                                       Foreground="White" Opacity="0.4" FontSize="11" Padding="8,2,0,2"
+                                       Cursor="Hand" MouseLeftButtonUp="RemoveExtension_Click">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="1"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

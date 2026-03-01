@@ -45,6 +45,21 @@ namespace naLauncher2.Wpf
 
         void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
 
+        void RemoveExtension_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement { Tag: string key })
+            {
+                Game.Extensions.Remove(key);
+                ExtensionsList.ItemsSource = null;
+                ExtensionsList.ItemsSource = Game.Extensions;
+                if (Game.Extensions.Count == 0)
+                {
+                    ExtensionsLabel.Visibility = Visibility.Collapsed;
+                    ExtensionsList.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
         void BrowseImagePath_Click(object sender, MouseButtonEventArgs e)
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
