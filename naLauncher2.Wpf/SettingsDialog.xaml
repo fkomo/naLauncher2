@@ -5,7 +5,7 @@
         AllowsTransparency="True"
         Background="Transparent"
         SizeToContent="Height"
-        Width="520"
+        Width="640"
         WindowStartupLocation="CenterOwner"
         KeyDown="Window_KeyDown">
     <Window.Resources>
@@ -85,6 +85,21 @@
                         MouseLeftButtonUp="BrowseImageCache_Click"/>
             </Grid>
 
+            <TextBlock Text="LOG PATH" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="SemiBold" Margin="24,0,24,8"/>
+            <Grid Margin="24,0,24,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" BorderBrush="#44FFFFFF" BorderThickness="0,0,0,1" Padding="4,4">
+                    <TextBlock x:Name="LogPathText" Foreground="White" FontSize="13"
+                            TextTrimming="CharacterEllipsis" Opacity="0.8" Text="(default)"/>
+                </Border>
+                <TextBlock Grid.Column="1" Style="{StaticResource SmallButtonStyle}" Text="Browse&#x2026;"
+                        Foreground="LightSkyBlue" Margin="8,0,0,0"
+                        MouseLeftButtonUp="BrowseLogPath_Click"/>
+            </Grid>
+
             <TextBlock Text="SOURCE DIRECTORIES" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="SemiBold" Margin="24,0,24,8"/>
             <Border Margin="24,0,24,20" BorderBrush="#FF404448" BorderThickness="1">
                 <StackPanel>
@@ -121,6 +136,30 @@
                                MouseLeftButtonUp="AddSource_Click"/>
                 </StackPanel>
             </Border>
+
+            <TextBlock Text="TWITCH API" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="Bold" Margin="24,0,24,8"/>
+            <Grid Margin="24,0,24,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Client ID" Foreground="White" Opacity="0.6" FontSize="13" VerticalAlignment="Center"/>
+                <Border Grid.Column="1" BorderBrush="#44FFFFFF" BorderThickness="0,0,0,1" Padding="4,4">
+                    <TextBox x:Name="TwitchClientIdBox" Foreground="White" FontSize="13"
+                             Background="Transparent" BorderThickness="0" CaretBrush="White"/>
+                </Border>
+            </Grid>
+            <Grid Margin="24,0,24,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Client Secret" Foreground="White" Opacity="0.6" FontSize="13" VerticalAlignment="Center"/>
+                <Border Grid.Column="1" BorderBrush="#44FFFFFF" BorderThickness="0,0,0,1" Padding="4,4">
+                    <TextBox x:Name="TwitchClientSecretBox" Foreground="White" FontSize="13"
+                             Background="Transparent" BorderThickness="0" CaretBrush="White"/>
+                </Border>
+            </Grid>
 
             <Rectangle Height="1" Fill="#FF404448"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

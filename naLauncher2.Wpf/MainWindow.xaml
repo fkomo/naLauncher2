@@ -27,7 +27,7 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
-    <Grid x:Name="RootGrid" Background="#F0181D1F" MouseRightButtonUp="RootGrid_MouseRightButtonUp" MouseLeftButtonUp="RootGrid_MouseLeftButtonUp">
+    <Grid x:Name="RootGrid" Background="#F0181D1F" MouseRightButtonUp="RootGrid_MouseRightButtonUp" MouseLeftButtonDown="RootGrid_MouseLeftButtonDown">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -154,25 +154,48 @@
             </Canvas>
         </Grid>
 
-        <!-- Settings button -->
-        <TextBlock x:Name="SettingsButton" Grid.RowSpan="3"
-                   Text="&#xE713;" FontSize="20" FontFamily="Segoe MDL2 Assets"
-                   HorizontalAlignment="Right" VerticalAlignment="Top"
-                   Margin="0,16,16,0" Panel.ZIndex="50"
-                   Cursor="Hand"
-                   MouseLeftButtonUp="SettingsButton_Click">
-            <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Foreground" Value="White"/>
-                    <Setter Property="Opacity" Value="0.5"/>
-                    <Style.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Opacity" Value="1"/>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
-        </TextBlock>
+        <!-- Top-right buttons -->
+        <StackPanel Grid.RowSpan="3" Orientation="Horizontal"
+                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Margin="0,16,16,0" Panel.ZIndex="50">
+            <TextBlock x:Name="RefreshButton"
+                       Text="&#xE72C;" FontSize="16" FontFamily="Segoe MDL2 Assets"
+                       Margin="0,0,12,0"
+                       Cursor="Hand"
+                       RenderTransformOrigin="0.5,0.5"
+                       MouseLeftButtonUp="RefreshButton_Click">
+                <TextBlock.RenderTransform>
+                    <RotateTransform x:Name="RefreshButtonRotate" Angle="0"/>
+                </TextBlock.RenderTransform>
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Opacity" Value="0.5"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <TextBlock x:Name="SettingsButton"
+                       Text="&#xE713;" FontSize="16" FontFamily="Segoe MDL2 Assets"
+                       Cursor="Hand"
+                       MouseLeftButtonUp="SettingsButton_Click">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Opacity" Value="0.5"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </StackPanel>
 
         <!-- Dropdown overlay: spans all rows, always in the visual tree, no HWND overhead -->
         <Canvas x:Name="DropdownOverlay" Grid.RowSpan="3"
@@ -185,6 +208,7 @@
                     <TextBlock x:Name="FilterOptionInstalled" Style="{StaticResource DropdownItemStyle}" Text="Installed" Tag="Installed" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionRemoved" Style="{StaticResource DropdownItemStyle}" Text="Removed" Tag="Removed" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionCompleted" Style="{StaticResource DropdownItemStyle}" Text="Completed" Tag="Completed" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                    <TextBlock x:Name="FilterOptionMissingData" Style="{StaticResource DropdownItemStyle}" Text="Missing Data" Tag="MissingData" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionAll" Style="{StaticResource DropdownItemStyle}" Text="All" Tag="All" MouseLeftButtonUp="UserGamesFilter_Click"/>
                 </StackPanel>
             </Border>

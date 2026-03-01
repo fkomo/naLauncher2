@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 
 namespace naLauncher2.Wpf
@@ -144,6 +145,7 @@ namespace naLauncher2.Wpf
             {
                 UserGamesFilterMode.Removed => all.Where(x => x.Value.Removed),
                 UserGamesFilterMode.Completed => all.Where(x => x.Value.Completed.HasValue),
+                UserGamesFilterMode.MissingData => all.Where(x => x.Value.MissingImage),
                 UserGamesFilterMode.All => all,
                 _ => all.Where(x => x.Value.Installed),
             };
@@ -171,7 +173,6 @@ namespace naLauncher2.Wpf
         /// </summary>
         async Task<bool> LoadLibraryAndSettings()
         {
-            await AppSettings.Instance.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "settings.json"));
             if (AppSettings.Instance.LibraryPathMissing)
             {
                 var settingsDialog = new SettingsDialog() { Owner = this };
@@ -183,6 +184,8 @@ namespace naLauncher2.Wpf
             }
 
             await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath!);
+
+            await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources);
 
             return true;
         }
@@ -200,6 +203,40 @@ namespace naLauncher2.Wpf
                 await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath!);
                 RefreshAllSections();
             }
+        }
+
+        async void RefreshButton_Click(object sender, MouseButtonEventArgs e)
+        {
+            var spin = new DoubleAnimation(0, 360, new Duration(TimeSpan.FromMilliseconds(800)))
+            {
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+            RefreshButtonRotate.BeginAnimation(RotateTransform.AngleProperty, spin);
+
+            var glow = new DropShadowEffect { Color = Colors.LightSkyBlue, BlurRadius = GameInfoControl.ShadowBlurRadius, ShadowDepth = 0, Opacity = 0 };
+            RefreshButton.Effect = glow;
+            RefreshButton.Foreground = Brushes.LightSkyBlue;
+            RefreshButton.Opacity = 1;
+            glow.BeginAnimation(DropShadowEffect.OpacityProperty,
+                new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(200))));
+
+            if (await GameLibrary.Instance.RefreshMissingGameImages())
+                RefreshAllSections();
+
+            if (await GameLibrary.Instance.RefreshMissingGameData())
+                RefreshAllSections();
+
+            RefreshButtonRotate.BeginAnimation(RotateTransform.AngleProperty, null);
+            RefreshButtonRotate.Angle = 0;
+
+            var glowOut = new DoubleAnimation(glow.Opacity, 0, new Duration(TimeSpan.FromMilliseconds(200)));
+            glowOut.Completed += (_, _) =>
+            {
+                RefreshButton.Effect = null;
+                RefreshButton.ClearValue(TextBlock.ForegroundProperty);
+                RefreshButton.ClearValue(UIElement.OpacityProperty);
+            };
+            glow.BeginAnimation(DropShadowEffect.OpacityProperty, glowOut);
         }
 
         /// <summary>
@@ -558,8 +595,11 @@ namespace naLauncher2.Wpf
 
         static void ConsumeClick(object sender, MouseButtonEventArgs e) => e.Handled = true;
 
-        async void RootGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        async void RootGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (e.ClickCount != 2)
+                return;
+
             var control = FindAncestorOrSelf<GameInfoControl>((DependencyObject)e.OriginalSource);
             if (control is null)
                 return;
@@ -591,7 +631,7 @@ namespace naLauncher2.Wpf
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error running game '{_contextMenuTargetId}': {ex}");
+                Log.WriteLine($"Error running game '{_contextMenuTargetId}': {ex}");
             }
 
             game.Played.Add(DateTime.Now);
@@ -645,8 +685,12 @@ namespace naLauncher2.Wpf
             if (dialog.ShowDialog() != true)
                 return;
 
-            GameLibrary.Instance.Games.Remove(_contextMenuTargetId);
-            
+            if (!GameLibrary.Instance.Games.Remove(_contextMenuTargetId, out _))
+            {
+                new MessageDialog("Error", $"Failed to remove '{_contextMenuTargetId}' from library.").ShowDialog();
+                return;
+            }
+
             await GameLibrary.Instance.Save();
 
             RefreshAllSections();
@@ -685,8 +729,13 @@ namespace naLauncher2.Wpf
             if (string.IsNullOrEmpty(newName) || newName == _contextMenuTargetId || GameLibrary.Instance.Games.ContainsKey(newName))
                 return;
 
+            if (!GameLibrary.Instance.Games.Remove(_contextMenuTargetId, out _))
+            {
+                new MessageDialog("Error", $"Failed to remove '{_contextMenuTargetId}' from library.").ShowDialog();
+                return;
+            }
+
             GameLibrary.Instance.Games[newName] = game;
-            GameLibrary.Instance.Games.Remove(_contextMenuTargetId);
 
             await GameLibrary.Instance.Save();
             
@@ -796,6 +845,7 @@ namespace naLauncher2.Wpf
             FilterOptionInstalled.Foreground = _userGamesFilterMode == UserGamesFilterMode.Installed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionRemoved.Foreground = _userGamesFilterMode == UserGamesFilterMode.Removed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionCompleted.Foreground = _userGamesFilterMode == UserGamesFilterMode.Completed ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionMissingData.Foreground = _userGamesFilterMode == UserGamesFilterMode.MissingData ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionAll.Foreground = _userGamesFilterMode == UserGamesFilterMode.All ? Brushes.LightSkyBlue : Brushes.White;
         }
 

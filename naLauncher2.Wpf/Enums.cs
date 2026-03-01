@@ -4,7 +4,8 @@
     { 
         Installed, 
         Removed, 
-        Completed, 
+        Completed,
+        MissingData,
         All
     }
 

@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Windows;
 using System.Windows.Input;
 
@@ -9,6 +8,7 @@ namespace naLauncher2.Wpf
     {
         public string? SelectedLibraryPath { get; private set; }
         public string? SelectedImageCachePath { get; private set; }
+        public string? SelectedLogPath { get; private set; }
         public string[] SelectedSources => [.. _sources];
 
         readonly ObservableCollection<string> _sources = [];
@@ -25,10 +25,19 @@ namespace naLauncher2.Wpf
             SelectedImageCachePath = appSettings.ImageCachePath;
             ImageCachePathText.Text = appSettings.ImageCachePath ?? "(default)";
 
+            SelectedLogPath = appSettings.LogPath;
+            LogPathText.Text = appSettings.LogPath ?? "(default)";
+
             foreach (var s in appSettings.Sources)
                 _sources.Add(s);
 
             SourcesList.ItemsSource = _sources;
+
+            if (appSettings.TwitchDev != null)
+            {
+                TwitchClientIdBox.Text = appSettings.TwitchDev.ClientId;
+                TwitchClientSecretBox.Text = appSettings.TwitchDev.ClientSecret;
+            }
         }
 
         void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
@@ -79,6 +88,20 @@ namespace naLauncher2.Wpf
             }
         }
 
+        void BrowseLogPath_Click(object sender, MouseButtonEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = "Select log directory",
+            };
+
+            if (dialog.ShowDialog(this) == true)
+            {
+                SelectedLogPath = dialog.FolderName;
+                LogPathText.Text = dialog.FolderName;
+            }
+        }
+
         void AddSource_Click(object sender, MouseButtonEventArgs e)
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog
@@ -106,7 +129,17 @@ namespace naLauncher2.Wpf
 
             AppSettings.Instance.LibraryPath = SelectedLibraryPath;
             AppSettings.Instance.ImageCachePath = SelectedImageCachePath;
+            AppSettings.Instance.LogPath = SelectedLogPath;
             AppSettings.Instance.Sources = SelectedSources;
+
+            if (TwitchClientIdBox.Text != null && TwitchClientSecretBox.Text != null)
+            {
+                AppSettings.Instance.TwitchDev = new AppSettings.TwitchDevSettings
+                {
+                    ClientId = TwitchClientIdBox.Text,
+                    ClientSecret = TwitchClientSecretBox.Text,
+                };
+            }
 
             await AppSettings.Instance.Save();
 

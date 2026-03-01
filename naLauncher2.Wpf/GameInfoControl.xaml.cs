@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
+using naLauncher2.Wpf.Common;
 
 namespace naLauncher2.Wpf
 {
@@ -260,7 +261,7 @@ namespace naLauncher2.Wpf
             {
                 LoadingText.Text = "Error loading image";
 
-                Debug.WriteLine($"Error loading image: {ex}");
+                Log.WriteLine($"Error loading image: {ex}");
             }
         }
 
@@ -296,7 +297,7 @@ namespace naLauncher2.Wpf
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading image from path '{imagePath}': {ex}");
+                Log.WriteLine($"Error loading image from path '{imagePath}': {ex}");
             }
 
             return null;
