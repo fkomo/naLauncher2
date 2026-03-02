@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 
@@ -17,6 +18,7 @@ namespace naLauncher2.Wpf.Api
         public string? Developer { get; init; }
         public string[]? Genres { get; init; }
         public string? ImagePath { get; init; }
+        public string? Url { get; init; }
     }
 
 #pragma warning disable IDE1006 // Naming Styles
@@ -43,7 +45,8 @@ namespace naLauncher2.Wpf.Api
         int[]? genres,
         double? total_rating,
         string? summary,
-        int[]? involved_companies) : NameId(id, name);
+        int[]? involved_companies,
+        string url) : NameId(id, name);
 #pragma warning restore IDE1006 // Naming Styles
 
     /// <summary>
@@ -55,7 +58,7 @@ namespace naLauncher2.Wpf.Api
         readonly HttpClient _httpClient;
         static readonly HttpClient _imageHttpClient = new();
 
-        const string _igdbImagesDirectory = "IgdbCom";
+        const string _imagesDirectory = "IgdbCom";
 
         public IgdbClient(AppSettings.TwitchDevSettings twitchDev, string apiBaseUrl = "https://api.igdb.com/v4")
         {
@@ -66,7 +69,9 @@ namespace naLauncher2.Wpf.Api
             _httpClient = new HttpClient(new TwitchDevAuthz(twitchDev.ClientId, twitchDev.ClientSecret));
         }
 
-        public async Task<IgdbGameData?> GetGameData(string gameTitle)
+        public static string GetGameSearchUrl(string gameTitle) => $"https://www.igdb.com/search?q={Uri.EscapeDataString(gameTitle)}&type=games";
+
+        public async Task<IgdbGameData?> GetGameData(string gameTitle, string? gameId = null, bool getImage = true)
         {
             using var tb = new TimedBlock($"{nameof(IgdbClient)}.{nameof(GetGameData)}('{gameTitle}')");
 
@@ -74,44 +79,24 @@ namespace naLauncher2.Wpf.Api
 
             try
             {
-                var normalizedGameTitle = gameTitle.Normalize();
+                gameId ??= await GetIdFromTitle(gameTitle);
 
-                // search by title
-                var games = await PostAsync<NameId[]>($"{_apiBaseUrl}/games",
-                    $"fields name; search \"{gameTitle.ToLower()}\"; where version_parent = null;");
-
-                if (games == null || games.Length == 0)
-                    return null;
-
-                var possibleMatches = games.Select(g =>
-                    new KeyValuePair<string, KeyValuePair<int, string>>(
-                        g.id.ToString(),
-                        new KeyValuePair<int, string>(
-                            Extensions.DamerauLevenshteinEditDistance(normalizedGameTitle, g.name.Normalize()),
-                            g.name)))
-                    .Where(x => x.Value.Key < normalizedGameTitle.Length)
-                    .OrderBy(x => x.Value.Key)
-                    .ToArray();
-
-                var bestMatch = possibleMatches.FirstOrDefault();
-
-                // get best matching game by id
+                // get game by id
                 var gameDetail = (await PostAsync<GameDetail[]>($"{_apiBaseUrl}/games",
-                        $"fields name, artworks, cover, genres, total_rating, summary, involved_companies; where id = {bestMatch.Key};"))?
+                        $"fields name, artworks, cover, genres, total_rating, summary, involved_companies, url; where id = {gameId};"))?
                         .SingleOrDefault();
 
                 if (gameDetail != null)
                 {
-                    var image = await GetImage(gameTitle, gameDetail.cover);
-
                     var gameData = new IgdbGameData(gameTitle)
                     {
-                        Id = bestMatch.Key.ToString(),
+                        Id = gameId,
                         Summary = gameDetail.summary,
-                        Rating = !gameDetail.total_rating.HasValue ? null as int? : (int)gameDetail.total_rating,
+                        Rating = gameDetail.total_rating.HasValue ? (int)gameDetail.total_rating : null,
                         Developer = await GetDeveloper(gameDetail.involved_companies),
                         Genres = gameDetail.genres?.Select(x => _genresCache[x]).ToArray(),
-                        //ImagePath
+                        Url = gameDetail.url,
+                        ImagePath = getImage ? await GetImage(gameTitle, gameDetail.cover) : null
                     };
 
                     return gameData;
@@ -123,6 +108,33 @@ namespace naLauncher2.Wpf.Api
             }
 
             return null;
+        }
+
+        async Task<string?> GetIdFromTitle(string gameTitle)
+        {
+            var normalizedGameTitle = gameTitle.Normalize();
+
+            // search by title
+            var games = await PostAsync<NameId[]>($"{_apiBaseUrl}/games",
+                $"fields name; search \"{gameTitle.ToLower()}\"; where version_parent = null;");
+
+            if (games == null || games.Length == 0)
+                return null;
+
+            var possibleMatches = games.Select(g =>
+                new KeyValuePair<string, KeyValuePair<int, string>>(
+                    g.id.ToString(),
+                    new KeyValuePair<int, string>(
+                        Extensions.DamerauLevenshteinEditDistance(normalizedGameTitle, g.name.Normalize()),
+                        g.name)))
+                .Where(x => x.Value.Key < normalizedGameTitle.Length)
+                .OrderBy(x => x.Value.Key)
+                .ToArray();
+
+            if (possibleMatches.Length == 0)
+                return null;
+
+            return possibleMatches[0].Key;
         }
 
         async Task<TResponse?> PostAsync<TResponse>(string url, string body)
@@ -191,13 +203,14 @@ namespace naLauncher2.Wpf.Api
                 return null;
             }
 
-            var imageDirectory = Path.Combine(AppSettings.Instance.ImageCachePath, _igdbImagesDirectory);
+            var imageDirectory = Path.Combine(AppSettings.Instance.ImageCachePath, _imagesDirectory);
             var existingImages = Directory.GetFiles(imageDirectory, $"{gameTitle}.*", SearchOption.AllDirectories);
 
             if (existingImages.Length != 0)
             {
                 Log.WriteLine($"Image/s for '{gameTitle}' already exists at '{existingImages[0]}' - skipping download.");
-                return null;
+
+                return existingImages[0];
             }
 
             // download & save image

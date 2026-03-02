@@ -58,7 +58,7 @@ namespace naLauncher2.Wpf
             if (!string.IsNullOrEmpty(_libraryPath))
             {
                 await File.WriteAllTextAsync(_libraryPath, JsonSerializer.Serialize(this, options: App.JsonSerializerOptions));
-                
+
                 if (!silent)
                     Log.WriteLine($"Game library saved with {Games.Count} games");
             }
@@ -187,7 +187,7 @@ namespace naLauncher2.Wpf
             return changed;
         }
 
-        public async Task<bool> RefreshMissingGameData(IProgress<(int current, int total)>? progress = null)
+        public async Task<bool> RefreshMissingGameData(IProgress<(int current, int total, string gameTitle)>? progress = null)
         {
             if (AppSettings.Instance.TwitchDev == null)
                 return false;
@@ -214,6 +214,9 @@ namespace naLauncher2.Wpf
             for (int i = 0; i < gamesToUpdate.Length; i++)
             {
                 var game = gamesToUpdate[i];
+
+                progress?.Report((i, gamesToUpdate.Length, game));
+
                 var gameData = await igdbClient.GetGameData(game);
                 if (gameData != null)
                 {
@@ -223,10 +226,57 @@ namespace naLauncher2.Wpf
 
                     await Save(silent: true);
                 }
-                progress?.Report((i + 1, gamesToUpdate.Length));
             }
 
             return changed;
+        }
+
+        public async Task<bool> RefreshGameData(string gameTitle)
+        {
+            if (AppSettings.Instance.TwitchDev == null)
+                return false;
+
+            if (!Games.TryGetValue(gameTitle, out GameInfo? gameInfo))
+            {
+                Log.WriteLine($"Game '{gameTitle}' not found in library");
+                return false;
+            }
+
+            Log.WriteLine($"Refreshing data for '{gameTitle}' ...");
+
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshGameData)}('{gameTitle}')");
+
+            var igdbClient = new Api.IgdbClient(AppSettings.Instance.TwitchDev);
+
+            gameInfo.Extensions.TryGetValue(GameInfoExtension.IgdbId.ToString(), out string? igdbId);
+
+            var gameData = await igdbClient.GetGameData(gameTitle, gameId: igdbId, getImage: true);
+            if (gameData != null)
+            {
+                gameInfo.UpdateFromIgdb(gameData);
+
+                await Save();
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task RemoveExtensions(params string[] values)
+        {
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RemoveExtensions)}({string.Join(", ", values)})");
+
+            foreach (var game in Games)
+            {
+                if (game.Value.Extensions is null)
+                    continue;
+
+                foreach (var value in values)
+                    game.Value.Extensions.Remove(value);
+            }
+
+            await Save();
         }
     }
 }

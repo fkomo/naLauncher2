@@ -33,6 +33,8 @@ namespace naLauncher2.Wpf
 
             SourcesList.ItemsSource = _sources;
 
+            ExtensionsList.ItemsSource = Enum.GetValues<GameInfoExtension>().Select(e => e.ToString()).ToArray();
+
             if (appSettings.TwitchDev != null)
             {
                 TwitchClientIdBox.Text = appSettings.TwitchDev.ClientId;
@@ -147,6 +149,18 @@ namespace naLauncher2.Wpf
         }
 
         void Cancel_Click(object sender, MouseButtonEventArgs e) => DialogResult = false;
+
+        async void RemoveExtension_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: string extensionName })
+                return;
+
+            var dialog = new ConfirmationDialog($"Remove all '{extensionName}' extensions from library?") { Owner = this };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            await GameLibrary.Instance.RemoveExtensions(extensionName);
+        }
 
         void Window_KeyDown(object sender, KeyEventArgs e)
         {

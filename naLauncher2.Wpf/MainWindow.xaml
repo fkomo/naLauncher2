@@ -228,11 +228,13 @@
             <Border x:Name="GameContextMenuPanel" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160" Visibility="Collapsed">
                 <StackPanel>
                     <TextBlock x:Name="ContextMenuRun" Style="{StaticResource DropdownItemStyle}" Text="Run" MouseLeftButtonUp="GameContextMenu_Run_Click"/>
+                    <TextBlock x:Name="ContextMenuExplore" Style="{StaticResource DropdownItemStyle}" Text="Explore" MouseLeftButtonUp="GameContextMenu_Explore_Click"/>
                     <TextBlock x:Name="ContextMenuUninstall" Style="{StaticResource DropdownItemStyle}" Text="Uninstall" MouseLeftButtonUp="GameContextMenu_Uninstall_Click"/>
                     <Rectangle Height="1" Fill="#FF404448" Margin="0,4,0,4"/>
                     <TextBlock x:Name="ContextMenuDelete" Style="{StaticResource DropdownItemStyle}" Text="Delete" MouseLeftButtonUp="GameContextMenu_Delete_Click"/>
                     <TextBlock x:Name="ContextMenuMarkAsCompleted" Style="{StaticResource DropdownItemStyle}" Text="Mark as Completed" MouseLeftButtonUp="GameContextMenu_MarkAsCompleted_Click"/>
                     <Rectangle Height="1" Fill="#FF404448" Margin="0,4,0,4"/>
+                    <TextBlock x:Name="ContextMenuRefresh" Style="{StaticResource DropdownItemStyle}" Text="Refresh" MouseLeftButtonUp="GameContextMenu_Refresh_Click"/>
                     <TextBlock x:Name="ContextMenuProperties" Style="{StaticResource DropdownItemStyle}" Text="Properties" MouseLeftButtonUp="GameContextMenu_Properties_Click"/>
                 </StackPanel>
             </Border>

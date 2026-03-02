@@ -1,3 +1,4 @@
+using naLauncher2.Wpf.Api;
 using naLauncher2.Wpf.Common;
 using System.Diagnostics;
 using System.Windows;
@@ -209,8 +210,28 @@ namespace naLauncher2.Wpf
 
         async void RefreshButton_Click(object sender, MouseButtonEventArgs e)
         {
-            if (_isRefreshing)
+            var glow = TryStartRefreshAnimation();
+            if (glow is null)
                 return;
+
+            if (await GameLibrary.Instance.RefreshMissingGameImages())
+                RefreshAllSections();
+
+            var igdbProgress = new Progress<(int current, int total, string game)>(p =>
+            {
+                RefreshProgressText.Text = $"{p.game} [{p.current} / {p.total}]";
+                RefreshProgressText.Visibility = Visibility.Visible;
+            });
+            if (await GameLibrary.Instance.RefreshMissingGameData(igdbProgress))
+                RefreshAllSections();
+
+            StopRefreshAnimation(glow);
+        }
+
+        DropShadowEffect? TryStartRefreshAnimation(string? label = null)
+        {
+            if (_isRefreshing)
+                return null;
 
             _isRefreshing = true;
             RefreshButton.Cursor = Cursors.Arrow;
@@ -234,35 +255,35 @@ namespace naLauncher2.Wpf
             glow.BeginAnimation(DropShadowEffect.OpacityProperty,
                 new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(200))));
 
-            if (await GameLibrary.Instance.RefreshMissingGameImages())
-                RefreshAllSections();
-
-            var igdbProgress = new Progress<(int current, int total)>(p =>
+            if (label is not null)
             {
-                RefreshProgressText.Text = $"{p.current} / {p.total}";
+                RefreshProgressText.Text = label;
                 RefreshProgressText.Visibility = Visibility.Visible;
-            });
-            if (await GameLibrary.Instance.RefreshMissingGameData(igdbProgress))
-                RefreshAllSections();
-            RefreshProgressText.Visibility = Visibility.Collapsed;
+            }
 
+            return glow;
+        }
+
+        void StopRefreshAnimation(DropShadowEffect glow)
+        {
             RefreshButtonRotate.BeginAnimation(RotateTransform.AngleProperty, null);
             RefreshButtonRotate.Angle = 0;
+            RefreshProgressText.Visibility = Visibility.Collapsed;
 
             var glowOut = new DoubleAnimation(glow.Opacity, 0, new Duration(TimeSpan.FromMilliseconds(200)));
             glowOut.Completed += (_, _) =>
-                    {
-                        RefreshButton.Effect = null;
-                        RefreshButton.ClearValue(TextBlock.ForegroundProperty);
-                        RefreshButton.ClearValue(UIElement.OpacityProperty);
-                        RefreshButton.Cursor = Cursors.Hand;
+            {
+                RefreshButton.Effect = null;
+                RefreshButton.ClearValue(TextBlock.ForegroundProperty);
+                RefreshButton.ClearValue(UIElement.OpacityProperty);
+                RefreshButton.Cursor = Cursors.Hand;
 
-                        RefreshProgressText.Effect = null;
-                        RefreshProgressText.ClearValue(TextBlock.ForegroundProperty);
-                        RefreshProgressText.ClearValue(UIElement.OpacityProperty);
+                RefreshProgressText.Effect = null;
+                RefreshProgressText.ClearValue(TextBlock.ForegroundProperty);
+                RefreshProgressText.ClearValue(UIElement.OpacityProperty);
 
-                        _isRefreshing = false;
-                    };
+                _isRefreshing = false;
+            };
             glow.BeginAnimation(DropShadowEffect.OpacityProperty, glowOut);
         }
 
@@ -608,6 +629,8 @@ namespace naLauncher2.Wpf
                 SetMenuItemEnabled(ContextMenuUninstall, game.Installed);
                 SetMenuItemEnabled(ContextMenuDelete, !game.Installed);
                 SetMenuItemEnabled(ContextMenuMarkAsCompleted, !game.Completed.HasValue);
+                SetMenuItemEnabled(ContextMenuExplore, true);
+                SetMenuItemEnabled(ContextMenuRefresh, AppSettings.Instance.TwitchDev != null);
                 SetMenuItemEnabled(ContextMenuProperties, true);
             }
         }
@@ -662,7 +685,7 @@ namespace naLauncher2.Wpf
             }
 
             game.Played.Add(DateTime.Now);
-            
+
             await GameLibrary.Instance.Save();
 
             RefreshAllSections();
@@ -735,8 +758,49 @@ namespace naLauncher2.Wpf
                 return;
 
             game.Completed = DateTime.Now;
-            
+
             await GameLibrary.Instance.Save();
+
+            RefreshAllSections();
+        }
+
+        void GameContextMenu_Explore_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
+                return;
+
+            var gameTitle = _contextMenuTargetId;
+
+            string? url;
+
+            if (game.Extensions.TryGetValue(GameInfoExtension.SteamAppId.ToString(), out var steamAppId))
+                url = SteamClient.GetStoreUrl(steamAppId);
+
+            else if (!GameLibrary.Instance.Games[gameTitle].Extensions.TryGetValue(GameInfoExtension.IgdbUrl.ToString(), out url))
+                url = IgdbClient.GetGameSearchUrl(gameTitle);
+
+            if (url == null)
+                return;
+
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+
+        async void GameContextMenu_Refresh_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null)
+                return;
+
+            var glow = TryStartRefreshAnimation(_contextMenuTargetId);
+            if (glow is null)
+                return;
+
+            await GameLibrary.Instance.RefreshGameData(_contextMenuTargetId);
+
+            StopRefreshAnimation(glow);
 
             RefreshAllSections();
         }

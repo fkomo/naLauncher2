@@ -5,7 +5,8 @@ namespace naLauncher2.Wpf
     public enum GameInfoExtension
     {
         SteamAppId,
-        IgdbId
+        IgdbId,
+        IgdbUrl
     }
 
     public class GameInfo
@@ -47,6 +48,9 @@ namespace naLauncher2.Wpf
             Extensions ??= [];
 
             Extensions[GameInfoExtension.IgdbId.ToString()] = gameData.Id;
+
+            if (gameData.Url is not null)
+                Extensions[GameInfoExtension.IgdbUrl.ToString()] = gameData.Url;
 
             Summary ??= gameData.Summary;
             Developer ??= gameData.Developer;
