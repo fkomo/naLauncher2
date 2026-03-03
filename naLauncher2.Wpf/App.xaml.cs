@@ -1,4 +1,5 @@
-﻿using naLauncher2.Wpf.Common;
+﻿using naLauncher2.Wpf.Api;
+using naLauncher2.Wpf.Common;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
@@ -19,13 +20,30 @@ namespace naLauncher2.Wpf
             IgnoreReadOnlyProperties = true,
         };
 
+        public static TwitchDevAuthz? TwitchDevAuthz { get; set; }
+        public static IgdbClient? IgdbClient { get; set; }
+
         protected override async void OnStartup(StartupEventArgs e)
         {
             await AppSettings.Instance.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "settings.json"));
 
             Log.WriteLine("App starting ...");
 
+            SettingsChanged();
+
             base.OnStartup(e);
+        }
+
+        public static void SettingsChanged()
+        {
+            TwitchDevAuthz = null;
+            IgdbClient = null;
+
+            if (AppSettings.Instance.TwitchDev?.ClientId != null && AppSettings.Instance.TwitchDev.ClientSecret != null)
+            {
+                TwitchDevAuthz = new TwitchDevAuthz(AppSettings.Instance.TwitchDev.ClientId, AppSettings.Instance.TwitchDev.ClientSecret);
+                IgdbClient = new IgdbClient(TwitchDevAuthz);
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)

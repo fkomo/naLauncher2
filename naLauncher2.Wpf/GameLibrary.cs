@@ -189,7 +189,7 @@ namespace naLauncher2.Wpf
 
         public async Task<bool> RefreshMissingGameData(IProgress<(int current, int total, string gameTitle)>? progress = null)
         {
-            if (AppSettings.Instance.TwitchDev == null)
+            if (App.IgdbClient == null)
                 return false;
 
             var gamesToUpdate = Games
@@ -207,8 +207,6 @@ namespace naLauncher2.Wpf
 
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameData)}()");
 
-            var igdbClient = new Api.IgdbClient(AppSettings.Instance.TwitchDev);
-
             var changed = false;
 
             for (int i = 0; i < gamesToUpdate.Length; i++)
@@ -217,7 +215,7 @@ namespace naLauncher2.Wpf
 
                 progress?.Report((i, gamesToUpdate.Length, game));
 
-                var gameData = await igdbClient.GetGameData(game);
+                var gameData = await App.IgdbClient.GetGameData(game);
                 if (gameData != null)
                 {
                     Games[game].UpdateFromIgdb(gameData);
@@ -233,7 +231,7 @@ namespace naLauncher2.Wpf
 
         public async Task<bool> RefreshGameData(string gameTitle)
         {
-            if (AppSettings.Instance.TwitchDev == null)
+            if (App.IgdbClient == null)
                 return false;
 
             if (!Games.TryGetValue(gameTitle, out GameInfo? gameInfo))
@@ -246,11 +244,9 @@ namespace naLauncher2.Wpf
 
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshGameData)}('{gameTitle}')");
 
-            var igdbClient = new Api.IgdbClient(AppSettings.Instance.TwitchDev);
-
             gameInfo.Extensions.TryGetValue(GameInfoExtension.IgdbId.ToString(), out string? igdbId);
 
-            var gameData = await igdbClient.GetGameData(gameTitle, gameId: igdbId, getImage: true);
+            var gameData = await App.IgdbClient.GetGameData(gameTitle, gameId: igdbId, getImage: true);
             if (gameData != null)
             {
                 gameInfo.UpdateFromIgdb(gameData);

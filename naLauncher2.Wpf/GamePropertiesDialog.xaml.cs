@@ -7,6 +7,7 @@ namespace naLauncher2.Wpf
     public partial class GamePropertiesDialog : Window
     {
         readonly string _originalId;
+        readonly Dictionary<string, string> _pendingExtensions;
 
         public string NewId => TitleBox.Text.Trim();
         public GameInfo Game { get; }
@@ -15,6 +16,7 @@ namespace naLauncher2.Wpf
         {
             _originalId = id;
             Game = game;
+            _pendingExtensions = new Dictionary<string, string>(game.Extensions);
 
             InitializeComponent();
 
@@ -33,11 +35,11 @@ namespace naLauncher2.Wpf
                 ? $"{game.Played.Count} session{(game.Played.Count != 1 ? "s" : "")}, last played {game.LastPlayed!.Value:yyyy-MM-dd HH:mm}"
                 : "(never played)";
 
-            if (game.Extensions.Count > 0)
+            if (_pendingExtensions.Count > 0)
             {
                 ExtensionsLabel.Visibility = Visibility.Visible;
                 ExtensionsList.Visibility = Visibility.Visible;
-                ExtensionsList.ItemsSource = game.Extensions;
+                ExtensionsList.ItemsSource = _pendingExtensions;
             }
 
             Loaded += (_, _) => { TitleBox.Focus(); TitleBox.SelectAll(); };
@@ -49,10 +51,10 @@ namespace naLauncher2.Wpf
         {
             if (sender is FrameworkElement { Tag: string key })
             {
-                Game.Extensions.Remove(key);
+                _pendingExtensions.Remove(key);
                 ExtensionsList.ItemsSource = null;
-                ExtensionsList.ItemsSource = Game.Extensions;
-                if (Game.Extensions.Count == 0)
+                ExtensionsList.ItemsSource = _pendingExtensions;
+                if (_pendingExtensions.Count == 0)
                 {
                     ExtensionsLabel.Visibility = Visibility.Collapsed;
                     ExtensionsList.Visibility = Visibility.Collapsed;
@@ -110,6 +112,7 @@ namespace naLauncher2.Wpf
             Game.Rating = int.TryParse(RatingBox.Text, out int rating) && rating >= 0 && rating <= 100
                 ? rating
                 : null;
+            Game.Extensions = new Dictionary<string, string>(_pendingExtensions);
         }
     }
 }

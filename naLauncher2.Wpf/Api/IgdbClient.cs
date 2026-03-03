@@ -52,7 +52,7 @@ namespace naLauncher2.Wpf.Api
     /// <summary>
     /// https://www.igdb.com/api
     /// </summary>
-    internal class IgdbClient
+    public class IgdbClient
     {
         readonly string _apiBaseUrl;
         readonly HttpClient _httpClient;
@@ -60,13 +60,13 @@ namespace naLauncher2.Wpf.Api
 
         const string _imagesDirectory = "IgdbCom";
 
-        public IgdbClient(AppSettings.TwitchDevSettings twitchDev, string apiBaseUrl = "https://api.igdb.com/v4")
+        public IgdbClient(TwitchDevAuthz? twitchDevAuthz, string apiBaseUrl = "https://api.igdb.com/v4")
         {
-            if (twitchDev == null || string.IsNullOrEmpty(twitchDev.ClientId) || string.IsNullOrEmpty(twitchDev.ClientSecret))
-                throw new ArgumentException($"TwitchDev settings are required for {nameof(IgdbClient)}.");
+            if (twitchDevAuthz == null)
+                throw new ArgumentException($"TwitchDev authz is required for {nameof(IgdbClient)}.");
 
             _apiBaseUrl = apiBaseUrl;
-            _httpClient = new HttpClient(new TwitchDevAuthz(twitchDev.ClientId, twitchDev.ClientSecret));
+            _httpClient = new HttpClient(twitchDevAuthz);
         }
 
         public static string GetGameSearchUrl(string gameTitle) => $"https://www.igdb.com/search?q={Uri.EscapeDataString(gameTitle)}&type=games";
@@ -112,29 +112,31 @@ namespace naLauncher2.Wpf.Api
 
         async Task<string?> GetIdFromTitle(string gameTitle)
         {
-            var normalizedGameTitle = gameTitle.Normalize();
-
             // search by title
             var games = await PostAsync<NameId[]>($"{_apiBaseUrl}/games",
-                $"fields name; search \"{gameTitle.ToLower()}\"; where version_parent = null;");
+                $"fields name; search \"{gameTitle}\"; where version_parent = null; limit 100;");
 
             if (games == null || games.Length == 0)
                 return null;
 
-            var possibleMatches = games.Select(g =>
-                new KeyValuePair<string, KeyValuePair<int, string>>(
-                    g.id.ToString(),
-                    new KeyValuePair<int, string>(
-                        Extensions.DamerauLevenshteinEditDistance(normalizedGameTitle, g.name.Normalize()),
-                        g.name)))
-                .Where(x => x.Value.Key < normalizedGameTitle.Length)
-                .OrderBy(x => x.Value.Key)
-                .ToArray();
+            //var possibleMatches = games.Select(g =>
+            //    new KeyValuePair<string, KeyValuePair<int, string>>(
+            //        g.id.ToString(),
+            //        new KeyValuePair<int, string>(
+            //            Extensions.DamerauLevenshteinEditDistance(normalizedGameTitle, g.name.Normalize()),
+            //            g.name)))
+            //    .Where(x => x.Value.Key < normalizedGameTitle.Length)
+            //    .OrderBy(x => x.Value.Key)
+            //    .ToArray();
+            //if (possibleMatches.Length == 0)
+            //    return null;
+            //return possibleMatches[0].Key;
 
-            if (possibleMatches.Length == 0)
-                return null;
+            Log.WriteLine($"Found {games.Length} possible matches for '{gameTitle}' on IGDB ({string.Join(" | ", games.Select(x => x.name))})");
 
-            return possibleMatches[0].Key;
+            var normalizedGameTitle = gameTitle.NormalizeCustom();
+
+            return games.FirstOrDefault(x => string.Equals(x.name.NormalizeCustom(), normalizedGameTitle, StringComparison.OrdinalIgnoreCase))?.id.ToString();
         }
 
         async Task<TResponse?> PostAsync<TResponse>(string url, string body)

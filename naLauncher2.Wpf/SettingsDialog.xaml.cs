@@ -1,3 +1,4 @@
+using naLauncher2.Wpf.Api;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -141,6 +142,8 @@ namespace naLauncher2.Wpf
                     ClientId = TwitchClientIdBox.Text,
                     ClientSecret = TwitchClientSecretBox.Text,
                 };
+
+                App.SettingsChanged();
             }
 
             await AppSettings.Instance.Save();

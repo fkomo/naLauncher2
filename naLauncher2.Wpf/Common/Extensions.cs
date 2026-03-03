@@ -2,7 +2,7 @@
 {
     internal static class Extensions
     {
-        public static string Normalize(this string s)
+        public static string NormalizeCustom(this string s)
         {
             //var after = before.ToLower()
             //	.Replace("’s ", "s ").Replace("’n ", "n ").Replace("’t ", "t ")
