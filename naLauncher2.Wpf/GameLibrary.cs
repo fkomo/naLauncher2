@@ -95,6 +95,18 @@ namespace naLauncher2.Wpf
             await File.WriteAllBytesAsync(backupPath + ".bak", GZip.Compress(serialized));
 
             Log.WriteLine($"Game library backed up to '{backupPath}'");
+
+            var backupDir = Path.GetDirectoryName(Path.GetFullPath(_libraryPath)) ?? ".";
+            var backupBaseName = Path.GetFileName(_libraryPath.Trim(".json").ToString()) + "_";
+            const int maxBackups = 10;
+
+            var backupFiles = Directory.GetFiles(backupDir, "*.bak")
+                .Where(f => Path.GetFileName(f).StartsWith(backupBaseName))
+                .Order()
+                .ToArray();
+
+            foreach (var old in backupFiles.Take(Math.Max(0, backupFiles.Length - maxBackups)))
+                File.Delete(old);
         }
 
         public async Task<bool> RefreshSources(string[]? sources)
