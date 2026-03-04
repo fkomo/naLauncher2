@@ -930,11 +930,13 @@ namespace naLauncher2.Wpf
             ShowDropdown(UserGamesFilterPanel, UserGamesLabel);
         }
 
+        static string GetGenreItemText(string genre, int count, bool selected) => (selected ? "\u2713  " : "    ") + $"{genre} ({count})";
+
         void UserGamesGenresLabel_Click(object sender, MouseButtonEventArgs e)
         {
             UserGamesGenresContainer.Children.Clear();
 
-            var genres = GameLibrary.Instance.Genres.OrderBy(g => g).ToArray();
+            var genres = GameLibrary.Instance.Genres.ToArray();
             if (genres.Length == 0)
             {
                 ShowDropdown(UserGamesGenresPanel, UserGamesGenresLabel);
@@ -944,14 +946,16 @@ namespace naLauncher2.Wpf
             const int maxPerColumn = 10;
             var style = (Style)Resources["DropdownItemStyle"];
 
+            var genresWithCounts = GameLibrary.Instance.GenresWithCounts.OrderByDescending(x => x.Value);
+
             // Build all items first so we can measure for a uniform column width
-            var items = genres.Select(genre =>
+            var items = genresWithCounts.Select(genre =>
             {
-                bool selected = _userGamesGenreFilter.Contains(genre);
+                bool selected = _userGamesGenreFilter.Contains(genre.Key);
                 var item = new TextBlock
                 {
-                    Text = (selected ? "\u2713  " : "    ") + genre,
-                    Tag = genre,
+                    Text = GetGenreItemText(genre.Key, genre.Value, selected),
+                    Tag = genre.Key,
                     Style = style,
                     Foreground = selected ? Brushes.LightSkyBlue : Brushes.White,
                 };
@@ -995,7 +999,7 @@ namespace naLauncher2.Wpf
                 _userGamesGenreFilter.Add(genre);
 
             bool selected = _userGamesGenreFilter.Contains(genre);
-            tb.Text = (selected ? "\u2713  " : "    ") + genre;
+            tb.Text = GetGenreItemText(genre, GameLibrary.Instance.GenresWithCounts[genre], selected);
             tb.Foreground = selected ? Brushes.LightSkyBlue : Brushes.White;
 
             UpdateGenresLabel();
@@ -1009,10 +1013,8 @@ namespace naLauncher2.Wpf
 
         void UpdateGenresLabel()
         {
-            //UserGamesGenresLabel.Text = _userGamesGenreFilter.Count == 0 ? "Genres" : $"Genres ({_userGamesGenreFilter.Count})";
-            UserGamesGenresLabel.Text = _userGamesGenreFilter.Count == 0 ? "All genres" : string.Join(", ", _userGamesGenreFilter);
-
-            UserGamesGenresLabel.Foreground = Brushes.White; // _userGamesGenreFilter.Count > 0 ? Brushes.LightSkyBlue : Brushes.White;
+            UserGamesGenresLabel.Text = _userGamesGenreFilter.Count == 0 ? "All genres" : string.Join("  |  ", _userGamesGenreFilter);
+            UserGamesGenresLabel.Foreground = Brushes.White;
         }
 
         /// <summary>

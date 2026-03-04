@@ -23,6 +23,11 @@ namespace naLauncher2.Wpf
             .SelectMany(x => x.Value.Genres ?? [])
             .Distinct();
 
+        public Dictionary<string, int> GenresWithCounts => Genres
+            .ToDictionary(
+                x => x,
+                x => Games.Count(xx => xx.Value.Genres?.Contains(x) == true));
+
         static string[] SupportedGameExtensions { get; set; } =
         [
             ".lnk",
