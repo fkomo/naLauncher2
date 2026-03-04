@@ -1,5 +1,4 @@
-﻿using naLauncher2.Wpf.Common;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -7,6 +6,8 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using Ujeby.Extensions;
+using Ujeby.Tools;
 
 namespace naLauncher2.Wpf.Api
 {
@@ -73,7 +74,7 @@ namespace naLauncher2.Wpf.Api
 
         public async Task<IgdbGameData?> GetGameData(string gameTitle, string? gameId = null, bool getImage = true)
         {
-            using var tb = new TimedBlock($"{nameof(IgdbClient)}.{nameof(GetGameData)}('{gameTitle}')");
+            using var tb = new TimedBlock($"{nameof(IgdbClient)}.{nameof(GetGameData)}('{gameTitle}')", Log.WriteLine);
 
             await CacheEnums();
 
@@ -249,7 +250,7 @@ namespace naLauncher2.Wpf.Api
 
         async static Task<(Image, ImageFormat)> DownloadImage(string imageUrl)
         {
-            using var tb = new TimedBlock($"{nameof(IgdbClient)}.{nameof(DownloadImage)}({imageUrl})");
+            using var tb = new TimedBlock($"{nameof(IgdbClient)}.{nameof(DownloadImage)}({imageUrl})", Log.WriteLine);
 
             using var response = await _imageHttpClient.GetAsync(imageUrl);
             if (!response.IsSuccessStatusCode)

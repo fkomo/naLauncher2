@@ -1,6 +1,6 @@
-﻿using naLauncher2.Wpf.Common;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Net.Http.Json;
+using Ujeby.Tools;
 
 namespace naLauncher2.Wpf.Api
 {
@@ -30,7 +30,7 @@ namespace naLauncher2.Wpf.Api
 
         async Task GetAccessToken()
         {
-            using var tb = new TimedBlock($"{nameof(TwitchDevAuthz)}.{nameof(GetAccessToken)}");
+            using var tb = new TimedBlock($"{nameof(TwitchDevAuthz)}.{nameof(GetAccessToken)}", Log.WriteLine);
 
             var tokenResponse = await _httpClient.PostAsync($"{TokenEndpoint}?client_id={_clientId}&client_secret={_clientSecret}&grant_type=client_credentials", null);
             if (tokenResponse.IsSuccessStatusCode)

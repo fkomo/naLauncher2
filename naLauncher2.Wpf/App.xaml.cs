@@ -1,5 +1,4 @@
 ﻿using naLauncher2.Wpf.Api;
-using naLauncher2.Wpf.Common;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;

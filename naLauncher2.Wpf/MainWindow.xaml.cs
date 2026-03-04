@@ -1,5 +1,4 @@
 using naLauncher2.Wpf.Api;
-using naLauncher2.Wpf.Common;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;

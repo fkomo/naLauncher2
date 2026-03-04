@@ -1,7 +1,7 @@
-﻿using naLauncher2.Wpf.Common;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.IO;
 using System.Text.Json;
+using Ujeby.Tools;
 
 namespace naLauncher2.Wpf
 {
@@ -48,7 +48,7 @@ namespace naLauncher2.Wpf
                 return;
             }
 
-            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(Load)}('{path}')");
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(Load)}('{path}')", Log.WriteLine);
 
             var libraryContent = await File.ReadAllTextAsync(path);
 
@@ -76,14 +76,19 @@ namespace naLauncher2.Wpf
             if (_libraryPath is null)
                 return;
 
-            var backupPath = $"{_libraryPath}_{DateTime.Now:yyyyMMddHHmmss}.bak";
-            await File.WriteAllTextAsync(backupPath, JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions));
+            var backupPath = $"{_libraryPath.Trim(".json")}_{DateTime.Now:yyyyMMddHHmmss}";
+
+            var serialized = JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions);
+
+            await File.WriteAllTextAsync(backupPath + ".json", serialized);
+            await File.WriteAllBytesAsync(backupPath + ".bak", GZip.Compress(serialized));
+
             Log.WriteLine($"Game library backed up to '{backupPath}'");
         }
 
         public async Task<bool> RefreshSources(string[]? sources)
         {
-            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshSources)}()");
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshSources)}()", Log.WriteLine);
 
             if (sources == null || sources.Length == 0)
                 return false;
@@ -163,7 +168,7 @@ namespace naLauncher2.Wpf
 
             Log.WriteLine($"{gamesToUpdate.Length} games are missing image ...");
 
-            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameImages)}()");
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameImages)}()", Log.WriteLine);
 
             var changed = false;
 
@@ -202,7 +207,7 @@ namespace naLauncher2.Wpf
 
             Log.WriteLine($"{gamesToUpdate.Length} games are missing IGDB data ...");
 
-            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameData)}()");
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameData)}()", Log.WriteLine);
 
             var changed = false;
 
@@ -239,7 +244,7 @@ namespace naLauncher2.Wpf
 
             Log.WriteLine($"Refreshing data for '{gameTitle}' ...");
 
-            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshGameData)}('{gameTitle}')");
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshGameData)}('{gameTitle}')", Log.WriteLine);
 
             gameInfo.Extensions.TryGetValue(GameInfoExtension.IgdbId.ToString(), out string? igdbId);
 
@@ -258,7 +263,7 @@ namespace naLauncher2.Wpf
 
         public async Task RemoveExtensions(params string[] values)
         {
-            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RemoveExtensions)}({string.Join(", ", values)})");
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RemoveExtensions)}({string.Join(", ", values)})", Log.WriteLine);
 
             foreach (var game in Games)
             {

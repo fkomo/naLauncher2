@@ -28,4 +28,10 @@
 		<EmbeddedResource Include="Assets\na-launcher.png" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Reference Include="Ujeby">
+	    <HintPath>..\..\Ujeby\publish\Ujeby.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
+
 </Project>
