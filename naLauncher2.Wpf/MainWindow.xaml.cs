@@ -141,6 +141,15 @@ namespace naLauncher2.Wpf
 
         string[] GetUserGames()
         {
+            static bool FilterGameTitle(string gameTitle, string filter)
+            {
+                var filterParts = filter.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var gameTitleParts = gameTitle.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                return filterParts
+                    .All(x => gameTitleParts.Any(xx => xx.Contains(x)));
+            }
+
             var all = GameLibrary.Instance.Games.AsEnumerable();
 
             var filtered = _userGamesFilterMode switch
@@ -153,7 +162,7 @@ namespace naLauncher2.Wpf
             };
 
             if (!string.IsNullOrEmpty(_userGamesTitleFilter))
-                filtered = filtered.Where(x => x.Key.Contains(_userGamesTitleFilter, StringComparison.OrdinalIgnoreCase));
+                filtered = filtered.Where(x => FilterGameTitle(x.Key, _userGamesTitleFilter));
 
             var sorted = _userGamesSortMode switch
             {
@@ -987,8 +996,23 @@ namespace naLauncher2.Wpf
 
         void UserGamesTitleFilter_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (string.IsNullOrWhiteSpace(UserGamesTitleFilter.Text) && string.IsNullOrWhiteSpace(_userGamesTitleFilter))
+                return;
+
+            if (!string.IsNullOrWhiteSpace(UserGamesTitleFilter.Text) && !string.IsNullOrWhiteSpace(_userGamesTitleFilter))
+            {
+                var newFilter = UserGamesTitleFilter.Text.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var oldFilter = _userGamesTitleFilter.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                // filter not changed if the same set of words is present in both the old and new filter, regardless of order or duplicates
+                if (newFilter.Length == oldFilter.Length && newFilter.All(x => oldFilter.Contains(x)))
+                    return;
+            }
+
             _userGamesTitleFilter = UserGamesTitleFilter.Text;
+            
             RefreshUserGames();
+
             if (UserGamesTitleFilter.Text.Length == 0)
                 HideFilterTextBox();
         }
