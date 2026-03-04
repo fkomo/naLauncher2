@@ -19,6 +19,10 @@ namespace naLauncher2.Wpf
             .OrderByDescending(x => x.Value.Played.Last())
             .Select(x => x.Key);
 
+        public IEnumerable<string> Genres => Games
+            .SelectMany(x => x.Value.Genres ?? [])
+            .Distinct();
+
         static string[] SupportedGameExtensions { get; set; } =
         [
             ".lnk",
@@ -80,7 +84,9 @@ namespace naLauncher2.Wpf
 
             var serialized = JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions);
 
+#if DEBUG
             await File.WriteAllTextAsync(backupPath + ".json", serialized);
+#endif
             await File.WriteAllBytesAsync(backupPath + ".bak", GZip.Compress(serialized));
 
             Log.WriteLine($"Game library backed up to '{backupPath}'");

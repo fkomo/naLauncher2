@@ -12,6 +12,9 @@ namespace naLauncher2.Wpf
         public bool UserGamesSortDescending { get; set; } = false;
         public GamesSortMode UserGamesSortMode { get; set; } = GamesSortMode.Title;
         public UserGamesFilterMode UserGamesFilterMode { get; set; } = UserGamesFilterMode.Installed;
+        public string[] UserGamesGenreFilter { get; set; } = [];
+        public bool NewGamesCollapsed { get; set; } = false;
+        public bool RecentGamesCollapsed { get; set; } = false;
 
         public class TwitchDevSettings
         {
@@ -46,6 +49,9 @@ namespace naLauncher2.Wpf
                 UserGamesFilterMode = loaded.UserGamesFilterMode;
                 UserGamesSortMode = loaded.UserGamesSortMode;
                 UserGamesSortDescending = loaded.UserGamesSortDescending;
+                UserGamesGenreFilter = loaded.UserGamesGenreFilter;
+                NewGamesCollapsed = loaded.NewGamesCollapsed;
+                RecentGamesCollapsed = loaded.RecentGamesCollapsed;
                 Sources = loaded.Sources;
                 ImageCachePath = loaded.ImageCachePath;
 

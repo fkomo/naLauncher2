@@ -48,6 +48,7 @@ namespace naLauncher2.Wpf
         bool _userGamesSortDescending = false;
 
         string _userGamesTitleFilter = string.Empty;
+        HashSet<string> _userGamesGenreFilter = [];
         bool _newGamesCollapsed = true;
         bool _recentGamesCollapsed = true;
 
@@ -83,6 +84,9 @@ namespace naLauncher2.Wpf
             _userGamesFilterMode = AppSettings.Instance.UserGamesFilterMode;
             _userGamesSortMode = AppSettings.Instance.UserGamesSortMode;
             _userGamesSortDescending = AppSettings.Instance.UserGamesSortDescending;
+            _userGamesGenreFilter = [.. AppSettings.Instance.UserGamesGenreFilter];
+            _newGamesCollapsed = AppSettings.Instance.NewGamesCollapsed;
+            _recentGamesCollapsed = AppSettings.Instance.RecentGamesCollapsed;
 
             double screenWidth = RootGrid.ActualWidth;
             _controlsPerRow = (int)((screenWidth + Gap) / (GameInfoControl.ControlWidth + Gap));
@@ -96,22 +100,20 @@ namespace naLauncher2.Wpf
 
             PopulateHorizontalSection(NewGamesContainer, newGames,
                 id => $"added {TimeAgo(GameLibrary.Instance.Games[id].Added)}");
-            if (newGames.Length > 0)
-                _newGamesCollapsed = false;
+            if (newGames.Length == 0)
+                _newGamesCollapsed = true;
             ApplyNewGamesState();
 
             PopulateHorizontalSection(RecentGamesContainer, recentGames,
                 id => $"played {TimeAgo(GameLibrary.Instance.Games[id].LastPlayed!.Value)}");
-            if (recentGames.Length > 0)
-                _recentGamesCollapsed = false;
+            if (recentGames.Length == 0)
+                _recentGamesCollapsed = true;
             ApplyRecentGamesState();
 
             PopulateGridSection(UserGamesContainer, userGames);
 
-            NewGamesCount.Text = $"({newGames.Length})";
-            RecentGamesCount.Text = $"({recentGames.Length})";
-            UserGamesCount.Text = $"({userGames.Length})";
-            UserGamesLabel.Text = _userGamesFilterMode.ToString();
+            UserGamesLabel.Text = GetUserGamesLabelText(_userGamesFilterMode, userGames.Length);
+            UpdateGenresLabel();
             UserGamesOrderLabel.Text = _userGamesSortMode.ToString();
             UserGamesOrderDirectionToggle.Text = _userGamesSortDescending ? "\u25BC" : "\u25B2";
 
@@ -163,6 +165,9 @@ namespace naLauncher2.Wpf
 
             if (!string.IsNullOrEmpty(_userGamesTitleFilter))
                 filtered = filtered.Where(x => FilterGameTitle(x.Key, _userGamesTitleFilter));
+
+            if (_userGamesGenreFilter.Count > 0)
+                filtered = filtered.Where(x => x.Value.Genres != null && x.Value.Genres.Any(g => _userGamesGenreFilter.Contains(g)));
 
             var sorted = _userGamesSortMode switch
             {
@@ -600,6 +605,7 @@ namespace naLauncher2.Wpf
             Canvas.SetTop(panel, pos.Y);
             UserGamesFilterPanel.Visibility = Visibility.Collapsed;
             UserGamesOrderPanel.Visibility = Visibility.Collapsed;
+            UserGamesGenresPanel.Visibility = Visibility.Collapsed;
             GameContextMenuPanel.Visibility = Visibility.Collapsed;
             panel.Visibility = Visibility.Visible;
             DropdownOverlay.Visibility = Visibility.Visible;
@@ -627,6 +633,7 @@ namespace naLauncher2.Wpf
             Canvas.SetTop(GameContextMenuPanel, pos.Y);
             UserGamesFilterPanel.Visibility = Visibility.Collapsed;
             UserGamesOrderPanel.Visibility = Visibility.Collapsed;
+            UserGamesGenresPanel.Visibility = Visibility.Collapsed;
             GameContextMenuPanel.Visibility = Visibility.Visible;
             DropdownOverlay.Visibility = Visibility.Visible;
 
@@ -886,10 +893,6 @@ namespace naLauncher2.Wpf
             UserGamesContainer.Children.Clear();
             PopulateGridSection(UserGamesContainer, userGames);
 
-            NewGamesCount.Text = $"({newGames.Length})";
-            RecentGamesCount.Text = $"({recentGames.Length})";
-            UserGamesCount.Text = $"({userGames.Length})";
-
             RootGrid.UpdateLayout();
 
             double screenWidth = RootGrid.ActualWidth;
@@ -925,6 +928,91 @@ namespace naLauncher2.Wpf
         {
             UpdateFilterOptionHighlight();
             ShowDropdown(UserGamesFilterPanel, UserGamesLabel);
+        }
+
+        void UserGamesGenresLabel_Click(object sender, MouseButtonEventArgs e)
+        {
+            UserGamesGenresContainer.Children.Clear();
+
+            var genres = GameLibrary.Instance.Genres.OrderBy(g => g).ToArray();
+            if (genres.Length == 0)
+            {
+                ShowDropdown(UserGamesGenresPanel, UserGamesGenresLabel);
+                return;
+            }
+
+            const int maxPerColumn = 10;
+            var style = (Style)Resources["DropdownItemStyle"];
+
+            // Build all items first so we can measure for a uniform column width
+            var items = genres.Select(genre =>
+            {
+                bool selected = _userGamesGenreFilter.Contains(genre);
+                var item = new TextBlock
+                {
+                    Text = (selected ? "\u2713  " : "    ") + genre,
+                    Tag = genre,
+                    Style = style,
+                    Foreground = selected ? Brushes.LightSkyBlue : Brushes.White,
+                };
+                item.MouseLeftButtonUp += UserGamesGenre_Click;
+                return item;
+            }).ToArray();
+
+            // Measure every item so all columns get the same width
+            double columnWidth = 0;
+            foreach (var item in items)
+            {
+                item.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                columnWidth = Math.Max(columnWidth, item.DesiredSize.Width);
+            }
+
+            // Arrange into evenly distributed columns (max maxPerColumn items each)
+            int columnCount = (int)Math.Ceiling(genres.Length / (double)maxPerColumn);
+            int itemsPerColumn = (int)Math.Ceiling(genres.Length / (double)columnCount);
+            for (int col = 0; col < columnCount; col++)
+            {
+                var column = new StackPanel { Width = columnWidth };
+                for (int row = 0; row < itemsPerColumn; row++)
+                {
+                    int idx = col * itemsPerColumn + row;
+                    if (idx >= items.Length) break;
+                    items[idx].Width = columnWidth;
+                    column.Children.Add(items[idx]);
+                }
+                UserGamesGenresContainer.Children.Add(column);
+            }
+
+            ShowDropdown(UserGamesGenresPanel, UserGamesGenresLabel);
+        }
+
+        void UserGamesGenre_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not TextBlock tb || tb.Tag is not string genre)
+                return;
+
+            if (!_userGamesGenreFilter.Remove(genre))
+                _userGamesGenreFilter.Add(genre);
+
+            bool selected = _userGamesGenreFilter.Contains(genre);
+            tb.Text = (selected ? "\u2713  " : "    ") + genre;
+            tb.Foreground = selected ? Brushes.LightSkyBlue : Brushes.White;
+
+            UpdateGenresLabel();
+            RefreshUserGames();
+
+            AppSettings.Instance.UserGamesGenreFilter = [.. _userGamesGenreFilter];
+            _ = AppSettings.Instance.Save();
+
+            e.Handled = true;
+        }
+
+        void UpdateGenresLabel()
+        {
+            //UserGamesGenresLabel.Text = _userGamesGenreFilter.Count == 0 ? "Genres" : $"Genres ({_userGamesGenreFilter.Count})";
+            UserGamesGenresLabel.Text = _userGamesGenreFilter.Count == 0 ? "All genres" : string.Join(", ", _userGamesGenreFilter);
+
+            UserGamesGenresLabel.Foreground = Brushes.White; // _userGamesGenreFilter.Count > 0 ? Brushes.LightSkyBlue : Brushes.White;
         }
 
         /// <summary>
@@ -1025,10 +1113,11 @@ namespace naLauncher2.Wpf
         {
             var userGames = GetUserGames();
 
-            UserGamesLabel.Text = _userGamesFilterMode.ToString();
             UserGamesContainer.Children.Clear();
             PopulateGridSection(UserGamesContainer, userGames);
-            UserGamesCount.Text = $"({userGames.Length})";
+
+            UserGamesLabel.Text = GetUserGamesLabelText(_userGamesFilterMode, userGames.Length);
+            UpdateGenresLabel();
 
             _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
             _allGamesOffsetY = 0;
@@ -1042,6 +1131,10 @@ namespace naLauncher2.Wpf
             UpdateViewportCulling();
             UpdateScrollThumbs();
         }
+
+        static string GetUserGamesLabelText(UserGamesFilterMode userGamesFilterMode, int length) =>
+            //userGamesFilterMode.ToString() + (length > 0 ? $" ({length})" : null);
+            userGamesFilterMode.ToString();// + (length > 0 ? $" ({length})" : null);   
 
         /// <summary>
         /// Recalculates the User Games scroll range and viewport culling after the available
@@ -1092,13 +1185,14 @@ namespace naLauncher2.Wpf
 
         void UpdateUserGamesHeaderControls()
         {
-            UserGamesCount.Opacity = 1.0;
             UserGamesLabel.IsHitTestVisible = true;
             UserGamesLabel.Opacity = 1.0;
             UserGamesOrderLabel.IsHitTestVisible = true;
             UserGamesOrderLabel.Opacity = 1.0;
             UserGamesOrderDirectionToggle.IsHitTestVisible = true;
             UserGamesOrderDirectionToggle.Opacity = 0.5;
+            UserGamesGenresLabel.IsHitTestVisible = true;
+            UserGamesGenresLabel.Opacity = 1.0;
             if (UserGamesTitleFilter.Text.Length > 0)
                 ShowFilterTextBox();
         }
@@ -1206,6 +1300,9 @@ namespace naLauncher2.Wpf
                     UpdateRecentGamesHeaderMargin();
                     RefreshUserGamesViewport();
                 });
+
+            AppSettings.Instance.NewGamesCollapsed = _newGamesCollapsed;
+            _ = AppSettings.Instance.Save();
         }
 
         void ToggleRecentGames()
@@ -1230,6 +1327,9 @@ namespace naLauncher2.Wpf
                     UpdateUserGamesHeaderMargin();
                     RefreshUserGamesViewport();
                 });
+
+            AppSettings.Instance.RecentGamesCollapsed = _recentGamesCollapsed;
+            _ = AppSettings.Instance.Save();
         }
 
         void NewGamesLabel_Click(object sender, MouseButtonEventArgs e) => ToggleNewGames();
