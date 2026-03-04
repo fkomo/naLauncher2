@@ -19,6 +19,15 @@ namespace naLauncher2.Wpf
             .OrderByDescending(x => x.Value.Played.Last())
             .Select(x => x.Key);
 
+        static string[] SupportedGameExtensions { get; set; } =
+        [
+            ".lnk",
+            ".exe",
+            ".url",
+            ".cmd",
+            ".bat"
+        ];
+
         string? _libraryPath;
 
         static readonly GameLibrary _instance = new();
@@ -43,12 +52,10 @@ namespace naLauncher2.Wpf
 
             var libraryContent = await File.ReadAllTextAsync(path);
 
-            var loaded = JsonSerializer.Deserialize<GameLibrary>(libraryContent, options: App.JsonSerializerOptions)
-                ?? throw new InvalidOperationException("Failed to deserialize game library.");
-
             _libraryPath = path;
 
-            Games = loaded.Games ?? [];
+            Games = JsonSerializer.Deserialize<ConcurrentDictionary<string, GameInfo>>(libraryContent, options: App.JsonSerializerOptions)
+                ?? throw new InvalidOperationException("Failed to deserialize game library.");
 
             Log.WriteLine($"Game library loaded - {Games.Count} games");
         }
@@ -57,23 +64,14 @@ namespace naLauncher2.Wpf
         {
             if (!string.IsNullOrEmpty(_libraryPath))
             {
-                await File.WriteAllTextAsync(_libraryPath, JsonSerializer.Serialize(this, options: App.JsonSerializerOptions));
+                await File.WriteAllTextAsync(_libraryPath, JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions));
 
                 if (!silent)
                     Log.WriteLine($"Game library saved with {Games.Count} games");
             }
         }
 
-        static string[] SupportedGameExtensions { get; set; } =
-        [
-            ".lnk",
-            ".exe",
-            ".url",
-            ".cmd",
-            ".bat"
-        ];
-
-        public async Task<bool> RefreshSources(string[]? sources)
+        public async Task<bool> RefreshSources(string[]? sources, bool backup = false)
         {
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshSources)}()");
 
@@ -88,25 +86,24 @@ namespace naLauncher2.Wpf
             bool changed = false;
 
             // add new games from sources
-            foreach (var newGame in sourceGames.Where(x => !Games.ContainsKey(x.Key)))
+            foreach (var newGame in sourceGames.Where(x => !Games.Any(xx => xx.Value.Shortcut == x.Value)))
             {
+                Log.WriteLine($"New game found '{newGame.Key}'");
 
                 var newGameInfo = new GameInfo(newGame.Value, added: new FileInfo(newGame.Value).CreationTime);
 
                 // add new game
                 Games.AddOrUpdate(newGame.Key, newGameInfo, (key, oldGameInfo) => newGameInfo);
-                Log.WriteLine($"'{newGame.Key}' added to library");
 
                 changed = true;
             }
 
-            // remove games that are no longer in sources
-            foreach (var removedGameFromSource in Games.Where(x => x.Value.Installed && !sourceGames.ContainsKey(x.Key)).Select(x => x.Key))
+            // mark games as uninstalled if their shortcuts no longer exist
+            foreach (var uninstalledGame in Games.Where(x => x.Value.Installed && !File.Exists(x.Value.Shortcut)).Select(x => x.Key))
             {
-                Log.WriteLine($"'{removedGameFromSource}' not found in source");
+                Log.WriteLine($"Shortcut for '{uninstalledGame}' not found");
 
-                // mark game as removed
-                Games[removedGameFromSource].Shortcut = null;
+                Games[uninstalledGame].Shortcut = null;
 
                 changed = true;
             }
@@ -122,20 +119,19 @@ namespace naLauncher2.Wpf
                 changed = true;
             }
 
-            // mark games as uninstalled if their shortcuts no longer exist
-            foreach (var uninstalledGame in Games.Where(x => x.Value.Installed && !File.Exists(x.Value.Shortcut)).Select(x => x.Key))
+            if (!changed)
+                return changed;
+
+            if (backup && _libraryPath is not null)
             {
-                Log.WriteLine($"Shortcut for '{uninstalledGame}' not found");
-
-                Games[uninstalledGame].Shortcut = null;
-
-                changed = true;
+                var backupPath = $"{_libraryPath}_{DateTime.Now:yyyyMMddHHmmss}.bak";
+                await File.WriteAllTextAsync(backupPath, JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions));
+                Log.WriteLine($"Game library backed up to '{backupPath}'");
             }
 
-            if (changed)
-                await Save();
+            await Save();
 
-            return changed;
+            return true;
         }
 
         public async Task<bool> RefreshMissingGameImages()

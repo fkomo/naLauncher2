@@ -188,7 +188,7 @@ namespace naLauncher2.Wpf
 
             await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath!);
 
-            await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources);
+            await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources, backup: true);
 
             return true;
         }
@@ -322,8 +322,6 @@ namespace naLauncher2.Wpf
         /// <param name="subLabelSelector">Optional delegate that returns a sub-label string for a given game id.</param>
         void PopulateHorizontalSection(Canvas container, string[] games, Func<string, string?>? subLabelSelector = null)
         {
-            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateHorizontalSection)}({games.Length} games)");
-
             double subLabelY = GameInfoControl.ShadowBlurRadius + GameInfoControl.ControlHeight + 8;
 
             for (int i = 0; i < games.Length; i++)
@@ -371,8 +369,6 @@ namespace naLauncher2.Wpf
         /// <param name="games">Ordered array of games to display.</param>
         void PopulateGridSection(Canvas container, string[] games)
         {
-            using var tb = new TimedBlock($"{nameof(MainWindow)}.{nameof(PopulateGridSection)}({games.Length} games)");
-
             bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
             for (int i = 0; i < games.Length; i++)
             {
