@@ -71,7 +71,17 @@ namespace naLauncher2.Wpf
             }
         }
 
-        public async Task<bool> RefreshSources(string[]? sources, bool backup = false)
+        public async Task Backup()
+        {
+            if (_libraryPath is null)
+                return;
+
+            var backupPath = $"{_libraryPath}_{DateTime.Now:yyyyMMddHHmmss}.bak";
+            await File.WriteAllTextAsync(backupPath, JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions));
+            Log.WriteLine($"Game library backed up to '{backupPath}'");
+        }
+
+        public async Task<bool> RefreshSources(string[]? sources)
         {
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshSources)}()");
 
@@ -119,19 +129,10 @@ namespace naLauncher2.Wpf
                 changed = true;
             }
 
-            if (!changed)
-                return changed;
+            if (changed)
+                await Save();
 
-            if (backup && _libraryPath is not null)
-            {
-                var backupPath = $"{_libraryPath}_{DateTime.Now:yyyyMMddHHmmss}.bak";
-                await File.WriteAllTextAsync(backupPath, JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions));
-                Log.WriteLine($"Game library backed up to '{backupPath}'");
-            }
-
-            await Save();
-
-            return true;
+            return changed;
         }
 
         public async Task<bool> RefreshMissingGameImages()

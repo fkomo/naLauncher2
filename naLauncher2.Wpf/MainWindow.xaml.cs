@@ -188,7 +188,10 @@ namespace naLauncher2.Wpf
 
             await GameLibrary.Instance.Load(AppSettings.Instance.LibraryPath!);
 
-            await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources, backup: true);
+            // backup on start in case the user has made changes to their library outside of the launcher and we want to avoid losing data
+            await GameLibrary.Instance.Backup();
+
+            await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources);
 
             return true;
         }
