@@ -8,6 +8,7 @@
 		<UseWPF>true</UseWPF>
 		<ApplicationIcon>Assets\na-launcher.ico</ApplicationIcon>
 		<DebugType>embedded</DebugType>
+		<AssemblyName>naLauncher2</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
