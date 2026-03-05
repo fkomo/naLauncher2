@@ -51,6 +51,9 @@ namespace naLauncher2.Wpf
         HashSet<string> _userGamesGenreFilter = [];
         bool _newGamesCollapsed = true;
         bool _recentGamesCollapsed = true;
+        bool _recentGamesInstalledOnly = true;
+        bool _newGamesSortDescending = true;
+        bool _recentGamesSortDescending = true;
 
         string? _contextMenuTargetId;
 
@@ -87,6 +90,9 @@ namespace naLauncher2.Wpf
             _userGamesGenreFilter = [.. AppSettings.Instance.UserGamesGenreFilter];
             _newGamesCollapsed = AppSettings.Instance.NewGamesCollapsed;
             _recentGamesCollapsed = AppSettings.Instance.RecentGamesCollapsed;
+            _recentGamesInstalledOnly = AppSettings.Instance.RecentGamesInstalledOnly;
+            _newGamesSortDescending = AppSettings.Instance.NewGamesSortDescending;
+            _recentGamesSortDescending = AppSettings.Instance.RecentGamesSortDescending;
 
             double screenWidth = RootGrid.ActualWidth;
             _controlsPerRow = (int)((screenWidth + Gap) / (GameInfoControl.ControlWidth + Gap));
@@ -94,8 +100,8 @@ namespace naLauncher2.Wpf
             double totalWidth = _controlsPerRow * GameInfoControl.ControlWidth + (_controlsPerRow - 1) * Gap;
             _gridOffset = (screenWidth - totalWidth) / 2;
 
-            var newGames = GameLibrary.Instance.NewGames().ToArray();
-            var recentGames = GameLibrary.Instance.RecentGames().ToArray();
+            var newGames = GetNewGames();
+            var recentGames = GetRecentGames();
             var userGames = GetUserGames();
 
             PopulateHorizontalSection(NewGamesContainer, newGames,
@@ -116,6 +122,9 @@ namespace naLauncher2.Wpf
             UpdateGenresLabel();
             UserGamesOrderLabel.Text = _userGamesSortMode.ToString();
             UserGamesOrderDirectionToggle.Text = _userGamesSortDescending ? "\u25BC" : "\u25B2";
+            NewGamesOrderDirectionToggle.Text = _newGamesSortDescending ? "\u25BC" : "\u25B2";
+            RecentGamesOrderDirectionToggle.Text = _recentGamesSortDescending ? "\u25BC" : "\u25B2";
+            UpdateRecentGamesInstalledOnlyToggle();
 
             double shadowOffset = GameInfoControl.ShadowBlurRadius;
             double canvasTopMargin = SectionGap - shadowOffset;
@@ -183,6 +192,28 @@ namespace naLauncher2.Wpf
                 .ToArray();
         }
 
+        string[] GetNewGames()
+        {
+            var games = GameLibrary.Instance.Games
+                .Where(x => x.Value.Installed && x.Value.NotPlayed)
+                .OrderBy(x => x.Value.Added);
+
+            return (_newGamesSortDescending ? games.Reverse() : (IEnumerable<KeyValuePair<string, GameInfo>>)games)
+                .Select(x => x.Key)
+                .ToArray();
+        }
+
+        string[] GetRecentGames()
+        {
+            var games = GameLibrary.Instance.Games
+                .Where(x => (!_recentGamesInstalledOnly || x.Value.Installed) && !x.Value.NotPlayed)
+                .OrderBy(x => x.Value.Added);
+
+            return (_recentGamesSortDescending ? games.Reverse() : (IEnumerable<KeyValuePair<string, GameInfo>>)games)
+                .Select(x => x.Key)
+                .ToArray();
+        }
+
         /// <summary>
         /// Load app settings and game library from file. If the library path is not set in settings,
         /// opens the settings dialog so the user can configure it.
@@ -204,7 +235,7 @@ namespace naLauncher2.Wpf
             // backup on start in case the user has made changes to their library outside of the launcher and we want to avoid losing data
             await GameLibrary.Instance.Backup();
 
-            await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources);
+            await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources, extensions: AppSettings.Instance.GameExtensions);
 
             return true;
         }
@@ -726,7 +757,7 @@ namespace naLauncher2.Wpf
             if (dialog.ShowDialog() != true)
                 return;
 
-            if (game.Shortcut is not null && System.IO.File.Exists(game.Shortcut) && game.Shortcut.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+            if (game.Shortcut is not null && System.IO.File.Exists(game.Shortcut))
                 System.IO.File.Delete(game.Shortcut);
 
             game.Shortcut = null;
@@ -858,8 +889,8 @@ namespace naLauncher2.Wpf
 
         void RefreshAllSections()
         {
-            var newGames = GameLibrary.Instance.NewGames().ToArray();
-            var recentGames = GameLibrary.Instance.RecentGames().ToArray();
+            var newGames = GetNewGames();
+            var recentGames = GetRecentGames();
             var userGames = GetUserGames();
 
             NewGamesContainer.Children.Clear();
@@ -1006,8 +1037,6 @@ namespace naLauncher2.Wpf
             RefreshUserGames();
 
             AppSettings.Instance.UserGamesGenreFilter = [.. _userGamesGenreFilter];
-            _ = AppSettings.Instance.Save();
-
             e.Handled = true;
         }
 
@@ -1020,7 +1049,7 @@ namespace naLauncher2.Wpf
         /// <summary>
         /// Applies the selected filter mode from the dropdown and refreshes the User Games grid.
         /// </summary>
-        async void UserGamesFilter_Click(object sender, MouseButtonEventArgs e)
+        void UserGamesFilter_Click(object sender, MouseButtonEventArgs e)
         {
             if (sender is TextBlock tb && tb.Tag is string tag && Enum.TryParse<UserGamesFilterMode>(tag, out var mode))
             {
@@ -1029,7 +1058,6 @@ namespace naLauncher2.Wpf
                 RefreshUserGames();
 
                 AppSettings.Instance.UserGamesFilterMode = _userGamesFilterMode;
-                await AppSettings.Instance.Save();
             }
         }
 
@@ -1061,7 +1089,7 @@ namespace naLauncher2.Wpf
             ShowDropdown(UserGamesOrderPanel, UserGamesOrderLabel);
         }
 
-        async void UserGamesOrder_Click(object sender, MouseButtonEventArgs e)
+        void UserGamesOrder_Click(object sender, MouseButtonEventArgs e)
         {
             if (sender is TextBlock tb && tb.Tag is string tag && Enum.TryParse<GamesSortMode>(tag, out var mode))
             {
@@ -1071,17 +1099,16 @@ namespace naLauncher2.Wpf
                 RefreshUserGames();
 
                 AppSettings.Instance.UserGamesSortMode = _userGamesSortMode;
-                await AppSettings.Instance.Save();
             }
         }
 
-        async void UserGamesOrderDirectionToggle_Click(object sender, MouseButtonEventArgs e)
+        void UserGamesOrderDirectionToggle_Click(object sender, MouseButtonEventArgs e)
         {
             _userGamesSortDescending = !_userGamesSortDescending;
             UserGamesOrderDirectionToggle.Text = _userGamesSortDescending ? "\u25BC" : "\u25B2";
             RefreshUserGames();
+
             AppSettings.Instance.UserGamesSortDescending = _userGamesSortDescending;
-            await AppSettings.Instance.Save();
         }
 
         void UserGamesTitleFilter_TextChanged(object sender, TextChangedEventArgs e)
@@ -1100,7 +1127,7 @@ namespace naLauncher2.Wpf
             }
 
             _userGamesTitleFilter = UserGamesTitleFilter.Text;
-            
+
             RefreshUserGames();
 
             if (UserGamesTitleFilter.Text.Length == 0)
@@ -1304,7 +1331,29 @@ namespace naLauncher2.Wpf
                 });
 
             AppSettings.Instance.NewGamesCollapsed = _newGamesCollapsed;
-            _ = AppSettings.Instance.Save();
+        }
+
+        void RefreshNewGames()
+        {
+            var newGames = GetNewGames();
+            NewGamesContainer.Children.Clear();
+            PopulateHorizontalSection(NewGamesContainer, newGames,
+                id => $"added {TimeAgo(GameLibrary.Instance.Games[id].Added)}");
+
+            double screenWidth = RootGrid.ActualWidth;
+            double HorizontalContentWidth(int n) => n > 0 ? 2 * _gridOffset + n * (GameInfoControl.ControlWidth + Gap) - Gap : 0;
+            _newGamesMaxScrollX = Math.Max(0, HorizontalContentWidth(newGames.Length) - screenWidth);
+            _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0;
+            UpdateScrollThumbs();
+        }
+
+        void NewGamesOrderDirectionToggle_Click(object sender, MouseButtonEventArgs e)
+        {
+            _newGamesSortDescending = !_newGamesSortDescending;
+            NewGamesOrderDirectionToggle.Text = _newGamesSortDescending ? "\u25BC" : "\u25B2";
+            RefreshNewGames();
+
+            AppSettings.Instance.NewGamesSortDescending = _newGamesSortDescending;
         }
 
         void ToggleRecentGames()
@@ -1331,7 +1380,45 @@ namespace naLauncher2.Wpf
                 });
 
             AppSettings.Instance.RecentGamesCollapsed = _recentGamesCollapsed;
-            _ = AppSettings.Instance.Save();
+        }
+
+        void RefreshRecentGames()
+        {
+            var recentGames = GetRecentGames();
+            RecentGamesContainer.Children.Clear();
+            PopulateHorizontalSection(RecentGamesContainer, recentGames,
+                id => $"played {TimeAgo(GameLibrary.Instance.Games[id].LastPlayed!.Value)}");
+
+            double screenWidth = RootGrid.ActualWidth;
+            double HorizontalContentWidth(int n) => n > 0 ? 2 * _gridOffset + n * (GameInfoControl.ControlWidth + Gap) - Gap : 0;
+            _recentGamesMaxScrollX = Math.Max(0, HorizontalContentWidth(recentGames.Length) - screenWidth);
+            _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0;
+            UpdateScrollThumbs();
+        }
+
+        void RecentGamesInstalledOnlyToggle_Click(object sender, MouseButtonEventArgs e)
+        {
+            _recentGamesInstalledOnly = !_recentGamesInstalledOnly;
+            UpdateRecentGamesInstalledOnlyToggle();
+            RefreshRecentGames();
+
+            AppSettings.Instance.RecentGamesInstalledOnly = _recentGamesInstalledOnly;
+        }
+
+        void UpdateRecentGamesInstalledOnlyToggle()
+        {
+            RecentGamesInstalledOnlyToggle.Foreground = _recentGamesInstalledOnly
+                ? Brushes.White
+                : new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
+        }
+
+        void RecentGamesOrderDirectionToggle_Click(object sender, MouseButtonEventArgs e)
+        {
+            _recentGamesSortDescending = !_recentGamesSortDescending;
+            RecentGamesOrderDirectionToggle.Text = _recentGamesSortDescending ? "\u25BC" : "\u25B2";
+            RefreshRecentGames();
+
+            AppSettings.Instance.RecentGamesSortDescending = _recentGamesSortDescending;
         }
 
         void NewGamesLabel_Click(object sender, MouseButtonEventArgs e) => ToggleNewGames();

@@ -28,7 +28,7 @@ namespace naLauncher2.Wpf
                 x => x,
                 x => Games.Count(xx => xx.Value.Genres?.Contains(x) == true));
 
-        static string[] SupportedGameExtensions { get; set; } =
+        public readonly static string[] SupportedGameExtensions =
         [
             ".lnk",
             ".exe",
@@ -88,7 +88,6 @@ namespace naLauncher2.Wpf
             var backupPath = $"{_libraryPath.Trim(".json")}_{DateTime.Now:yyyyMMddHHmmss}";
 
             var serialized = JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions);
-
 #if DEBUG
             await File.WriteAllTextAsync(backupPath + ".json", serialized);
 #endif
@@ -109,16 +108,18 @@ namespace naLauncher2.Wpf
                 File.Delete(old);
         }
 
-        public async Task<bool> RefreshSources(string[]? sources)
+        public async Task<bool> RefreshSources(string[]? sources, string[]? extensions = null)
         {
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshSources)}()", Log.WriteLine);
 
             if (sources == null || sources.Length == 0)
                 return false;
 
+            extensions ??= SupportedGameExtensions;
+
             var sourceGames = sources
                 .SelectMany(x => Directory.GetFiles(x, "*.*", SearchOption.AllDirectories)
-                .Where(f => SupportedGameExtensions.Contains(Path.GetExtension(f))))
+                .Where(f => extensions.Contains(Path.GetExtension(f))))
                 .ToDictionary(x => Path.GetFileNameWithoutExtension(x), x => x);
 
             bool changed = false;

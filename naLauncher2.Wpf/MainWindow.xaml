@@ -39,13 +39,17 @@
             <Grid Margin="32,32,32,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="New" x:Name="NewGamesLabel" Foreground="White" Opacity="1"
-                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="8,0,16,0"
+                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"
                            Cursor="Hand" MouseLeftButtonUp="NewGamesLabel_Click"/>
-                <Rectangle Grid.Column="1" x:Name="NewGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="1" x:Name="NewGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                <TextBlock Grid.Column="1" x:Name="NewGamesOrderDirectionToggle" Text="&#x25BC;" Foreground="White" Opacity="0.5"
+                           FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,16,0"
+                           MouseLeftButtonUp="NewGamesOrderDirectionToggle_Click"/>
+                <Rectangle Grid.Column="2" x:Name="NewGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="2" x:Name="NewGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>
@@ -61,13 +65,22 @@
             <Grid x:Name="RecentGamesHeaderGrid" Margin="32,16,32,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Recent" x:Name="RecentGamesLabel" Foreground="White" Opacity="1"
-                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="8,0,16,0"
+                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"
                            Cursor="Hand" MouseLeftButtonUp="RecentGamesLabel_Click"/>
-                <Rectangle Grid.Column="1" x:Name="RecentGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                <Rectangle Grid.Column="1" x:Name="RecentGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
+                <TextBlock Grid.Column="1" x:Name="RecentGamesOrderDirectionToggle" Text="&#x25BC;" Foreground="White" Opacity="0.5"
+                           FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
+                           MouseLeftButtonUp="RecentGamesOrderDirectionToggle_Click"/>
+                <TextBlock Grid.Column="2" x:Name="RecentGamesInstalledOnlyToggle" Text="Installed Only" Foreground="White"
+                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Cursor="Hand" Margin="0,0,16,0"
+                           MouseLeftButtonUp="RecentGamesInstalledOnlyToggle_Click"/>
+                <Rectangle Grid.Column="3" x:Name="RecentGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
+                <Rectangle Grid.Column="3" x:Name="RecentGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
                         <DropShadowEffect Color="LightSkyBlue" ShadowDepth="0" BlurRadius="6" Opacity="0.8"/>
                     </Rectangle.Effect>
@@ -118,12 +131,12 @@
                            MouseLeftButtonUp="UserGamesGenresLabel_Click"/>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <TextBlock x:Name="UserGamesOrderDirectionToggle" Text="▲" Foreground="White" Opacity="0.5"
-                               FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
-                               MouseLeftButtonUp="UserGamesOrderDirectionToggle_Click"/>
                     <TextBlock x:Name="UserGamesOrderLabel" Text="Title" Foreground="White" Opacity="1"
                                FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                                Cursor="Hand" MouseLeftButtonUp="UserGamesOrderLabel_Click"/>
+                    <TextBlock x:Name="UserGamesOrderDirectionToggle" Text="▲" Foreground="White" Opacity="0.5"
+                               FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="8,0,0,0"
+                               MouseLeftButtonUp="UserGamesOrderDirectionToggle_Click"/>
                 </StackPanel>
 
                 <Grid Grid.Column="4" VerticalAlignment="Center" Margin="8,0,8,0">

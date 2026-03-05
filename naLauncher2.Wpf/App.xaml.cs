@@ -45,8 +45,10 @@ namespace naLauncher2.Wpf
             }
         }
 
-        protected override void OnExit(ExitEventArgs e)
+        protected override async void OnExit(ExitEventArgs e)
         {
+            await AppSettings.Instance.Save();
+
             Log.WriteLine("App exiting ...");
             base.OnExit(e);
         }

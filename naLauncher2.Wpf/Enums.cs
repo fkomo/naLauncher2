@@ -15,6 +15,6 @@
         Added, // GameInfo.Added
         Completed, // GameInfo.Completed
         Played, // GameInfo.Played.Count
-        Rating, // GameInfo.Rating 
+        Rating, // GameInfo.Rating
     }
 }

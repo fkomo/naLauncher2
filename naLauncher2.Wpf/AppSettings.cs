@@ -8,6 +8,7 @@ namespace naLauncher2.Wpf
         public string? LogPath { get; set; }
         public string? LibraryPath { get; set; }
         public string[] Sources { get; set; } = [];
+        public string[] GameExtensions { get; set; } = GameLibrary.SupportedGameExtensions;
         public string? ImageCachePath { get; set; }
         public bool UserGamesSortDescending { get; set; } = false;
         public GamesSortMode UserGamesSortMode { get; set; } = GamesSortMode.Title;
@@ -15,6 +16,9 @@ namespace naLauncher2.Wpf
         public string[] UserGamesGenreFilter { get; set; } = [];
         public bool NewGamesCollapsed { get; set; } = false;
         public bool RecentGamesCollapsed { get; set; } = false;
+        public bool RecentGamesInstalledOnly { get; set; } = true;
+        public bool NewGamesSortDescending { get; set; } = true;
+        public bool RecentGamesSortDescending { get; set; } = true;
 
         public class TwitchDevSettings
         {
@@ -52,7 +56,11 @@ namespace naLauncher2.Wpf
                 UserGamesGenreFilter = loaded.UserGamesGenreFilter;
                 NewGamesCollapsed = loaded.NewGamesCollapsed;
                 RecentGamesCollapsed = loaded.RecentGamesCollapsed;
+                RecentGamesInstalledOnly = loaded.RecentGamesInstalledOnly;
+                NewGamesSortDescending = loaded.NewGamesSortDescending;
+                RecentGamesSortDescending = loaded.RecentGamesSortDescending;
                 Sources = loaded.Sources;
+                GameExtensions = loaded.GameExtensions;
                 ImageCachePath = loaded.ImageCachePath;
 
                 if (loaded.TwitchDev != null)

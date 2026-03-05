@@ -1,4 +1,3 @@
-using naLauncher2.Wpf.Api;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -34,6 +33,8 @@ namespace naLauncher2.Wpf
 
             SourcesList.ItemsSource = _sources;
 
+            GameExtensionsBox.Text = string.Join(", ", appSettings.GameExtensions);
+
             ExtensionsList.ItemsSource = Enum.GetValues<GameInfoExtension>().Select(e => e.ToString()).ToArray();
 
             if (appSettings.TwitchDev != null)
@@ -42,6 +43,8 @@ namespace naLauncher2.Wpf
                 TwitchClientSecretBox.Text = appSettings.TwitchDev.ClientSecret;
             }
         }
+
+        // TODO add "Restore" option - users then chooses from one of present .bak game library files to restore/load
 
         void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
 
@@ -134,6 +137,8 @@ namespace naLauncher2.Wpf
             AppSettings.Instance.ImageCachePath = SelectedImageCachePath;
             AppSettings.Instance.LogPath = SelectedLogPath;
             AppSettings.Instance.Sources = SelectedSources;
+            AppSettings.Instance.GameExtensions = GameExtensionsBox.Text
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
             if (TwitchClientIdBox.Text != null && TwitchClientSecretBox.Text != null)
             {
