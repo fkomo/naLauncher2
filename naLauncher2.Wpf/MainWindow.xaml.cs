@@ -1043,7 +1043,6 @@ namespace naLauncher2.Wpf
         void UpdateGenresLabel()
         {
             UserGamesGenresLabel.Text = _userGamesGenreFilter.Count == 0 ? "All genres" : string.Join("  |  ", _userGamesGenreFilter);
-            UserGamesGenresLabel.Foreground = Brushes.White;
         }
 
         /// <summary>
@@ -1407,9 +1406,7 @@ namespace naLauncher2.Wpf
 
         void UpdateRecentGamesInstalledOnlyToggle()
         {
-            RecentGamesInstalledOnlyToggle.Foreground = _recentGamesInstalledOnly
-                ? Brushes.White
-                : new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
+            RecentGamesInstalledOnlyToggle.Tag = _recentGamesInstalledOnly ? null : "inactive";
         }
 
         void RecentGamesOrderDirectionToggle_Click(object sender, MouseButtonEventArgs e)

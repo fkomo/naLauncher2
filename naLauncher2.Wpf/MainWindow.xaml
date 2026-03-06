@@ -26,6 +26,43 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="GroupLabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="LightSkyBlue"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="CollapsedGroupLabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#888888"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="LightSkyBlue"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="DirectionToggleStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Opacity" Value="0.5"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="LightSkyBlue"/>
+                    <Setter Property="Opacity" Value="1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ToggleLabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Style.Triggers>
+                <Trigger Property="Tag" Value="inactive">
+                    <Setter Property="Foreground" Value="#888888"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="LightSkyBlue"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
     <Grid x:Name="RootGrid" Background="#F0181D1F" MouseRightButtonUp="RootGrid_MouseRightButtonUp" MouseLeftButtonDown="RootGrid_MouseLeftButtonDown">
         <Grid.RowDefinitions>
@@ -42,10 +79,10 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="New" x:Name="NewGamesLabel" Foreground="White" Opacity="1"
+                <TextBlock Grid.Column="0" Text="New" x:Name="NewGamesLabel" Style="{StaticResource GroupLabelStyle}"
                            FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"
                            Cursor="Hand" MouseLeftButtonUp="NewGamesLabel_Click"/>
-                <TextBlock Grid.Column="1" x:Name="NewGamesOrderDirectionToggle" Text="&#x25BC;" Foreground="White" Opacity="0.5"
+                <TextBlock Grid.Column="1" x:Name="NewGamesOrderDirectionToggle" Text="&#x25BC;" Style="{StaticResource DirectionToggleStyle}"
                            FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,16,0"
                            MouseLeftButtonUp="NewGamesOrderDirectionToggle_Click"/>
                 <Rectangle Grid.Column="2" x:Name="NewGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
@@ -69,13 +106,13 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Recent" x:Name="RecentGamesLabel" Foreground="White" Opacity="1"
+                <TextBlock Grid.Column="0" Text="Recent" x:Name="RecentGamesLabel" Style="{StaticResource GroupLabelStyle}"
                            FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"
                            Cursor="Hand" MouseLeftButtonUp="RecentGamesLabel_Click"/>
-                <TextBlock Grid.Column="1" x:Name="RecentGamesOrderDirectionToggle" Text="&#x25BC;" Foreground="White" Opacity="0.5"
+                <TextBlock Grid.Column="1" x:Name="RecentGamesOrderDirectionToggle" Text="&#x25BC;" Style="{StaticResource DirectionToggleStyle}"
                            FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
                            MouseLeftButtonUp="RecentGamesOrderDirectionToggle_Click"/>
-                <TextBlock Grid.Column="2" x:Name="RecentGamesInstalledOnlyToggle" Text="Installed Only" Foreground="White"
+                <TextBlock Grid.Column="2" x:Name="RecentGamesInstalledOnlyToggle" Text="Installed Only" Style="{StaticResource ToggleLabelStyle}"
                            FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                            Cursor="Hand" Margin="0,0,16,0"
                            MouseLeftButtonUp="RecentGamesInstalledOnlyToggle_Click"/>
@@ -109,32 +146,32 @@
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="CollapsedNewLabel" Text="New"
-                               Foreground="#888888" FontSize="16" FontWeight="SemiBold"
+                               Style="{StaticResource CollapsedGroupLabelStyle}" FontSize="16" FontWeight="SemiBold"
                                VerticalAlignment="Center" Cursor="Hand"
                                Visibility="Collapsed" Margin="0,0,16,0"
                                MouseLeftButtonUp="CollapsedNewLabel_Click"/>
                     <TextBlock x:Name="CollapsedRecentLabel" Text="Recent"
-                               Foreground="#888888" FontSize="16" FontWeight="SemiBold"
+                               Style="{StaticResource CollapsedGroupLabelStyle}" FontSize="16" FontWeight="SemiBold"
                                VerticalAlignment="Center" Cursor="Hand"
                                Visibility="Collapsed" Margin="0,0,16,0"
                                MouseLeftButtonUp="CollapsedRecentLabel_Click"/>
                 </StackPanel>
 
-                <TextBlock Grid.Column="1" Text="Installed" x:Name="UserGamesLabel" Foreground="White" Opacity="1"
+                <TextBlock Grid.Column="1" Text="Installed" x:Name="UserGamesLabel" Style="{StaticResource GroupLabelStyle}"
                            FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                            Cursor="Hand" Margin="0,0,16,0"
                            MouseLeftButtonUp="UserGamesLabel_Click"/>
 
-                <TextBlock Grid.Column="2" x:Name="UserGamesGenresLabel" Text="All genres" Foreground="White" Opacity="1"
+                <TextBlock Grid.Column="2" x:Name="UserGamesGenresLabel" Text="All genres" Style="{StaticResource GroupLabelStyle}"
                            FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                            Cursor="Hand" Margin="0,0,16,0"
                            MouseLeftButtonUp="UserGamesGenresLabel_Click"/>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <TextBlock x:Name="UserGamesOrderLabel" Text="Title" Foreground="White" Opacity="1"
+                    <TextBlock x:Name="UserGamesOrderLabel" Text="Title" Style="{StaticResource GroupLabelStyle}"
                                FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                                Cursor="Hand" MouseLeftButtonUp="UserGamesOrderLabel_Click"/>
-                    <TextBlock x:Name="UserGamesOrderDirectionToggle" Text="▲" Foreground="White" Opacity="0.5"
+                    <TextBlock x:Name="UserGamesOrderDirectionToggle" Text="▲" Style="{StaticResource DirectionToggleStyle}"
                                FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="8,0,0,0"
                                MouseLeftButtonUp="UserGamesOrderDirectionToggle_Click"/>
                 </StackPanel>
