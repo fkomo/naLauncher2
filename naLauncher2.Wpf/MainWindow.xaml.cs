@@ -660,13 +660,18 @@ namespace naLauncher2.Wpf
 
         void ShowGameContextMenu(Point pos)
         {
-            Canvas.SetLeft(GameContextMenuPanel, pos.X);
-            Canvas.SetTop(GameContextMenuPanel, pos.Y);
             UserGamesFilterPanel.Visibility = Visibility.Collapsed;
             UserGamesOrderPanel.Visibility = Visibility.Collapsed;
             UserGamesGenresPanel.Visibility = Visibility.Collapsed;
             GameContextMenuPanel.Visibility = Visibility.Visible;
             DropdownOverlay.Visibility = Visibility.Visible;
+
+            GameContextMenuPanel.UpdateLayout();
+
+            double x = Math.Min(pos.X, RootGrid.ActualWidth - GameContextMenuPanel.ActualWidth - 16);
+            double y = Math.Min(pos.Y, RootGrid.ActualHeight - GameContextMenuPanel.ActualHeight - 16);
+            Canvas.SetLeft(GameContextMenuPanel, Math.Max(0, x));
+            Canvas.SetTop(GameContextMenuPanel, Math.Max(0, y));
 
             if (_contextMenuTargetId is not null && GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
             {
@@ -887,7 +892,7 @@ namespace naLauncher2.Wpf
             RefreshAllSections();
         }
 
-        void RefreshAllSections()
+        internal void RefreshAllSections()
         {
             var newGames = GetNewGames();
             var recentGames = GetRecentGames();

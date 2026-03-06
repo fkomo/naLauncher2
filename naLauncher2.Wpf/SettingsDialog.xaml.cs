@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 
@@ -12,6 +13,7 @@ namespace naLauncher2.Wpf
         public string[] SelectedSources => [.. _sources];
 
         readonly ObservableCollection<string> _sources = [];
+        readonly ObservableCollection<string> _extensions = [];
 
         public SettingsDialog()
         {
@@ -35,16 +37,24 @@ namespace naLauncher2.Wpf
 
             GameExtensionsBox.Text = string.Join(", ", appSettings.GameExtensions);
 
-            ExtensionsList.ItemsSource = Enum.GetValues<GameInfoExtension>().Select(e => e.ToString()).ToArray();
+            foreach (var ext in GameLibrary.Instance.ExtensionsUsed)
+                _extensions.Add(ext);
+
+            ExtensionsList.ItemsSource = _extensions;
 
             if (appSettings.TwitchDev != null)
             {
                 TwitchClientIdBox.Text = appSettings.TwitchDev.ClientId;
                 TwitchClientSecretBox.Text = appSettings.TwitchDev.ClientSecret;
             }
+
+            _sources.CollectionChanged += (_, _) => MarkDirty();
+            GameExtensionsBox.TextChanged += (_, _) => MarkDirty();
+            TwitchClientIdBox.TextChanged += (_, _) => MarkDirty();
+            TwitchClientSecretBox.TextChanged += (_, _) => MarkDirty();
         }
 
-        // TODO add "Restore" option - users then chooses from one of present .bak game library files to restore/load
+        void MarkDirty() => SaveButton.Visibility = Visibility.Visible;
 
         void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
 
@@ -61,7 +71,50 @@ namespace naLauncher2.Wpf
             {
                 SelectedLibraryPath = dialog.FileName;
                 LibraryPathText.Text = dialog.FileName;
+                MarkDirty();
             }
+        }
+
+        async void RestoreLibrary_Click(object sender, MouseButtonEventArgs e)
+        {
+            var libraryPath = AppSettings.Instance.LibraryPath;
+            if (libraryPath == null)
+            {
+                new MessageDialog("Error", "No game library is currently loaded.") { Owner = this }.ShowDialog();
+                return;
+            }
+
+            var libraryDir = Path.GetDirectoryName(Path.GetFullPath(libraryPath)) ?? ".";
+
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Select backup file to restore",
+                Filter = "Backup files (*.bak)|*.bak",
+                InitialDirectory = libraryDir,
+                CheckFileExists = true,
+            };
+
+            if (dialog.ShowDialog(this) != true)
+                return;
+
+            var confirmDialog = new ConfirmationDialog($"Restore library from '{Path.GetFileName(dialog.FileName)}'?") { Owner = this };
+            if (confirmDialog.ShowDialog() != true)
+                return;
+
+            await GameLibrary.Instance.Restore(dialog.FileName);
+            await GameLibrary.Instance.Save();
+
+            var fileBaseName = Path.GetFileNameWithoutExtension(dialog.FileName);
+            var timestampPart = fileBaseName.Split('_')[^1];
+            var dateText = DateTime.TryParseExact(timestampPart, "yyyyMMddHHmmss",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var backupDate)
+                ? backupDate.ToString("g")
+                : fileBaseName;
+
+            new MessageDialog("Restored", $"Library restored to {dateText}.") { Owner = this }.ShowDialog();
+
+            (Owner as MainWindow)?.RefreshAllSections();
         }
 
         void NewLibrary_Click(object sender, MouseButtonEventArgs e)
@@ -77,6 +130,7 @@ namespace naLauncher2.Wpf
             {
                 SelectedLibraryPath = dialog.FileName;
                 LibraryPathText.Text = dialog.FileName;
+                MarkDirty();
             }
         }
 
@@ -91,6 +145,7 @@ namespace naLauncher2.Wpf
             {
                 SelectedImageCachePath = dialog.FolderName;
                 ImageCachePathText.Text = dialog.FolderName;
+                MarkDirty();
             }
         }
 
@@ -105,6 +160,7 @@ namespace naLauncher2.Wpf
             {
                 SelectedLogPath = dialog.FolderName;
                 LogPathText.Text = dialog.FolderName;
+                MarkDirty();
             }
         }
 
@@ -151,6 +207,9 @@ namespace naLauncher2.Wpf
                 App.SettingsChanged();
             }
 
+            if (_extensionsToRemove.Count > 0)
+                await GameLibrary.Instance.RemoveExtensions(_extensionsToRemove.ToArray());
+
             await AppSettings.Instance.Save();
 
             DialogResult = true;
@@ -158,7 +217,9 @@ namespace naLauncher2.Wpf
 
         void Cancel_Click(object sender, MouseButtonEventArgs e) => DialogResult = false;
 
-        async void RemoveExtension_Click(object sender, MouseButtonEventArgs e)
+        readonly List<string> _extensionsToRemove = [];
+
+        void RemoveExtension_Click(object sender, MouseButtonEventArgs e)
         {
             if (sender is not FrameworkElement { Tag: string extensionName })
                 return;
@@ -167,7 +228,10 @@ namespace naLauncher2.Wpf
             if (dialog.ShowDialog() != true)
                 return;
 
-            await GameLibrary.Instance.RemoveExtensions(extensionName);
+            _extensionsToRemove.Add(extensionName);
+            _extensions.Remove(extensionName);
+
+            MarkDirty();
         }
 
         void Window_KeyDown(object sender, KeyEventArgs e)

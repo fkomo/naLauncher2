@@ -28,6 +28,10 @@ namespace naLauncher2.Wpf
                 x => x,
                 x => Games.Count(xx => xx.Value.Genres?.Contains(x) == true));
 
+        public IEnumerable<string> ExtensionsUsed => Games
+            .SelectMany(x => x.Value.Extensions.Keys)
+            .Distinct();
+
         public readonly static string[] SupportedGameExtensions =
         [
             ".lnk",
@@ -40,6 +44,8 @@ namespace naLauncher2.Wpf
         string? _libraryPath;
 
         static readonly GameLibrary _instance = new();
+        
+
         public static GameLibrary Instance => _instance;
 
         public async Task Load(string path)
@@ -63,10 +69,36 @@ namespace naLauncher2.Wpf
 
             _libraryPath = path;
 
-            Games = JsonSerializer.Deserialize<ConcurrentDictionary<string, GameInfo>>(libraryContent, options: App.JsonSerializerOptions)
-                ?? throw new InvalidOperationException("Failed to deserialize game library.");
+            Games = Deserialize(libraryContent);
 
             Log.WriteLine($"Game library loaded - {Games.Count} games");
+        }
+
+        static ConcurrentDictionary<string, GameInfo> Deserialize(string libraryContent)
+        {
+            return JsonSerializer.Deserialize<ConcurrentDictionary<string, GameInfo>>(libraryContent, options: App.JsonSerializerOptions)
+                ?? throw new InvalidOperationException("Failed to deserialize game library.");
+        }
+
+        public async Task Restore(string backupPath)
+        {
+            if (!File.Exists(backupPath))
+            {
+                Log.WriteLine($"Backup file not found at '{backupPath}' - cannot restore library");
+                return;
+            }
+
+            if (_libraryPath is null)
+                return;
+
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(Restore)}('{backupPath}')", Log.WriteLine);
+
+            var backupContent = await File.ReadAllBytesAsync(backupPath);
+            var libraryContent = GZip.Decompress(backupContent);
+
+            Games = Deserialize(libraryContent);
+
+            Log.WriteLine($"Game library restored - {Games.Count} games");
         }
 
         public async Task Save(bool silent = false)

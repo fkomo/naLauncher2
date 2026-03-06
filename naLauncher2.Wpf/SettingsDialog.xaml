@@ -57,6 +57,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="0" BorderBrush="#44FFFFFF" BorderThickness="0,0,0,1" Padding="4,4">
                     <TextBlock x:Name="LibraryPathText" Foreground="White" FontSize="13"
@@ -68,6 +69,9 @@
                 <TextBlock Grid.Column="2" Style="{StaticResource SmallButtonStyle}" Text="New…"
                            Foreground="LightSkyBlue" Margin="4,0,0,0"
                            MouseLeftButtonUp="NewLibrary_Click"/>
+                <TextBlock Grid.Column="3" Style="{StaticResource SmallButtonStyle}" Text="Restore…"
+                           Foreground="LightSkyBlue" Margin="4,0,0,0"
+                           MouseLeftButtonUp="RestoreLibrary_Click"/>
             </Grid>
 
             <TextBlock Text="IMAGE CACHE PATH" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="SemiBold" Margin="24,0,24,8"/>
@@ -189,8 +193,8 @@
 
             <Rectangle Height="1" Fill="#FF404448"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <TextBlock Style="{StaticResource ButtonStyle}" Text="Save" Foreground="LightSkyBlue" MouseLeftButtonUp="Save_Click"/>
-                <TextBlock Style="{StaticResource ButtonStyle}" Text="Cancel" MouseLeftButtonUp="Cancel_Click"/>
+                <TextBlock x:Name="SaveButton" Style="{StaticResource ButtonStyle}" Visibility="Collapsed" Text="Save" Foreground="LightSkyBlue" MouseLeftButtonUp="Save_Click"/>
+                <TextBlock Style="{StaticResource ButtonStyle}" Text="Close" MouseLeftButtonUp="Cancel_Click"/>
             </StackPanel>
         </StackPanel>
     </Border>
