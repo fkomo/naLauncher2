@@ -5,7 +5,7 @@
         AllowsTransparency="True"
         Background="Transparent"
         SizeToContent="Height"
-        Width="640"
+        Width="720"
         WindowStartupLocation="CenterOwner"
         KeyDown="Window_KeyDown">
     <Window.Resources>

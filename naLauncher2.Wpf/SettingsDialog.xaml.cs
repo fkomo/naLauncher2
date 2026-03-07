@@ -86,33 +86,18 @@ namespace naLauncher2.Wpf
 
             var libraryDir = Path.GetDirectoryName(Path.GetFullPath(libraryPath)) ?? ".";
 
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Title = "Select backup file to restore",
-                Filter = "Backup files (*.bak)|*.bak",
-                InitialDirectory = libraryDir,
-                CheckFileExists = true,
-            };
-
-            if (dialog.ShowDialog(this) != true)
+            var restoreDialog = new RestoreDialog(libraryDir) { Owner = this };
+            if (restoreDialog.ShowDialog() != true)
                 return;
 
-            var confirmDialog = new ConfirmationDialog($"Restore library from '{Path.GetFileName(dialog.FileName)}'?") { Owner = this };
+            var confirmDialog = new ConfirmationDialog($"Restore library from backup of {restoreDialog.SelectedDisplayDate}?") { Owner = this };
             if (confirmDialog.ShowDialog() != true)
                 return;
 
-            await GameLibrary.Instance.Restore(dialog.FileName);
+            await GameLibrary.Instance.Restore(restoreDialog.SelectedBackupPath!);
             await GameLibrary.Instance.Save();
 
-            var fileBaseName = Path.GetFileNameWithoutExtension(dialog.FileName);
-            var timestampPart = fileBaseName.Split('_')[^1];
-            var dateText = DateTime.TryParseExact(timestampPart, "yyyyMMddHHmmss",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None, out var backupDate)
-                ? backupDate.ToString("g")
-                : fileBaseName;
-
-            new MessageDialog("Restored", $"Library restored to {dateText}.") { Owner = this }.ShowDialog();
+            new MessageDialog("Restored", $"Library restored to {restoreDialog.SelectedDisplayDate}.") { Owner = this }.ShowDialog();
 
             (Owner as MainWindow)?.RefreshAllSections();
         }

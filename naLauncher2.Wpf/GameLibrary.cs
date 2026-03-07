@@ -117,18 +117,36 @@ namespace naLauncher2.Wpf
             if (_libraryPath is null)
                 return;
 
-            var backupPath = $"{_libraryPath.Trim(".json")}_{DateTime.Now:yyyyMMddHHmmss}";
+            var backupDir = Path.GetDirectoryName(Path.GetFullPath(_libraryPath)) ?? ".";
+            var backupBaseName = Path.GetFileName(_libraryPath.Trim(".json").ToString()) + "_";
 
             var serialized = JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions);
+            var compressed = GZip.Compress(serialized);
+            var newHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(compressed));
+
+            var lastBackup = Directory.GetFiles(backupDir, "*.bak")
+                .Where(f => Path.GetFileName(f).StartsWith(backupBaseName))
+                .Order()
+                .LastOrDefault();
+
+            if (lastBackup != null)
+            {
+                var lastBytes = await File.ReadAllBytesAsync(lastBackup);
+                if (Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(lastBytes)) == newHash)
+                {
+                    Log.WriteLine("Game library backup skipped - no changes since last backup");
+                    return;
+                }
+            }
+
+            var backupPath = $"{_libraryPath.Trim(".json")}_{DateTime.Now:yyyyMMddHHmmss}";
 #if DEBUG
             await File.WriteAllTextAsync(backupPath + ".json", serialized);
 #endif
-            await File.WriteAllBytesAsync(backupPath + ".bak", GZip.Compress(serialized));
+            await File.WriteAllBytesAsync(backupPath + ".bak", compressed);
 
             Log.WriteLine($"Game library backed up to '{backupPath}'");
 
-            var backupDir = Path.GetDirectoryName(Path.GetFullPath(_libraryPath)) ?? ".";
-            var backupBaseName = Path.GetFileName(_libraryPath.Trim(".json").ToString()) + "_";
             const int maxBackups = 10;
 
             var backupFiles = Directory.GetFiles(backupDir, "*.bak")
@@ -137,7 +155,14 @@ namespace naLauncher2.Wpf
                 .ToArray();
 
             foreach (var old in backupFiles.Take(Math.Max(0, backupFiles.Length - maxBackups)))
+            {
                 File.Delete(old);
+#if DEBUG
+                var jsonBackup = old[..^".bak".Length] + ".json";
+                if (File.Exists(jsonBackup))
+                    File.Delete(jsonBackup);
+#endif
+            }
         }
 
         public async Task<bool> RefreshSources(string[]? sources, string[]? extensions = null)
