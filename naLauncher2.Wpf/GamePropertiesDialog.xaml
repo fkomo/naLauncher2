@@ -143,8 +143,8 @@
 
             <Rectangle Height="1" Fill="#FF404448"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <TextBlock Style="{StaticResource ButtonStyle}" Text="Save" Foreground="LightSkyBlue" MouseLeftButtonUp="Save_Click"/>
-                <TextBlock Style="{StaticResource ButtonStyle}" Text="Cancel" MouseLeftButtonUp="Cancel_Click"/>
+                <TextBlock x:Name="SaveButton" Style="{StaticResource ButtonStyle}" Text="Save" Foreground="LightSkyBlue" MouseLeftButtonUp="Save_Click" Visibility="Collapsed"/>
+                <TextBlock Style="{StaticResource ButtonStyle}" Text="Close" MouseLeftButtonUp="Close_Click"/>
             </StackPanel>
         </StackPanel>
     </Border>

@@ -8,6 +8,12 @@ namespace naLauncher2.Wpf
     {
         readonly string _originalId;
         readonly Dictionary<string, string> _pendingExtensions;
+        readonly string _originalDeveloper;
+        readonly string _originalGenres;
+        readonly string _originalRating;
+        readonly string _originalSummary;
+        readonly string _originalImagePath;
+        readonly int _originalExtensionsCount;
 
         public string NewId => TitleBox.Text.Trim();
         public GameInfo Game { get; }
@@ -17,15 +23,21 @@ namespace naLauncher2.Wpf
             _originalId = id;
             Game = game;
             _pendingExtensions = new Dictionary<string, string>(game.Extensions);
+            _originalDeveloper = game.Developer ?? string.Empty;
+            _originalGenres = game.Genres.Length > 0 ? string.Join(", ", game.Genres) : string.Empty;
+            _originalRating = game.Rating.HasValue ? game.Rating.Value.ToString() : string.Empty;
+            _originalSummary = game.Summary ?? string.Empty;
+            _originalImagePath = game.ImagePath ?? string.Empty;
+            _originalExtensionsCount = game.Extensions.Count;
 
             InitializeComponent();
 
             TitleBox.Text = id;
-            DeveloperBox.Text = game.Developer ?? string.Empty;
-            GenresBox.Text = game.Genres.Length > 0 ? string.Join(", ", game.Genres) : string.Empty;
-            RatingBox.Text = game.Rating.HasValue ? game.Rating.Value.ToString() : string.Empty;
-            SummaryBox.Text = game.Summary ?? string.Empty;
-            ImagePathBox.Text = game.ImagePath ?? string.Empty;
+            DeveloperBox.Text = _originalDeveloper;
+            GenresBox.Text = _originalGenres;
+            RatingBox.Text = _originalRating;
+            SummaryBox.Text = _originalSummary;
+            ImagePathBox.Text = _originalImagePath;
             ShortcutText.Text = game.Shortcut ?? "(not installed)";
             AddedText.Text = game.Added.ToString("yyyy-MM-dd HH:mm");
             CompletedText.Text = game.Completed.HasValue
@@ -41,6 +53,13 @@ namespace naLauncher2.Wpf
                 ExtensionsList.Visibility = Visibility.Visible;
                 ExtensionsList.ItemsSource = _pendingExtensions;
             }
+
+            TitleBox.TextChanged += (_, _) => UpdateSaveButton();
+            DeveloperBox.TextChanged += (_, _) => UpdateSaveButton();
+            GenresBox.TextChanged += (_, _) => UpdateSaveButton();
+            RatingBox.TextChanged += (_, _) => UpdateSaveButton();
+            SummaryBox.TextChanged += (_, _) => UpdateSaveButton();
+            ImagePathBox.TextChanged += (_, _) => UpdateSaveButton();
 
             Loaded += (_, _) => { TitleBox.Focus(); TitleBox.SelectAll(); };
         }
@@ -59,6 +78,7 @@ namespace naLauncher2.Wpf
                     ExtensionsLabel.Visibility = Visibility.Collapsed;
                     ExtensionsList.Visibility = Visibility.Collapsed;
                 }
+                UpdateSaveButton();
             }
         }
 
@@ -78,19 +98,39 @@ namespace naLauncher2.Wpf
                 ImagePathBox.Text = dialog.FileName;
         }
 
+        bool HasChanges() =>
+            TitleBox.Text.Trim() != _originalId ||
+            DeveloperBox.Text != _originalDeveloper ||
+            GenresBox.Text != _originalGenres ||
+            RatingBox.Text != _originalRating ||
+            SummaryBox.Text != _originalSummary ||
+            ImagePathBox.Text != _originalImagePath ||
+            _pendingExtensions.Count != _originalExtensionsCount;
+
+        void UpdateSaveButton() =>
+            SaveButton.Visibility = HasChanges() ? Visibility.Visible : Visibility.Collapsed;
+
         void Save_Click(object sender, MouseButtonEventArgs e)
         {
+            var confirm = new ConfirmationDialog("Save changes?") { Owner = this };
+            if (confirm.ShowDialog() != true)
+                return;
             ApplyChanges();
             DialogResult = true;
         }
 
-        void Cancel_Click(object sender, MouseButtonEventArgs e) => DialogResult = false;
+        void Close_Click(object sender, MouseButtonEventArgs e) => DialogResult = false;
 
         void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
                 if (FocusManager.GetFocusedElement(this) is TextBox tb && tb.AcceptsReturn)
+                    return;
+                if (!HasChanges())
+                    return;
+                var confirm = new ConfirmationDialog("Save changes?") { Owner = this };
+                if (confirm.ShowDialog() != true)
                     return;
                 ApplyChanges();
                 DialogResult = true;
