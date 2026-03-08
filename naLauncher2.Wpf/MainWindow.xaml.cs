@@ -207,7 +207,7 @@ namespace naLauncher2.Wpf
         {
             var games = GameLibrary.Instance.Games
                 .Where(x => (!_recentGamesInstalledOnly || x.Value.Installed) && !x.Value.NotPlayed)
-                .OrderBy(x => x.Value.Added);
+                .OrderBy(x => x.Value.LastPlayed);
 
             return (_recentGamesSortDescending ? games.Reverse() : (IEnumerable<KeyValuePair<string, GameInfo>>)games)
                 .Select(x => x.Key)
