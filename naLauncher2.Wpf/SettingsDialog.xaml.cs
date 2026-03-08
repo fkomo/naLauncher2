@@ -54,7 +54,11 @@ namespace naLauncher2.Wpf
             TwitchClientSecretBox.TextChanged += (_, _) => MarkDirty();
         }
 
-        void MarkDirty() => SaveButton.Visibility = Visibility.Visible;
+        void MarkDirty()
+        {
+            SaveButton.Visibility = Visibility.Visible;
+            CloseButton.Text = "Cancel";
+        }
 
         void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
 

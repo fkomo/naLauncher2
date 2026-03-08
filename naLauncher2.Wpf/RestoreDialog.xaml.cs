@@ -15,6 +15,8 @@ namespace naLauncher2.Wpf
         public RestoreDialog(string libraryDir)
         {
             InitializeComponent();
+            Loaded += (_, _) => WindowDimHelper.Dim(Owner);
+            Closed += (_, _) => WindowDimHelper.Undim(Owner);
 
             var entries = Directory.GetFiles(libraryDir, "*.bak")
                 .Select(BackupEntry.From)

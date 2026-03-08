@@ -10,6 +10,8 @@ namespace naLauncher2.Wpf
             InitializeComponent();
             TitleText.Text = title;
             MessageText.Text = message;
+            Loaded += (_, _) => WindowDimHelper.Dim(Owner);
+            Closed += (_, _) => WindowDimHelper.Undim(Owner);
         }
 
         void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();

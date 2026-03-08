@@ -46,6 +46,7 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
+    <Grid>
     <Border Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1">
         <StackPanel>
             <TextBlock Text="Settings" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="24,20,24,20"
@@ -194,8 +195,10 @@
             <Rectangle Height="1" Fill="#FF404448"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <TextBlock x:Name="SaveButton" Style="{StaticResource ButtonStyle}" Visibility="Collapsed" Text="Save" Foreground="LightSkyBlue" MouseLeftButtonUp="Save_Click"/>
-                <TextBlock Style="{StaticResource ButtonStyle}" Text="Close" MouseLeftButtonUp="Cancel_Click"/>
+                <TextBlock x:Name="CloseButton" Style="{StaticResource ButtonStyle}" Text="Close" MouseLeftButtonUp="Cancel_Click"/>
             </StackPanel>
         </StackPanel>
     </Border>
+    <Border x:Name="DimOverlay" Background="#80000000" Visibility="Collapsed"/>
+    </Grid>
 </Window>

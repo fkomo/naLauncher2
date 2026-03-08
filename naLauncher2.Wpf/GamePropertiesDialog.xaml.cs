@@ -49,7 +49,6 @@ namespace naLauncher2.Wpf
 
             if (_pendingExtensions.Count > 0)
             {
-                ExtensionsLabel.Visibility = Visibility.Visible;
                 ExtensionsList.Visibility = Visibility.Visible;
                 ExtensionsList.ItemsSource = _pendingExtensions;
             }
@@ -60,6 +59,15 @@ namespace naLauncher2.Wpf
             RatingBox.TextChanged += (_, _) => UpdateSaveButton();
             SummaryBox.TextChanged += (_, _) => UpdateSaveButton();
             ImagePathBox.TextChanged += (_, _) => UpdateSaveButton();
+
+            ExtensionKeyBox.KeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Enter) { ExtensionValueBox.Focus(); e.Handled = true; }
+            };
+            ExtensionValueBox.KeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Enter) { AddExtension(); e.Handled = true; }
+            };
 
             Loaded += (_, _) => { TitleBox.Focus(); TitleBox.SelectAll(); };
         }
@@ -75,11 +83,30 @@ namespace naLauncher2.Wpf
                 ExtensionsList.ItemsSource = _pendingExtensions;
                 if (_pendingExtensions.Count == 0)
                 {
-                    ExtensionsLabel.Visibility = Visibility.Collapsed;
                     ExtensionsList.Visibility = Visibility.Collapsed;
                 }
                 UpdateSaveButton();
             }
+        }
+
+        void AddExtension_Click(object sender, MouseButtonEventArgs e) => AddExtension();
+
+        void AddExtension()
+        {
+            var key = ExtensionKeyBox.Text.Trim();
+            var value = ExtensionValueBox.Text.Trim();
+            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
+                return;
+
+            _pendingExtensions[key] = value;
+            ExtensionsList.ItemsSource = null;
+            ExtensionsList.ItemsSource = _pendingExtensions;
+            ExtensionsList.Visibility = Visibility.Visible;
+
+            ExtensionKeyBox.Clear();
+            ExtensionValueBox.Clear();
+            ExtensionKeyBox.Focus();
+            UpdateSaveButton();
         }
 
         void BrowseImagePath_Click(object sender, MouseButtonEventArgs e)
@@ -107,8 +134,12 @@ namespace naLauncher2.Wpf
             ImagePathBox.Text != _originalImagePath ||
             _pendingExtensions.Count != _originalExtensionsCount;
 
-        void UpdateSaveButton() =>
-            SaveButton.Visibility = HasChanges() ? Visibility.Visible : Visibility.Collapsed;
+        void UpdateSaveButton()
+        {
+            var hasChanges = HasChanges();
+            SaveButton.Visibility = hasChanges ? Visibility.Visible : Visibility.Collapsed;
+            CloseButton.Text = hasChanges ? "Cancel" : "Close";
+        }
 
         void Save_Click(object sender, MouseButtonEventArgs e)
         {

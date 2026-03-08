@@ -59,6 +59,7 @@
             <Setter Property="Padding" Value="4,4"/>
         </Style>
     </Window.Resources>
+    <Grid>
     <Border Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1">
         <StackPanel>
             <TextBlock Text="Properties" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="24,20,24,20"
@@ -109,7 +110,7 @@
             <TextBlock Style="{StaticResource LabelStyle}" Text="PLAY HISTORY"/>
             <TextBlock x:Name="PlayedText" Style="{StaticResource ReadOnlyValueStyle}"/>
 
-            <TextBlock x:Name="ExtensionsLabel" Style="{StaticResource LabelStyle}" Text="EXTENSIONS" Visibility="Collapsed"/>
+            <TextBlock x:Name="ExtensionsLabel" Style="{StaticResource LabelStyle}" Text="EXTENSIONS"/>
             <ItemsControl x:Name="ExtensionsList" Margin="24,0,24,16" Visibility="Collapsed">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -140,12 +141,32 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <Grid Margin="24,0,24,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="ExtensionKeyBox" Grid.Column="0"
+                         Foreground="White" FontSize="12" Background="Transparent"
+                         BorderThickness="0,0,0,1" BorderBrush="#44FFFFFF"
+                         CaretBrush="White" SelectionBrush="LightSkyBlue" Padding="0,2"/>
+                <TextBox x:Name="ExtensionValueBox" Grid.Column="1"
+                         Foreground="White" FontSize="12" Background="Transparent"
+                         BorderThickness="0,0,0,1" BorderBrush="#44FFFFFF"
+                         CaretBrush="White" SelectionBrush="LightSkyBlue" Padding="4,2" Margin="4,0,0,0"/>
+                <TextBlock Grid.Column="2" Style="{StaticResource SmallButtonStyle}" Text="+"
+                           Foreground="LightSkyBlue" Margin="8,0,0,0"
+                           MouseLeftButtonUp="AddExtension_Click"/>
+            </Grid>
 
             <Rectangle Height="1" Fill="#FF404448"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <TextBlock x:Name="SaveButton" Style="{StaticResource ButtonStyle}" Text="Save" Foreground="LightSkyBlue" MouseLeftButtonUp="Save_Click" Visibility="Collapsed"/>
-                <TextBlock Style="{StaticResource ButtonStyle}" Text="Close" MouseLeftButtonUp="Close_Click"/>
+                <TextBlock x:Name="CloseButton" Style="{StaticResource ButtonStyle}" Text="Close" MouseLeftButtonUp="Close_Click"/>
             </StackPanel>
         </StackPanel>
     </Border>
+    <Border x:Name="DimOverlay" Background="#80000000" Visibility="Collapsed"/>
+    </Grid>
 </Window>
