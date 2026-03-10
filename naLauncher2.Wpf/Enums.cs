@@ -6,6 +6,8 @@
         Removed, 
         Completed,
         MissingData,
+        Steam,
+        Igdb,
         All
     }
 

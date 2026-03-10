@@ -34,4 +34,8 @@
 	  </Reference>
 	</ItemGroup>
 
+	<ItemGroup>
+	  <PackageReference Include="PuppeteerSharp" Version="24.38.0" />
+	</ItemGroup>
+
 </Project>

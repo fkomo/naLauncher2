@@ -87,28 +87,27 @@ namespace naLauncher2.Wpf.Api
                         $"fields name, artworks, cover, genres, total_rating, summary, involved_companies, url; where id = {gameId};"))?
                         .SingleOrDefault();
 
-                if (gameDetail != null)
-                {
-                    var gameData = new IgdbGameData(gameTitle)
-                    {
-                        Id = gameId,
-                        Summary = gameDetail.summary,
-                        Rating = gameDetail.total_rating.HasValue ? (int)gameDetail.total_rating : null,
-                        Developer = await GetDeveloper(gameDetail.involved_companies),
-                        Genres = gameDetail.genres?.Select(x => _genresCache[x]).ToArray(),
-                        Url = gameDetail.url,
-                        ImagePath = getImage ? await GetImage(gameTitle, gameDetail.cover) : null
-                    };
+                if (gameDetail == null)
+                    return null;
 
-                    return gameData;
-                }
+                var gameData = new IgdbGameData(gameTitle)
+                {
+                    Id = gameId,
+                    Summary = gameDetail.summary,
+                    Rating = gameDetail.total_rating.HasValue ? (int)gameDetail.total_rating : null,
+                    Developer = await GetDeveloper(gameDetail.involved_companies),
+                    Genres = gameDetail.genres?.Select(x => _genresCache[x]).ToArray(),
+                    Url = gameDetail.url,
+                    ImagePath = getImage ? await GetImage(gameTitle, gameDetail.cover) : null
+                };
+
+                return gameData;
             }
             catch (Exception ex)
             {
                 Log.WriteLine($"{nameof(GetGameData)}('{gameTitle}') failed with: {ex}");
+                return null;
             }
-
-            return null;
         }
 
         async Task<string?> GetIdFromTitle(string gameTitle)
@@ -120,24 +119,18 @@ namespace naLauncher2.Wpf.Api
             if (games == null || games.Length == 0)
                 return null;
 
-            //var possibleMatches = games.Select(g =>
-            //    new KeyValuePair<string, KeyValuePair<int, string>>(
-            //        g.id.ToString(),
-            //        new KeyValuePair<int, string>(
-            //            Extensions.DamerauLevenshteinEditDistance(normalizedGameTitle, g.name.Normalize()),
-            //            g.name)))
-            //    .Where(x => x.Value.Key < normalizedGameTitle.Length)
-            //    .OrderBy(x => x.Value.Key)
-            //    .ToArray();
-            //if (possibleMatches.Length == 0)
-            //    return null;
-            //return possibleMatches[0].Key;
-
-            Log.WriteLine($"Found {games.Length} possible matches for '{gameTitle}' on IGDB ({string.Join(" | ", games.Select(x => x.name))})");
-
             var normalizedGameTitle = gameTitle.NormalizeCustom();
 
-            return games.FirstOrDefault(x => string.Equals(x.name.NormalizeCustom(), normalizedGameTitle, StringComparison.OrdinalIgnoreCase))?.id.ToString();
+            var exactMatches = games
+                .Where(x => string.Equals(x.name.NormalizeCustom(), normalizedGameTitle, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            if (exactMatches.Length == 1)
+                return exactMatches[0].id.ToString();
+
+            Log.WriteLine($"Multiple exact IGDB matches for '{gameTitle}' ({string.Join(" | ", exactMatches.Select(x => $"'{x.name}'"))})");
+
+            return null;
         }
 
         async Task<TResponse?> PostAsync<TResponse>(string url, string body)
@@ -158,7 +151,7 @@ namespace naLauncher2.Wpf.Api
                     .ToDictionary(x => x.id, x => x.name);
         }
 
-        ConcurrentDictionary<int, string> _developersCache = [];
+        readonly ConcurrentDictionary<int, string> _developersCache = [];
 
         async Task<string?> GetDeveloper(int[]? involvedCompanies)
         {
@@ -211,8 +204,9 @@ namespace naLauncher2.Wpf.Api
 
             if (existingImages.Length != 0)
             {
+#if DEBUG
                 Log.WriteLine($"Image/s for '{gameTitle}' already exists at '{existingImages[0]}' - skipping download.");
-
+#endif
                 return existingImages[0];
             }
 
@@ -239,7 +233,9 @@ namespace naLauncher2.Wpf.Api
             var filePath = Path.Combine(directory, $"{safeTitle}.{extension}");
             if (File.Exists(filePath))
             {
+#if DEBUG
                 Log.WriteLine($"Image for '{gameTitle}' already exists at {filePath}. Skipping download.");
+#endif                
                 return filePath;
             }
 

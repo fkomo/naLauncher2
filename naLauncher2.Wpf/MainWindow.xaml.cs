@@ -168,6 +168,8 @@ namespace naLauncher2.Wpf
                 UserGamesFilterMode.Removed => all.Where(x => x.Value.Removed),
                 UserGamesFilterMode.Completed => all.Where(x => x.Value.Completed.HasValue),
                 UserGamesFilterMode.MissingData => all.Where(x => x.Value.MissingImage),
+                UserGamesFilterMode.Steam => all.Where(x => x.Value.Extensions?.ContainsKey(GameInfoExtension.SteamAppId.ToString()) == true),
+                UserGamesFilterMode.Igdb => all.Where(x => x.Value.Extensions?.ContainsKey(GameInfoExtension.IgdbId.ToString()) == true),
                 UserGamesFilterMode.All => all,
                 _ => all.Where(x => x.Value.Installed),
             };
@@ -261,15 +263,16 @@ namespace naLauncher2.Wpf
             if (glow is null)
                 return;
 
-            if (await GameLibrary.Instance.RefreshMissingGameImages())
+            if (await GameLibrary.Instance.RefreshMissingGameImagesFromCache())
                 RefreshAllSections();
 
-            var igdbProgress = new Progress<(int current, int total, string game)>(p =>
+            var refreshProgress = new Progress<(int current, int total, string game)>(p =>
             {
                 RefreshProgressText.Text = $"{p.game} [{p.current} / {p.total}]";
                 RefreshProgressText.Visibility = Visibility.Visible;
             });
-            if (await GameLibrary.Instance.RefreshMissingGameData(igdbProgress))
+
+            if (await GameLibrary.Instance.RefreshMissingGameData(refreshProgress))
                 RefreshAllSections();
 
             StopRefreshAnimation(glow);
@@ -823,18 +826,18 @@ namespace naLauncher2.Wpf
 
             var gameTitle = _contextMenuTargetId;
 
-            string? url;
-
+            var steamUrl = false;
             if (game.Extensions.TryGetValue(GameInfoExtension.SteamAppId.ToString(), out var steamAppId))
-                url = SteamClient.GetStoreUrl(steamAppId);
+            {
+                Process.Start(new ProcessStartInfo(SteamClient.GetStoreUrl(steamAppId)) { UseShellExecute = true });
+                steamUrl = true;
+            }
 
-            else if (!GameLibrary.Instance.Games[gameTitle].Extensions.TryGetValue(GameInfoExtension.IgdbUrl.ToString(), out url))
-                url = IgdbClient.GetGameSearchUrl(gameTitle);
-
-            if (url == null)
-                return;
-
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            if (GameLibrary.Instance.Games[gameTitle].Extensions.TryGetValue(GameInfoExtension.IgdbUrl.ToString(), out string? igdbUrl))
+                Process.Start(new ProcessStartInfo(igdbUrl) { UseShellExecute = true });
+            
+            else if (!steamUrl)
+                Process.Start(new ProcessStartInfo(IgdbClient.GetGameSearchUrl(gameTitle)) { UseShellExecute = true });
         }
 
         async void GameContextMenu_Refresh_Click(object sender, MouseButtonEventArgs e)
@@ -1075,6 +1078,8 @@ namespace naLauncher2.Wpf
             FilterOptionRemoved.Foreground = _userGamesFilterMode == UserGamesFilterMode.Removed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionCompleted.Foreground = _userGamesFilterMode == UserGamesFilterMode.Completed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionMissingData.Foreground = _userGamesFilterMode == UserGamesFilterMode.MissingData ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionSteam.Foreground = _userGamesFilterMode == UserGamesFilterMode.Steam ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionIgdb.Foreground = _userGamesFilterMode == UserGamesFilterMode.Igdb ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionAll.Foreground = _userGamesFilterMode == UserGamesFilterMode.All ? Brushes.LightSkyBlue : Brushes.White;
         }
 

@@ -263,6 +263,8 @@
                     <TextBlock x:Name="FilterOptionRemoved" Style="{StaticResource DropdownItemStyle}" Text="Removed" Tag="Removed" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionCompleted" Style="{StaticResource DropdownItemStyle}" Text="Completed" Tag="Completed" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionMissingData" Style="{StaticResource DropdownItemStyle}" Text="Missing Data" Tag="MissingData" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                    <TextBlock x:Name="FilterOptionSteam" Style="{StaticResource DropdownItemStyle}" Text="Steam" Tag="Steam" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                    <TextBlock x:Name="FilterOptionIgdb" Style="{StaticResource DropdownItemStyle}" Text="IGDB" Tag="Igdb" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionAll" Style="{StaticResource DropdownItemStyle}" Text="All" Tag="All" MouseLeftButtonUp="UserGamesFilter_Click"/>
                 </StackPanel>
             </Border>

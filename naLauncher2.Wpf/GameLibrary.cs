@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using naLauncher2.Wpf.Api;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Text.Json;
 using Ujeby.Tools;
@@ -17,6 +18,14 @@ namespace naLauncher2.Wpf
         public IEnumerable<string> RecentGames() => Games
             .Where(x => x.Value.Installed && !x.Value.NotPlayed)
             .OrderByDescending(x => x.Value.Played.Last())
+            .Select(x => x.Key);
+
+        public IEnumerable<string> Steam() => Games
+            .Where(x => x.Value.Extensions?.ContainsKey(GameInfoExtension.SteamAppId.ToString()) == true)
+            .Select(x => x.Key);
+
+        public IEnumerable<string> Igdb() => Games
+            .Where(x => x.Value.Extensions?.ContainsKey(GameInfoExtension.IgdbId.ToString()) == true)
             .Select(x => x.Key);
 
         public IEnumerable<string> Genres => Games
@@ -221,7 +230,7 @@ namespace naLauncher2.Wpf
             return changed;
         }
 
-        public async Task<bool> RefreshMissingGameImages()
+        public async Task<bool> RefreshMissingGameImagesFromCache()
         {
             if (AppSettings.Instance.ImageCachePath is null)
             {
@@ -249,7 +258,7 @@ namespace naLauncher2.Wpf
 
             Log.WriteLine($"{gamesToUpdate.Length} games are missing image ...");
 
-            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameImages)}()", Log.WriteLine);
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameImagesFromCache)}()", Log.WriteLine);
 
             var changed = false;
 
@@ -272,74 +281,79 @@ namespace naLauncher2.Wpf
 
         public async Task<bool> RefreshMissingGameData(IProgress<(int current, int total, string gameTitle)>? progress = null)
         {
-            if (App.IgdbClient == null)
-                return false;
-
-            var gamesToUpdate = Games
-                .Where(x => x.Value.Extensions != null && !x.Value.Extensions.ContainsKey(GameInfoExtension.IgdbId.ToString()))
-                .Select(x => x.Key)
-                .ToArray();
-
-            if (gamesToUpdate.Length == 0)
-            {
-                Log.WriteLine("No games with missing IGDB data found");
-                return false;
-            }
-
-            Log.WriteLine($"{gamesToUpdate.Length} games are missing IGDB data ...");
-
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameData)}()", Log.WriteLine);
 
             var changed = false;
 
-            for (int i = 0; i < gamesToUpdate.Length; i++)
+            var gamesToUpdate = Games.Keys.ToArray();
+
+            for (var i = 0; i < gamesToUpdate.Length; i++)
             {
                 var game = gamesToUpdate[i];
 
                 progress?.Report((i, gamesToUpdate.Length, game));
 
-                var gameData = await App.IgdbClient.GetGameData(game);
-                if (gameData != null)
-                {
-                    Games[game].UpdateFromIgdb(gameData);
-
+                if (await RefreshGameData(game, silent: true))
                     changed = true;
-
-                    await Save(silent: true);
-                }
             }
 
             return changed;
         }
 
-        public async Task<bool> RefreshGameData(string gameTitle)
+        public async Task<bool> RefreshGameData(string gameTitle, bool silent = false)
         {
-            if (App.IgdbClient == null)
-                return false;
-
-            if (!Games.TryGetValue(gameTitle, out GameInfo? gameInfo))
+            if (!Games.ContainsKey(gameTitle))
             {
                 Log.WriteLine($"Game '{gameTitle}' not found in library");
                 return false;
             }
 
-            Log.WriteLine($"Refreshing data for '{gameTitle}' ...");
-
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshGameData)}('{gameTitle}')", Log.WriteLine);
+
+            var changed = false;
+            
+            changed |= await RefreshIgdbGameData(gameTitle);
+            changed |= await RefreshSteamGameData(gameTitle);
+
+            if (changed)
+                await Save(silent: silent);
+
+            return changed;
+        }
+
+        async Task<bool> RefreshSteamGameData(string gameTitle)
+        {
+            var gameInfo = Games[gameTitle];
+
+            gameInfo.Extensions.TryGetValue(GameInfoExtension.SteamAppId.ToString(), out string? steamAppId);
+            if (steamAppId != null)
+                return false;
+
+            steamAppId = await SteamClient.GetAppId(gameTitle);
+            if (steamAppId == null)
+                return false;
+
+            gameInfo.Extensions.Add(GameInfoExtension.SteamAppId.ToString(), steamAppId);
+
+            return true;
+        }
+
+        async Task<bool> RefreshIgdbGameData(string gameTitle)
+        {
+            if (App.IgdbClient == null)
+                return false;
+
+            var gameInfo = Games[gameTitle];
 
             gameInfo.Extensions.TryGetValue(GameInfoExtension.IgdbId.ToString(), out string? igdbId);
 
-            var gameData = await App.IgdbClient.GetGameData(gameTitle, gameId: igdbId, getImage: true);
-            if (gameData != null)
-            {
-                gameInfo.UpdateFromIgdb(gameData);
+            var igdbGameData = await App.IgdbClient.GetGameData(gameTitle, gameId: igdbId, getImage: true);
+            if (igdbGameData == null)
+                return false;
 
-                await Save();
+            gameInfo.UpdateFromIgdb(igdbGameData);
 
-                return true;
-            }
-
-            return false;
+            return true;
         }
 
         public async Task RemoveExtensions(params string[] values)
