@@ -53,7 +53,6 @@ namespace naLauncher2.Wpf
         string? _libraryPath;
 
         static readonly GameLibrary _instance = new();
-        
 
         public static GameLibrary Instance => _instance;
 
@@ -79,8 +78,6 @@ namespace naLauncher2.Wpf
             _libraryPath = path;
 
             Games = Deserialize(libraryContent);
-
-            Log.WriteLine($"Game library loaded - {Games.Count} games");
         }
 
         static ConcurrentDictionary<string, GameInfo> Deserialize(string libraryContent)
@@ -117,7 +114,7 @@ namespace naLauncher2.Wpf
                 await File.WriteAllTextAsync(_libraryPath, JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions));
 
                 if (!silent)
-                    Log.WriteLine($"Game library saved with {Games.Count} games");
+                    Log.WriteLine($"{nameof(GameLibrary)}.{nameof(Save)}({Games.Count} games)");
             }
         }
 
@@ -149,12 +146,13 @@ namespace naLauncher2.Wpf
             }
 
             var backupPath = $"{_libraryPath.Trim(".json")}_{DateTime.Now:yyyyMMddHHmmss}";
+
+            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(Backup)}('{backupPath}')", Log.WriteLine);
+
 #if DEBUG
             await File.WriteAllTextAsync(backupPath + ".json", serialized);
 #endif
             await File.WriteAllBytesAsync(backupPath + ".bak", compressed);
-
-            Log.WriteLine($"Game library backed up to '{backupPath}'");
 
             const int maxBackups = 10;
 
@@ -335,6 +333,8 @@ namespace naLauncher2.Wpf
 
             gameInfo.Extensions.Add(GameInfoExtension.SteamAppId.ToString(), steamAppId);
 
+            Log.WriteLine($"'{gameTitle}' updated with SteamAppId={steamAppId}");
+
             return true;
         }
 
@@ -352,6 +352,8 @@ namespace naLauncher2.Wpf
                 return false;
 
             gameInfo.UpdateFromIgdb(igdbGameData);
+
+            Log.WriteLine($"'{gameTitle}' updated with IgdbId={igdbGameData.Id}");
 
             return true;
         }

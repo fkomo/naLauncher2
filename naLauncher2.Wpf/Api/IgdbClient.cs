@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using Ujeby.Extensions;
@@ -56,8 +55,9 @@ namespace naLauncher2.Wpf.Api
     public class IgdbClient
     {
         readonly string _apiBaseUrl;
+
         readonly HttpClient _httpClient;
-        static readonly HttpClient _imageHttpClient = new();
+        readonly HttpClient _imageHttpClient;
 
         const string _imagesDirectory = "IgdbCom";
 
@@ -68,6 +68,8 @@ namespace naLauncher2.Wpf.Api
 
             _apiBaseUrl = apiBaseUrl;
             _httpClient = new HttpClient(twitchDevAuthz);
+            
+            _imageHttpClient = new HttpClient();
         }
 
         public static string GetGameSearchUrl(string gameTitle) => $"https://www.igdb.com/search?q={Uri.EscapeDataString(gameTitle)}&type=games";
@@ -128,7 +130,8 @@ namespace naLauncher2.Wpf.Api
             if (exactMatches.Length == 1)
                 return exactMatches[0].id.ToString();
 
-            Log.WriteLine($"Multiple exact IGDB matches for '{gameTitle}' ({string.Join(" | ", exactMatches.Select(x => $"'{x.name}'"))})");
+            if (exactMatches.Length > 1)
+                Log.WriteLine($"{exactMatches.Length} exact IGDB matches found for '{gameTitle}')");
 
             return null;
         }
@@ -204,9 +207,7 @@ namespace naLauncher2.Wpf.Api
 
             if (existingImages.Length != 0)
             {
-#if DEBUG
                 Log.WriteLine($"Image/s for '{gameTitle}' already exists at '{existingImages[0]}' - skipping download.");
-#endif
                 return existingImages[0];
             }
 
@@ -233,9 +234,7 @@ namespace naLauncher2.Wpf.Api
             var filePath = Path.Combine(directory, $"{safeTitle}.{extension}");
             if (File.Exists(filePath))
             {
-#if DEBUG
                 Log.WriteLine($"Image for '{gameTitle}' already exists at {filePath}. Skipping download.");
-#endif                
                 return filePath;
             }
 
@@ -244,7 +243,7 @@ namespace naLauncher2.Wpf.Api
             return filePath;
         }
 
-        async static Task<(Image, ImageFormat)> DownloadImage(string imageUrl)
+        async Task<(Image, ImageFormat)> DownloadImage(string imageUrl)
         {
             using var tb = new TimedBlock($"{nameof(IgdbClient)}.{nameof(DownloadImage)}({imageUrl})", Log.WriteLine);
 

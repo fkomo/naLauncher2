@@ -124,6 +124,9 @@ namespace naLauncher2.Wpf
             UserGamesOrderDirectionToggle.Text = _userGamesSortDescending ? "\u25BC" : "\u25B2";
             NewGamesOrderDirectionToggle.Text = _newGamesSortDescending ? "\u25BC" : "\u25B2";
             RecentGamesOrderDirectionToggle.Text = _recentGamesSortDescending ? "\u25BC" : "\u25B2";
+            NewGamesOrderDirectionToggle.ToolTip = $"{newGames.Length} {(newGames.Length == 1 ? "game" : "games")}";
+            RecentGamesOrderDirectionToggle.ToolTip = $"{recentGames.Length} {(recentGames.Length == 1 ? "game" : "games")}";
+            UserGamesOrderDirectionToggle.ToolTip = $"{userGames.Length} {(userGames.Length == 1 ? "game" : "games")}";
             UpdateRecentGamesInstalledOnlyToggle();
 
             double shadowOffset = GameInfoControl.ShadowBlurRadius;
@@ -900,6 +903,9 @@ namespace naLauncher2.Wpf
             var newGames = GetNewGames();
             var recentGames = GetRecentGames();
             var userGames = GetUserGames();
+            NewGamesOrderDirectionToggle.ToolTip = $"{newGames.Length} {(newGames.Length == 1 ? "game" : "games")}";
+            RecentGamesOrderDirectionToggle.ToolTip = $"{recentGames.Length} {(recentGames.Length == 1 ? "game" : "games")}";
+            UserGamesOrderDirectionToggle.ToolTip = $"{userGames.Length} {(userGames.Length == 1 ? "game" : "games")}";
 
             NewGamesContainer.Children.Clear();
             PopulateHorizontalSection(NewGamesContainer, newGames,
@@ -1150,6 +1156,7 @@ namespace naLauncher2.Wpf
         void RefreshUserGames()
         {
             var userGames = GetUserGames();
+            UserGamesOrderDirectionToggle.ToolTip = $"{userGames.Length} {(userGames.Length == 1 ? "game" : "games")}";
 
             UserGamesContainer.Children.Clear();
             PopulateGridSection(UserGamesContainer, userGames);
@@ -1345,6 +1352,7 @@ namespace naLauncher2.Wpf
         void RefreshNewGames()
         {
             var newGames = GetNewGames();
+            NewGamesOrderDirectionToggle.ToolTip = $"{newGames.Length} {(newGames.Length == 1 ? "game" : "games")}";
             NewGamesContainer.Children.Clear();
             PopulateHorizontalSection(NewGamesContainer, newGames,
                 id => $"added {TimeAgo(GameLibrary.Instance.Games[id].Added)}");
@@ -1394,6 +1402,7 @@ namespace naLauncher2.Wpf
         void RefreshRecentGames()
         {
             var recentGames = GetRecentGames();
+            RecentGamesOrderDirectionToggle.ToolTip = $"{recentGames.Length} {(recentGames.Length == 1 ? "game" : "games")}";
             RecentGamesContainer.Children.Clear();
             PopulateHorizontalSection(RecentGamesContainer, recentGames,
                 id => $"played {TimeAgo(GameLibrary.Instance.Games[id].LastPlayed!.Value)}");

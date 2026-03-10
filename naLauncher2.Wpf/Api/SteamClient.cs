@@ -38,7 +38,8 @@ namespace naLauncher2.Wpf.Api
             if (exactMatches.Length == 1)
                 return exactMatches[0].AppId;
 
-            Log.WriteLine($"Multiple exact Steam matches for '{gameTitle}' ({string.Join(" | ", exactMatches.Select(x => $"'{x.Title}'"))})");
+            if (exactMatches.Length > 1)
+                Log.WriteLine($"{exactMatches.Length} exact Steam matches found for '{gameTitle}'");
 
             return null;
         }

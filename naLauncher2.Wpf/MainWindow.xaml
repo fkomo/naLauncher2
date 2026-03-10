@@ -80,7 +80,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="New" x:Name="NewGamesLabel" Style="{StaticResource GroupLabelStyle}"
-                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"
+                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"
                            Cursor="Hand" MouseLeftButtonUp="NewGamesLabel_Click"/>
                 <TextBlock Grid.Column="1" x:Name="NewGamesOrderDirectionToggle" Text="&#x25BC;" Style="{StaticResource DirectionToggleStyle}"
                            FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,16,0"
@@ -107,15 +107,15 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Recent" x:Name="RecentGamesLabel" Style="{StaticResource GroupLabelStyle}"
-                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"
+                           FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"
                            Cursor="Hand" MouseLeftButtonUp="RecentGamesLabel_Click"/>
-                <TextBlock Grid.Column="1" x:Name="RecentGamesOrderDirectionToggle" Text="&#x25BC;" Style="{StaticResource DirectionToggleStyle}"
-                           FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
-                           MouseLeftButtonUp="RecentGamesOrderDirectionToggle_Click"/>
-                <TextBlock Grid.Column="2" x:Name="RecentGamesInstalledOnlyToggle" Text="Installed Only" Style="{StaticResource ToggleLabelStyle}"
+                <TextBlock Grid.Column="1" x:Name="RecentGamesInstalledOnlyToggle" Text="Installed Only" Style="{StaticResource ToggleLabelStyle}"
                            FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                            Cursor="Hand" Margin="0,0,16,0"
                            MouseLeftButtonUp="RecentGamesInstalledOnlyToggle_Click"/>
+                <TextBlock Grid.Column="2" x:Name="RecentGamesOrderDirectionToggle" Text="&#x25BC;" Style="{StaticResource DirectionToggleStyle}"
+                           FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,16,0"
+                           MouseLeftButtonUp="RecentGamesOrderDirectionToggle_Click"/>
                 <Rectangle Grid.Column="3" x:Name="RecentGamesScrollTrack" Height="0" Fill="White" Opacity="0.2" VerticalAlignment="Center" Margin="0,3,0,0"/>
                 <Rectangle Grid.Column="3" x:Name="RecentGamesScrollThumb" Height="3" Fill="LightSkyBlue" Opacity="0" VerticalAlignment="Center" Margin="0,3,0,0" HorizontalAlignment="Left" Width="0">
                     <Rectangle.Effect>
@@ -167,12 +167,12 @@
                            Cursor="Hand" Margin="0,0,16,0"
                            MouseLeftButtonUp="UserGamesGenresLabel_Click"/>
 
-                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock x:Name="UserGamesOrderLabel" Text="Title" Style="{StaticResource GroupLabelStyle}"
-                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"
                                Cursor="Hand" MouseLeftButtonUp="UserGamesOrderLabel_Click"/>
                     <TextBlock x:Name="UserGamesOrderDirectionToggle" Text="▲" Style="{StaticResource DirectionToggleStyle}"
-                               FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="8,0,0,0"
+                               FontSize="16" Cursor="Hand" VerticalAlignment="Center" 
                                MouseLeftButtonUp="UserGamesOrderDirectionToggle_Click"/>
                 </StackPanel>
 
