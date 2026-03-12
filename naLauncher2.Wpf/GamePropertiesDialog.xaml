@@ -105,7 +105,24 @@
             <TextBlock x:Name="AddedText" Style="{StaticResource ReadOnlyValueStyle}"/>
 
             <TextBlock Style="{StaticResource LabelStyle}" Text="COMPLETED"/>
-            <TextBlock x:Name="CompletedText" Style="{StaticResource ReadOnlyValueStyle}"/>
+            <Grid Margin="24,0,24,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="CompletedBox" Grid.Column="0"
+                         Foreground="White" FontSize="13" Background="Transparent"
+                         BorderThickness="0,0,0,1" BorderBrush="#44FFFFFF"
+                         CaretBrush="White" SelectionBrush="LightSkyBlue"
+                         Padding="4,4"/>
+                <TextBlock Grid.Column="1" Style="{StaticResource SmallButtonStyle}" Text="Today"
+                           Foreground="LightSkyBlue" Margin="8,0,0,0"
+                           MouseLeftButtonUp="SetCompletedToday_Click"/>
+                <TextBlock Grid.Column="2" Style="{StaticResource SmallButtonStyle}" Text="Clear"
+                           Foreground="White" Opacity="0.5" Margin="4,0,0,0"
+                           MouseLeftButtonUp="ClearCompleted_Click"/>
+            </Grid>
 
             <TextBlock Style="{StaticResource LabelStyle}" Text="PLAY HISTORY"/>
             <TextBlock x:Name="PlayedText" Style="{StaticResource ReadOnlyValueStyle}"/>

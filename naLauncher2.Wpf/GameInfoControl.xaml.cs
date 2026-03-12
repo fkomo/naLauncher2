@@ -89,19 +89,19 @@ namespace naLauncher2.Wpf
             if (game.Completed.HasValue)
             {
                 CompletedFlag.Visibility = Visibility.Visible;
-                CompletedDateText.Text = $"Completed: {game.Completed.Value:d MMM yyyy}";
+                CompletedDateText.Text = $"Completed {game.Completed.Value:d MMM yyyy}";
 
                 if (game.Played?.Count > 0)
                 {
-                    PlaySessionsText.Text = $"Sessions: {game.Played.Count}";
-                    FirstPlayedText.Text = $"First played: {game.Played.First():d MMM yyyy}";
-                    LastPlayedText.Text = $"Last played: {game.Played.Last():d MMM yyyy}";
+                    if (game.Played.Count == 1)
+                        SessionsText.Text = $"1 session on {game.Played.Single():d MMM yyyy}";
+
+                    else
+                        SessionsText.Text = $"{game.Played.Count} sessions from {game.Played.First():d MMM yyyy} to {game.Played.Last():d MMM yyyy}";
                 }
                 else
                 {
-                    PlaySessionsText.Visibility = Visibility.Collapsed;
-                    FirstPlayedText.Visibility = Visibility.Collapsed;
-                    LastPlayedText.Visibility = Visibility.Collapsed;
+                    SessionsText.Visibility = Visibility.Collapsed;
                 }
             }
 

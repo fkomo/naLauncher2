@@ -13,6 +13,7 @@ namespace naLauncher2.Wpf
         readonly string _originalRating;
         readonly string _originalSummary;
         readonly string _originalImagePath;
+        readonly string _originalCompleted;
         readonly int _originalExtensionsCount;
 
         public string NewId => TitleBox.Text.Trim();
@@ -28,6 +29,7 @@ namespace naLauncher2.Wpf
             _originalRating = game.Rating.HasValue ? game.Rating.Value.ToString() : string.Empty;
             _originalSummary = game.Summary ?? string.Empty;
             _originalImagePath = game.ImagePath ?? string.Empty;
+            _originalCompleted = game.Completed.HasValue ? game.Completed.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty;
             _originalExtensionsCount = game.Extensions.Count;
 
             InitializeComponent();
@@ -40,9 +42,7 @@ namespace naLauncher2.Wpf
             ImagePathBox.Text = _originalImagePath;
             ShortcutText.Text = game.Shortcut ?? "(not installed)";
             AddedText.Text = game.Added.ToString("yyyy-MM-dd HH:mm");
-            CompletedText.Text = game.Completed.HasValue
-                ? game.Completed.Value.ToString("yyyy-MM-dd HH:mm")
-                : "(not completed)";
+            CompletedBox.Text = _originalCompleted;
             PlayedText.Text = game.Played.Count > 0
                 ? $"{game.Played.Count} session{(game.Played.Count != 1 ? "s" : "")}, last played {game.LastPlayed!.Value:yyyy-MM-dd HH:mm}"
                 : "(never played)";
@@ -59,6 +59,7 @@ namespace naLauncher2.Wpf
             RatingBox.TextChanged += (_, _) => UpdateSaveButton();
             SummaryBox.TextChanged += (_, _) => UpdateSaveButton();
             ImagePathBox.TextChanged += (_, _) => UpdateSaveButton();
+            CompletedBox.TextChanged += (_, _) => UpdateSaveButton();
 
             ExtensionKeyBox.KeyDown += (_, e) =>
             {
@@ -132,6 +133,7 @@ namespace naLauncher2.Wpf
             RatingBox.Text != _originalRating ||
             SummaryBox.Text != _originalSummary ||
             ImagePathBox.Text != _originalImagePath ||
+            CompletedBox.Text != _originalCompleted ||
             _pendingExtensions.Count != _originalExtensionsCount;
 
         void UpdateSaveButton()
@@ -172,6 +174,16 @@ namespace naLauncher2.Wpf
             }
         }
 
+        void SetCompletedToday_Click(object sender, MouseButtonEventArgs e)
+        {
+            CompletedBox.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+        }
+
+        void ClearCompleted_Click(object sender, MouseButtonEventArgs e)
+        {
+            CompletedBox.Text = string.Empty;
+        }
+
         void ApplyChanges()
         {
             Game.Developer = string.IsNullOrWhiteSpace(DeveloperBox.Text) ? null : DeveloperBox.Text.Trim();
@@ -182,6 +194,9 @@ namespace naLauncher2.Wpf
             Game.ImagePath = string.IsNullOrWhiteSpace(ImagePathBox.Text) ? null : ImagePathBox.Text.Trim();
             Game.Rating = int.TryParse(RatingBox.Text, out int rating) && rating >= 0 && rating <= 100
                 ? rating
+                : null;
+            Game.Completed = DateTime.TryParse(CompletedBox.Text.Trim(), out var completed)
+                ? completed
                 : null;
             Game.Extensions = new Dictionary<string, string>(_pendingExtensions);
         }
