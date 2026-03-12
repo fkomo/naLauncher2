@@ -86,6 +86,25 @@ namespace naLauncher2.Wpf
                     RatingBadge.Visibility = Visibility.Visible;
             }
 
+            if (game.Completed.HasValue)
+            {
+                CompletedFlag.Visibility = Visibility.Visible;
+                CompletedDateText.Text = $"Completed: {game.Completed.Value:d MMM yyyy}";
+
+                if (game.Played?.Count > 0)
+                {
+                    PlaySessionsText.Text = $"Sessions: {game.Played.Count}";
+                    FirstPlayedText.Text = $"First played: {game.Played.First():d MMM yyyy}";
+                    LastPlayedText.Text = $"Last played: {game.Played.Last():d MMM yyyy}";
+                }
+                else
+                {
+                    PlaySessionsText.Visibility = Visibility.Collapsed;
+                    FirstPlayedText.Visibility = Visibility.Collapsed;
+                    LastPlayedText.Visibility = Visibility.Collapsed;
+                }
+            }
+
             LoadImageAsync(game.ImagePath, game.Installed);
         }
 
@@ -111,6 +130,18 @@ namespace naLauncher2.Wpf
             if (!_isRatingSortActive)
                 RatingBadge.Visibility = Visibility.Collapsed;
             StopSummaryScroll();
+        }
+
+        void CompletedFlag_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
+            StatsOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(StatsOverlay.Opacity, 1, dur));
+        }
+
+        void CompletedFlag_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
+            StatsOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(StatsOverlay.Opacity, 0, dur));
         }
 
         void UserControl_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
