@@ -82,6 +82,7 @@ namespace naLauncher2.Wpf
                 _hasRating = true;
                 RatingBadge.Background = new SolidColorBrush(GetMetacriticColor(game.Rating.Value));
                 RatingText.Text = game.Rating.Value.ToString();
+               
                 if (_isRatingSortActive)
                     RatingBadge.Visibility = Visibility.Visible;
             }
@@ -89,20 +90,17 @@ namespace naLauncher2.Wpf
             if (game.Completed.HasValue)
             {
                 CompletedFlag.Visibility = Visibility.Visible;
-                CompletedDateText.Text = $"Completed {game.Completed.Value:d MMM yyyy}";
+                CompletedDateText.Text = $"Completed";
 
                 if (game.Played?.Count > 0)
                 {
                     if (game.Played.Count == 1)
                         SessionsText.Text = $"1 session on {game.Played.Single():d MMM yyyy}";
-
                     else
                         SessionsText.Text = $"{game.Played.Count} sessions from {game.Played.First():d MMM yyyy} to {game.Played.Last():d MMM yyyy}";
                 }
                 else
-                {
                     SessionsText.Visibility = Visibility.Collapsed;
-                }
             }
 
             LoadImageAsync(game.ImagePath, game.Installed);

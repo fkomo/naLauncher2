@@ -96,31 +96,34 @@
                             <GradientStop Color="#00000000" Offset="0.8"/>
                         </LinearGradientBrush>
                     </Grid.Background>
-                    <StackPanel VerticalAlignment="Top" Margin="10,8,56,0">
-                        <TextBlock x:Name="CompletedDateText"
-                                   Foreground="LightSkyBlue"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,2"
-                                   TextTrimming="CharacterEllipsis"/>
-                        <TextBlock x:Name="SessionsText"
-                                   Foreground="#FFAAAAAA"
-                                   FontSize="14"
-                                   Margin="0,2,0,0"/>
-                    </StackPanel>
+                    <TextBlock x:Name="CompletedDateText"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Right"
+                               Margin="0,4,40,0"
+                               Foreground="DarkSeaGreen"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="SessionsText"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Right"
+                               Margin="0,26,40,0"
+                               TextAlignment="Right"
+                               Foreground="#FFAAAAAA"
+                               FontSize="14"/>
                 </Grid>
 
                 <!-- Completed flag (bookmark ribbon, top-right) -->
                 <Canvas x:Name="CompletedFlag"
                         HorizontalAlignment="Right" VerticalAlignment="Top"
-                        Width="48" Height="48"
+                        Width="32" Height="40"
                         IsHitTestVisible="True"
                         Visibility="Collapsed"
                         MouseEnter="CompletedFlag_MouseEnter"
                         MouseLeave="CompletedFlag_MouseLeave">
-                    <Polygon Points="0,0 32,0 32,48 16,32 0,48">
+                    <Polygon Points="0,0 24,0 24,50 12,40 0,50">
                         <Polygon.Fill>
-                            <SolidColorBrush Color="LightSkyBlue"/>
+                            <SolidColorBrush Color="DarkSeaGreen"/>
                         </Polygon.Fill>
                         <Polygon.Effect>
                             <DropShadowEffect BlurRadius="4" Color="Black" ShadowDepth="1" Opacity="0.5"/>
