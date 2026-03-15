@@ -1,5 +1,6 @@
 using naLauncher2.Wpf.Api;
 using System.Diagnostics;
+using System.Reflection.Emit;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -24,6 +25,7 @@ namespace naLauncher2.Wpf
         const double SectionGap = 32; // vertical space between sections [in pixels]
         const double GamePlacementDelayMs = 25; // delay between each game placement animation [in milliseconds]
         const double GamePlacementDurationMs = 200; // duration of game placement animation [in milliseconds]
+        const double MoveDurationMs = 300; // duration of position-change (move) animation [in milliseconds]
 
         // horizontal scroll — New Games
         readonly TranslateTransform _newGamesTransform = new();
@@ -251,24 +253,6 @@ namespace naLauncher2.Wpf
             return true;
         }
 
-        async Task RefreshNewGameDataInBackground(string[] newGames)
-        {
-            var glow = TryStartRefreshAnimation();
-            if (glow is null)
-                return;
-
-            for (int i = 0; i < newGames.Length; i++)
-            {
-                RefreshProgressText.Text = $"{newGames[i]} [{i + 1} / {newGames.Length}]";
-                RefreshProgressText.Visibility = Visibility.Visible;
-
-                await GameLibrary.Instance.RefreshGameData(newGames[i]);
-            }
-
-            StopRefreshAnimation(glow);
-            RefreshAllSections();
-        }
-
         async void SettingsButton_Click(object sender, MouseButtonEventArgs e)
         {
             var libraryPathBefore = AppSettings.Instance.LibraryPath;
@@ -305,7 +289,7 @@ namespace naLauncher2.Wpf
             StopRefreshAnimation(glow);
         }
 
-        DropShadowEffect? TryStartRefreshAnimation(string? label = null)
+        DropShadowEffect? TryStartRefreshAnimation()
         {
             if (_isRefreshing)
                 return null;
@@ -331,12 +315,6 @@ namespace naLauncher2.Wpf
 
             glow.BeginAnimation(DropShadowEffect.OpacityProperty,
                 new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(200))));
-
-            if (label is not null)
-            {
-                RefreshProgressText.Text = label;
-                RefreshProgressText.Visibility = Visibility.Visible;
-            }
 
             return glow;
         }
@@ -421,6 +399,7 @@ namespace naLauncher2.Wpf
                         var subLabel = new TextBlock
                         {
                             Text = labelText,
+                            Tag = games[i],
                             Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
                             FontSize = 11,
                             FontStyle = FontStyles.Italic,
@@ -867,6 +846,28 @@ namespace naLauncher2.Wpf
                 Process.Start(new ProcessStartInfo(IgdbClient.GetGameSearchUrl(gameTitle)) { UseShellExecute = true });
         }
 
+        async Task RefreshNewGameDataInBackground(params string[] newGames)
+        {
+            var glow = TryStartRefreshAnimation();
+            if (glow is null)
+                return;
+
+            for (var i = 0; i < newGames.Length; i++)
+            {
+                RefreshProgressText.Visibility = Visibility.Visible;
+
+                if (newGames.Length == 1)
+                    RefreshProgressText.Text = newGames[i];
+                else
+                    RefreshProgressText.Text = $"{newGames[i]} [{i + 1} / {newGames.Length}]";
+
+                await GameLibrary.Instance.RefreshGameData(newGames[i]);
+            }
+
+            StopRefreshAnimation(glow);
+            RefreshAllSections();
+        }
+
         async void GameContextMenu_Refresh_Click(object sender, MouseButtonEventArgs e)
         {
             HideDropdowns();
@@ -874,15 +875,7 @@ namespace naLauncher2.Wpf
             if (_contextMenuTargetId is null)
                 return;
 
-            var glow = TryStartRefreshAnimation(_contextMenuTargetId);
-            if (glow is null)
-                return;
-
-            await GameLibrary.Instance.RefreshGameData(_contextMenuTargetId);
-
-            StopRefreshAnimation(glow);
-
-            RefreshAllSections();
+            await RefreshNewGameDataInBackground(_contextMenuTargetId);
         }
 
         async void GameContextMenu_Properties_Click(object sender, MouseButtonEventArgs e)
@@ -922,18 +915,179 @@ namespace naLauncher2.Wpf
             RefreshAllSections();
         }
 
+        /// <summary>
+        /// Incrementally updates a horizontal canvas section: games that moved slide to their new
+        /// position, new games fade in, and removed games fade out.
+        /// </summary>
+        void UpdateHorizontalSection(Canvas container, string[] games, Func<string, string?> subLabelSelector)
+        {
+            double subLabelY = GameInfoControl.ShadowBlurRadius + GameInfoControl.ControlHeight + 8;
+            var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var moveDuration = new Duration(TimeSpan.FromMilliseconds(MoveDurationMs));
+            var fadeDuration = new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs));
+
+            var existing = container.Children.OfType<GameInfoControl>().ToDictionary(c => c.Id);
+            var existingLabels = container.Children.OfType<TextBlock>()
+                .Where(tb => tb.Tag is string).ToDictionary(tb => (string)tb.Tag!);
+            var newSet = new HashSet<string>(games);
+
+            foreach (var (id, control) in existing)
+            {
+                if (newSet.Contains(id)) continue;
+                var c = control;
+                var anim = new DoubleAnimation(c.Opacity, 0, fadeDuration);
+                anim.Completed += (_, _) => container.Children.Remove(c);
+                c.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
+
+            foreach (var (id, label) in existingLabels)
+            {
+                if (newSet.Contains(id)) continue;
+                var l = label;
+                var anim = new DoubleAnimation(l.Opacity, 0, fadeDuration);
+                anim.Completed += (_, _) => container.Children.Remove(l);
+                l.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
+
+            for (int i = 0; i < games.Length; i++)
+            {
+                string id = games[i];
+                double newX = _gridOffset + i * (GameInfoControl.ControlWidth + Gap);
+
+                if (existing.TryGetValue(id, out var control))
+                {
+                    var existingTT = control.RenderTransform as TranslateTransform;
+                    double visualX = Canvas.GetLeft(control) + (existingTT?.X ?? 0);
+                    Canvas.SetLeft(control, newX);
+                    double deltaX = visualX - newX;
+                    if (Math.Abs(deltaX) > 0.5)
+                    {
+                        var tt = new TranslateTransform(deltaX, 0);
+                        control.RenderTransform = tt;
+                        tt.BeginAnimation(TranslateTransform.XProperty,
+                            new DoubleAnimation(deltaX, 0, moveDuration) { EasingFunction = easing });
+                    }
+
+                    if (existingLabels.TryGetValue(id, out var label))
+                    {
+                        label.Text = subLabelSelector(id) ?? string.Empty;
+                        var existingLabelTT = label.RenderTransform as TranslateTransform;
+                        double visualLabelX = Canvas.GetLeft(label) + (existingLabelTT?.X ?? 0);
+                        Canvas.SetLeft(label, newX);
+                        double deltaLabelX = visualLabelX - newX;
+                        if (Math.Abs(deltaLabelX) > 0.5)
+                        {
+                            var tt = new TranslateTransform(deltaLabelX, 0);
+                            label.RenderTransform = tt;
+                            tt.BeginAnimation(TranslateTransform.XProperty,
+                                new DoubleAnimation(deltaLabelX, 0, moveDuration) { EasingFunction = easing });
+                        }
+                    }
+                }
+                else
+                {
+                    var newControl = new GameInfoControl(id) { CacheMode = new BitmapCache(), Opacity = 0 };
+                    container.Children.Add(newControl);
+                    Canvas.SetLeft(newControl, newX);
+                    Canvas.SetTop(newControl, GameInfoControl.ShadowBlurRadius);
+                    newControl.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, fadeDuration));
+
+                    var labelText = subLabelSelector(id);
+                    if (!string.IsNullOrEmpty(labelText))
+                    {
+                        var subLabel = new TextBlock
+                        {
+                            Text = labelText,
+                            Tag = id,
+                            Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
+                            FontSize = 11,
+                            FontStyle = FontStyles.Italic,
+                            Width = GameInfoControl.ControlWidth,
+                            TextAlignment = TextAlignment.Center,
+                            TextTrimming = TextTrimming.CharacterEllipsis,
+                            Opacity = 0,
+                        };
+                        container.Children.Add(subLabel);
+                        Canvas.SetLeft(subLabel, newX);
+                        Canvas.SetTop(subLabel, subLabelY);
+                        subLabel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, fadeDuration));
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Incrementally updates the User Games grid: games that moved slide to their new
+        /// position, new games fade in, and removed games fade out.
+        /// </summary>
+        void UpdateGridSection(Canvas container, string[] games)
+        {
+            bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
+            var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var moveDuration = new Duration(TimeSpan.FromMilliseconds(MoveDurationMs));
+            var fadeDuration = new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs));
+
+            var existing = container.Children.OfType<GameInfoControl>().ToDictionary(c => c.Id);
+            var newSet = new HashSet<string>(games);
+
+            foreach (var (id, control) in existing)
+            {
+                if (newSet.Contains(id)) continue;
+                var c = control;
+                var anim = new DoubleAnimation(c.Opacity, 0, fadeDuration);
+                anim.Completed += (_, _) => container.Children.Remove(c);
+                c.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
+
+            for (int i = 0; i < games.Length; i++)
+            {
+                string id = games[i];
+                double newLeft = _gridOffset + (i % _controlsPerRow) * (GameInfoControl.ControlWidth + Gap);
+                double newTop = GameInfoControl.ShadowBlurRadius + (i / _controlsPerRow) * (GameInfoControl.ControlHeight + Gap);
+
+                if (existing.TryGetValue(id, out var control))
+                {
+                    var existingTT = control.RenderTransform as TranslateTransform;
+                    double visualX = Canvas.GetLeft(control) + (existingTT?.X ?? 0);
+                    double visualY = Canvas.GetTop(control) + (existingTT?.Y ?? 0);
+                    double deltaX = visualX - newLeft;
+                    double deltaY = visualY - newTop;
+                    Canvas.SetLeft(control, newLeft);
+                    Canvas.SetTop(control, newTop);
+                    if (Math.Abs(deltaX) > 0.5 || Math.Abs(deltaY) > 0.5)
+                    {
+                        var tt = new TranslateTransform(deltaX, deltaY);
+                        control.RenderTransform = tt;
+                        tt.BeginAnimation(TranslateTransform.XProperty,
+                            new DoubleAnimation(deltaX, 0, moveDuration) { EasingFunction = easing });
+                        tt.BeginAnimation(TranslateTransform.YProperty,
+                            new DoubleAnimation(deltaY, 0, moveDuration) { EasingFunction = easing });
+                    }
+                }
+                else
+                {
+                    var newControl = new GameInfoControl(id, isRatingSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
+                    container.Children.Add(newControl);
+                    Canvas.SetLeft(newControl, newLeft);
+                    Canvas.SetTop(newControl, newTop);
+                    newControl.BeginAnimation(UIElement.OpacityProperty,
+                        new DoubleAnimation(0, 1, fadeDuration) { BeginTime = TimeSpan.FromMilliseconds(i * GamePlacementDelayMs) });
+                }
+            }
+        }
+
         internal void RefreshAllSections()
         {
             var newGames = GetNewGames();
             var recentGames = GetRecentGames();
             var userGames = GetUserGames();
+
             NewGamesOrderDirectionToggle.ToolTip = $"{newGames.Length} {(newGames.Length == 1 ? "game" : "games")}";
             RecentGamesOrderDirectionToggle.ToolTip = $"{recentGames.Length} {(recentGames.Length == 1 ? "game" : "games")}";
             UserGamesOrderDirectionToggle.ToolTip = $"{userGames.Length} {(userGames.Length == 1 ? "game" : "games")}";
 
-            NewGamesContainer.Children.Clear();
-            PopulateHorizontalSection(NewGamesContainer, newGames,
-                id => $"added {TimeAgo(GameLibrary.Instance.Games[id].Added)}");
+            UpdateHorizontalSection(NewGamesContainer, newGames, id => $"added {TimeAgo(GameLibrary.Instance.Games[id].Added)}");
+
             if (newGames.Length > 0 && _newGamesCollapsed)
             {
                 _newGamesCollapsed = false;
@@ -945,9 +1099,8 @@ namespace naLauncher2.Wpf
                 ApplyNewGamesState();
             }
 
-            RecentGamesContainer.Children.Clear();
-            PopulateHorizontalSection(RecentGamesContainer, recentGames,
-                id => $"played {TimeAgo(GameLibrary.Instance.Games[id].LastPlayed!.Value)}");
+            UpdateHorizontalSection(RecentGamesContainer, recentGames, id => $"played {TimeAgo(GameLibrary.Instance.Games[id].LastPlayed!.Value)}");
+
             if (recentGames.Length > 0 && _recentGamesCollapsed)
             {
                 _recentGamesCollapsed = false;
@@ -959,8 +1112,7 @@ namespace naLauncher2.Wpf
                 ApplyRecentGamesState();
             }
 
-            UserGamesContainer.Children.Clear();
-            PopulateGridSection(UserGamesContainer, userGames);
+            UpdateGridSection(UserGamesContainer, userGames);
 
             RootGrid.UpdateLayout();
 
@@ -973,9 +1125,13 @@ namespace naLauncher2.Wpf
             _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0;
 
             _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
-            _allGamesOffsetY = 0; _allGamesVelocityY = 0; _allGamesTransform.Y = 0;
+            _allGamesOffsetY = Math.Min(_allGamesOffsetY, _userGamesMaxScrollY);
+            _allGamesVelocityY = 0;
+            _allGamesTransform.Y = -_allGamesOffsetY;
 
+            var newUserGamesSet = new HashSet<string>(userGames);
             _visibleControls = UserGamesContainer.Children.OfType<GameInfoControl>()
+                .Where(c => newUserGamesSet.Contains(c.Id))
                 .Select(c => (Control: c, LocalTop: Canvas.GetTop(c)))
                 .ToArray();
 
