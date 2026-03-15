@@ -92,15 +92,17 @@ namespace naLauncher2.Wpf
                 CompletedFlag.Visibility = Visibility.Visible;
                 CompletedDateText.Text = $"Completed";
 
-                if (game.Played?.Count > 0)
-                {
-                    if (game.Played.Count == 1)
-                        SessionsText.Text = $"1 session on {game.Played.Single():d MMM yyyy}";
-                    else
-                        SessionsText.Text = $"{game.Played.Count} sessions from {game.Played.First():d MMM yyyy} to {game.Played.Last():d MMM yyyy}";
-                }
-                else
-                    SessionsText.Visibility = Visibility.Collapsed;
+                //if (game.Played?.Count > 0)
+                //{
+                //    if (game.Played.Count == 1)
+                //        SessionsText.Text = $"1 session on {game.Played.Single():d MMM yyyy}";
+                //    else
+                //        SessionsText.Text = $"{game.Played.Count} sessions from {game.Played.First():d MMM yyyy} to {game.Played.Last():d MMM yyyy}";
+                //}
+                //else
+                //    SessionsText.Visibility = Visibility.Collapsed;
+
+                SessionsText.Text = $"{game.Completed.Value:d MMM yyyy}";
             }
 
             LoadImageAsync(game.ImagePath, game.Installed);
