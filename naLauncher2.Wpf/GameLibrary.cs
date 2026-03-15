@@ -172,12 +172,12 @@ namespace naLauncher2.Wpf
             }
         }
 
-        public async Task<bool> RefreshSources(string[]? sources, string[]? extensions = null)
+        public async Task<RefreshResult> RefreshSources(string[]? sources, string[]? extensions = null)
         {
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshSources)}()", Log.WriteLine);
 
             if (sources == null || sources.Length == 0)
-                return false;
+                return new RefreshResult(false);
 
             extensions ??= SupportedGameExtensions;
 
@@ -185,6 +185,8 @@ namespace naLauncher2.Wpf
                 .SelectMany(x => Directory.GetFiles(x, "*.*", SearchOption.AllDirectories)
                 .Where(f => extensions.Contains(Path.GetExtension(f))))
                 .ToDictionary(x => Path.GetFileNameWithoutExtension(x), x => x);
+
+            var newGames = new List<string>();
 
             bool changed = false;
 
@@ -197,6 +199,8 @@ namespace naLauncher2.Wpf
 
                 // add new game
                 Games.AddOrUpdate(newGame.Key, newGameInfo, (key, oldGameInfo) => newGameInfo);
+
+                newGames.Add(newGame.Key);
 
                 changed = true;
             }
@@ -225,7 +229,7 @@ namespace naLauncher2.Wpf
             if (changed)
                 await Save();
 
-            return changed;
+            return new RefreshResult(changed, NewGames: [.. newGames]);
         }
 
         public async Task<bool> RefreshMissingGameImagesFromCache()
@@ -374,4 +378,6 @@ namespace naLauncher2.Wpf
             await Save();
         }
     }
+
+    public record class RefreshResult(bool Changed, string[]? NewGames = null);
 }

@@ -58,6 +58,7 @@ namespace naLauncher2.Wpf
         string? _contextMenuTargetId;
 
         bool _isRefreshing = false;
+        string[]? _pendingNewGameDataRefresh;
 
         /// <summary>
         /// Initializes the main window and assigns render transforms to scrollable containers.
@@ -151,6 +152,9 @@ namespace naLauncher2.Wpf
 
             UpdateViewportCulling();
             UpdateScrollThumbs();
+
+            if (_pendingNewGameDataRefresh is not null)
+                await RefreshNewGameDataInBackground(_pendingNewGameDataRefresh);
         }
 
         string[] GetUserGames()
@@ -240,9 +244,29 @@ namespace naLauncher2.Wpf
             // backup on start in case the user has made changes to their library outside of the launcher and we want to avoid losing data
             await GameLibrary.Instance.Backup();
 
-            await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources, extensions: AppSettings.Instance.GameExtensions);
+            var refreshResult = await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources, extensions: AppSettings.Instance.GameExtensions);
+            if (refreshResult.NewGames?.Length > 0)
+                _pendingNewGameDataRefresh = refreshResult.NewGames;
 
             return true;
+        }
+
+        async Task RefreshNewGameDataInBackground(string[] newGames)
+        {
+            var glow = TryStartRefreshAnimation();
+            if (glow is null)
+                return;
+
+            for (int i = 0; i < newGames.Length; i++)
+            {
+                RefreshProgressText.Text = $"{newGames[i]} [{i + 1} / {newGames.Length}]";
+                RefreshProgressText.Visibility = Visibility.Visible;
+
+                await GameLibrary.Instance.RefreshGameData(newGames[i]);
+            }
+
+            StopRefreshAnimation(glow);
+            RefreshAllSections();
         }
 
         async void SettingsButton_Click(object sender, MouseButtonEventArgs e)
