@@ -14,6 +14,7 @@
     <UserControl.Effect>
         <DropShadowEffect x:Name="ShadowEffect" BlurRadius="16" Color="Black" ShadowDepth="0" Opacity="1"/>
     </UserControl.Effect>
+    <Grid>
     <Border x:Name="MainBorder" BorderBrush="#FF404040" BorderThickness="1" Background="#FF1a1a1a">
         <Grid>
             <Grid.RowDefinitions>
@@ -166,4 +167,10 @@
             </Grid>
         </Grid>
     </Border>
+    <Rectangle x:Name="SnakeRect"
+               IsHitTestVisible="False"
+               Fill="Transparent"
+               StrokeThickness="4"
+               Opacity="0"/>
+    </Grid>
 </UserControl>

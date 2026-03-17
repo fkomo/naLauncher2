@@ -284,7 +284,7 @@
                 <StackPanel>
                     <TextBlock x:Name="ContextMenuRun" Style="{StaticResource DropdownItemStyle}" Text="Run" MouseLeftButtonUp="GameContextMenu_Run_Click"/>
                     <TextBlock x:Name="ContextMenuExplore" Style="{StaticResource DropdownItemStyle}" Text="Explore" MouseLeftButtonUp="GameContextMenu_Explore_Click"/>
-                    <TextBlock x:Name="ContextMenuUninstall" Style="{StaticResource DropdownItemStyle}" Text="Uninstall" MouseLeftButtonUp="GameContextMenu_Uninstall_Click"/>
+                    <TextBlock x:Name="ContextMenuRemove" Style="{StaticResource DropdownItemStyle}" Text="Remove" MouseLeftButtonUp="GameContextMenu_Remove_Click"/>
                     <Rectangle Height="1" Fill="#FF404448" Margin="0,4,0,4"/>
                     <TextBlock x:Name="ContextMenuDelete" Style="{StaticResource DropdownItemStyle}" Text="Delete" MouseLeftButtonUp="GameContextMenu_Delete_Click"/>
                     <TextBlock x:Name="ContextMenuMarkAsCompleted" Style="{StaticResource DropdownItemStyle}" Text="Mark as Completed" MouseLeftButtonUp="GameContextMenu_MarkAsCompleted_Click"/>

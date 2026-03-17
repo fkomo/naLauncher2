@@ -60,6 +60,7 @@ namespace naLauncher2.Wpf
         string? _contextMenuTargetId;
 
         bool _isRefreshing = false;
+        readonly Queue<string> _contextRefreshQueue = new();
         string[]? _pendingNewGameDataRefresh;
 
         /// <summary>
@@ -277,13 +278,28 @@ namespace naLauncher2.Wpf
             if (await GameLibrary.Instance.RefreshMissingGameImagesFromCache())
                 RefreshAllSections();
 
-            var refreshProgress = new Progress<(int current, int total, string game)>(p =>
-            {
-                RefreshProgressText.Text = $"{p.game} [{p.current} / {p.total}]";
-                RefreshProgressText.Visibility = Visibility.Visible;
-            });
+            var games = GameLibrary.Instance.Games.Keys.ToArray();
+            GameInfoControl[]? prevControls = null;
+            bool changed = false;
 
-            if (await GameLibrary.Instance.RefreshMissingGameData(refreshProgress))
+            for (int i = 0; i < games.Length; i++)
+            {
+                RefreshProgressText.Text = $"{games[i]} [{i + 1} / {games.Length}]";
+                RefreshProgressText.Visibility = Visibility.Visible;
+
+                if (prevControls is not null)
+                    foreach (var c in prevControls) c.StopRefreshGlow();
+                prevControls = FindGameControls(games[i]);
+                foreach (var c in prevControls) c.StartRefreshGlow();
+
+                if (await GameLibrary.Instance.RefreshGameData(games[i], silent: true))
+                    changed = true;
+            }
+
+            if (prevControls is not null)
+                foreach (var c in prevControls) c.StopRefreshGlow();
+
+            if (changed)
                 RefreshAllSections();
 
             StopRefreshAnimation(glow);
@@ -685,7 +701,7 @@ namespace naLauncher2.Wpf
             if (_contextMenuTargetId is not null && GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
             {
                 SetMenuItemEnabled(ContextMenuRun, game.Installed);
-                SetMenuItemEnabled(ContextMenuUninstall, game.Installed);
+                SetMenuItemEnabled(ContextMenuRemove, game.Installed);
                 SetMenuItemEnabled(ContextMenuDelete, !game.Installed);
                 SetMenuItemEnabled(ContextMenuMarkAsCompleted, !game.Completed.HasValue);
                 SetMenuItemEnabled(ContextMenuExplore, true);
@@ -760,14 +776,14 @@ namespace naLauncher2.Wpf
             await RunGame(game);
         }
 
-        async void GameContextMenu_Uninstall_Click(object sender, MouseButtonEventArgs e)
+        async void GameContextMenu_Remove_Click(object sender, MouseButtonEventArgs e)
         {
             HideDropdowns();
 
             if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game) || !game.Installed)
                 return;
 
-            var dialog = new ConfirmationDialog($"Uninstall \"{_contextMenuTargetId}\"?") { Owner = this };
+            var dialog = new ConfirmationDialog($"Remove/Uninstall \"{_contextMenuTargetId}\"?") { Owner = this };
             if (dialog.ShowDialog() != true)
                 return;
 
@@ -850,20 +866,55 @@ namespace naLauncher2.Wpf
         {
             var glow = TryStartRefreshAnimation();
             if (glow is null)
+            {
+                // A refresh is already running; queue the requested games so the running
+                // loop picks them up, and mark each control immediately as "pending".
+                foreach (var g in newGames)
+                    if (!_contextRefreshQueue.Contains(g))
+                    {
+                        _contextRefreshQueue.Enqueue(g);
+                        foreach (var c in FindGameControls(g)) c.StartRefreshGlow();
+                    }
                 return;
+            }
+
+            GameInfoControl[]? prevControls = null;
 
             for (var i = 0; i < newGames.Length; i++)
             {
                 RefreshProgressText.Visibility = Visibility.Visible;
+                RefreshProgressText.Text = newGames.Length == 1
+                    ? newGames[i]
+                    : $"{newGames[i]} [{i + 1} / {newGames.Length}]";
 
-                if (newGames.Length == 1)
-                    RefreshProgressText.Text = newGames[i];
-                else
-                    RefreshProgressText.Text = $"{newGames[i]} [{i + 1} / {newGames.Length}]";
+                if (prevControls is not null)
+                    foreach (var c in prevControls) c.StopRefreshGlow();
+
+                prevControls = FindGameControls(newGames[i]);
+                foreach (var c in prevControls) c.StartRefreshGlow();
 
                 await GameLibrary.Instance.RefreshGameData(newGames[i]);
             }
 
+            // Drain any context-menu refreshes queued while the main pass was running.
+            while (_contextRefreshQueue.Count > 0)
+            {
+                var id = _contextRefreshQueue.Dequeue();
+                RefreshProgressText.Visibility = Visibility.Visible;
+                RefreshProgressText.Text = _contextRefreshQueue.Count > 0
+                    ? $"{id} [+{_contextRefreshQueue.Count} queued]"
+                    : id;
+
+                if (prevControls is not null)
+                    foreach (var c in prevControls) c.StopRefreshGlow();
+                prevControls = FindGameControls(id);
+                foreach (var c in prevControls) c.StartRefreshGlow();
+
+                await GameLibrary.Instance.RefreshGameData(id);
+            }
+
+            if (prevControls is not null)
+                foreach (var c in prevControls) c.StopRefreshGlow();
             StopRefreshAnimation(glow);
             RefreshAllSections();
         }
@@ -1074,6 +1125,18 @@ namespace naLauncher2.Wpf
                         new DoubleAnimation(0, 1, fadeDuration) { BeginTime = TimeSpan.FromMilliseconds(i * GamePlacementDelayMs) });
                 }
             }
+        }
+
+        GameInfoControl[] FindGameControls(string id)
+        {
+            // Collect every occurrence of this game across all sections so the snake
+            // runs simultaneously on all visible tiles (a game can appear in both a
+            // horizontal strip and the user grid at the same time).
+            return NewGamesContainer.Children.OfType<GameInfoControl>().Where(c => c.Id == id)
+                .Concat(RecentGamesContainer.Children.OfType<GameInfoControl>().Where(c => c.Id == id))
+                .Concat(UserGamesContainer.Children.OfType<GameInfoControl>()
+                    .Where(c => c.Id == id && c.Visibility == Visibility.Visible))
+                .ToArray();
         }
 
         internal void RefreshAllSections()

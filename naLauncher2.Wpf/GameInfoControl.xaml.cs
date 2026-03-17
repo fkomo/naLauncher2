@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace naLauncher2.Wpf
 {
@@ -38,6 +39,7 @@ namespace naLauncher2.Wpf
         readonly bool _isRemoved;
         readonly bool _hasRating;
         readonly bool _isRatingSortActive;
+        bool _isRefreshActive;
 
         public GameInfoControl(string id, bool isRatingSortActive = false)
         {
@@ -331,6 +333,48 @@ namespace naLauncher2.Wpf
             }
 
             return null;
+        }
+
+        public void StartRefreshGlow()
+        {
+            if (_isRefreshActive)
+                return;
+            _isRefreshActive = true;
+
+            this.IsHitTestVisible = false;
+            MainBorder.BeginAnimation(UIElement.OpacityProperty,
+                new DoubleAnimation(1, 0.45, new Duration(TimeSpan.FromMilliseconds(300))));
+
+            const double strokeThickness = 4.0;
+            double perimeter = 2.0 * (ControlWidth + ControlHeight);
+            double period = perimeter / strokeThickness;
+            double snakeDash = 240.0 / strokeThickness;
+            double snakeGap = period - snakeDash;
+
+            SnakeRect.Stroke = new SolidColorBrush(Colors.LightSkyBlue);
+            SnakeRect.StrokeDashArray = new DoubleCollection { snakeDash, snakeGap };
+            SnakeRect.StrokeDashOffset = 0;
+            SnakeRect.Opacity = 1;
+
+            var travel = new DoubleAnimation(0, -period, new Duration(TimeSpan.FromMilliseconds(1500)))
+            {
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+            SnakeRect.BeginAnimation(Shape.StrokeDashOffsetProperty, travel);
+        }
+
+        public void StopRefreshGlow()
+        {
+            if (!_isRefreshActive)
+                return;
+            _isRefreshActive = false;
+
+            this.IsHitTestVisible = true;
+            MainBorder.BeginAnimation(UIElement.OpacityProperty,
+                new DoubleAnimation(MainBorder.Opacity, 1, new Duration(TimeSpan.FromMilliseconds(300))));
+
+            SnakeRect.BeginAnimation(Shape.StrokeDashOffsetProperty, null);
+            SnakeRect.Opacity = 0;
         }
 
         static Color GetMetacriticColor(int score)

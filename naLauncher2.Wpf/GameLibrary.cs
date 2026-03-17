@@ -205,12 +205,12 @@ namespace naLauncher2.Wpf
                 changed = true;
             }
 
-            // mark games as uninstalled if their shortcuts no longer exist
-            foreach (var uninstalledGame in Games.Where(x => x.Value.Installed && !File.Exists(x.Value.Shortcut)).Select(x => x.Key))
+            // mark games as removed/uninstalled if their shortcuts no longer exist
+            foreach (var removedGame in Games.Where(x => x.Value.Installed && !File.Exists(x.Value.Shortcut)).Select(x => x.Key))
             {
-                Log.WriteLine($"Shortcut for '{uninstalledGame}' not found");
+                Log.WriteLine($"Shortcut for '{removedGame}' not found");
 
-                Games[uninstalledGame].Shortcut = null;
+                Games[removedGame].Shortcut = null;
 
                 changed = true;
             }
