@@ -327,15 +327,16 @@ namespace naLauncher2.Wpf
         {
             var gameInfo = Games[gameTitle];
 
-            gameInfo.Extensions.TryGetValue(GameInfoExtension.SteamAppId.ToString(), out string? steamAppId);
-            if (steamAppId != null)
-                return false;
+            if (!gameInfo.Extensions.TryGetValue(GameInfoExtension.SteamAppId.ToString(), out string? steamAppId) || string.IsNullOrWhiteSpace(steamAppId))
+            {
+                steamAppId = await SteamClient.GetAppId(gameTitle);
+                if (steamAppId == null)
+                    return false;
 
-            steamAppId = await SteamClient.GetAppId(gameTitle);
-            if (steamAppId == null)
-                return false;
+                gameInfo.Extensions.Add(GameInfoExtension.SteamAppId.ToString(), steamAppId);
+            }
 
-            gameInfo.Extensions.Add(GameInfoExtension.SteamAppId.ToString(), steamAppId);
+            gameInfo.Rating ??= await SteamClient.GetMetacriticScore(steamAppId);
 
             Log.WriteLine($"'{gameTitle}' updated with SteamAppId={steamAppId}");
 

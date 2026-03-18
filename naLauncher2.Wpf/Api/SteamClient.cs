@@ -21,7 +21,7 @@ namespace naLauncher2.Wpf.Api
 
             var allAppUrls = WebScraper.ExtractAllAttributeValues(html, "href", "https://store.steampowered.com/app/");
 
-            // "https://store.steampowered.com/app/4109130/Phonopolis_Demo/?snr=1_7_7_151_150_1"
+            // https://store.steampowered.com/app/4109130/...
 
             var normalizedGameTitle = gameTitle.NormalizeCustom();
 
@@ -42,6 +42,22 @@ namespace naLauncher2.Wpf.Api
                 Log.WriteLine($"{exactMatches.Length} exact Steam matches found for '{gameTitle}'");
 
             return null;
+        }
+
+        public static async Task<int?> GetMetacriticScore(string steamAppId)
+        {
+            var storeUrl = GetStoreUrl(steamAppId);
+
+            var html = await WebScraper.RenderAsync(storeUrl);
+            if (html == null)
+                return null;
+
+            // look for div with class containing "score" and extract the number inside
+            var metaScore = WebScraper.ExtractValue(html, @"<div[^>]*\bclass=""[^""]*\bscore\b[^""]*""[^>]*>\s*(\d+)\s*</div>");
+            if (metaScore == null)
+                return null;
+
+            return int.TryParse(metaScore, out var score) ? score : null;
         }
     }
 }
