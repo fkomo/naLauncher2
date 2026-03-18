@@ -57,7 +57,10 @@ namespace naLauncher2.Wpf.Api
             if (metaScore == null)
                 return null;
 
-            return int.TryParse(metaScore, out var score) ? score : null;
+            if (int.TryParse(metaScore, out var score))
+                Log.WriteLine($"Metacritic score for '{storeUrl}': {score}");
+
+            return score;
         }
     }
 }
