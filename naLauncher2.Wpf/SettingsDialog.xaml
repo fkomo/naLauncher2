@@ -142,6 +142,17 @@
                 </StackPanel>
             </Border>
 
+            <CheckBox x:Name="TopLevelOnlyCheck" Content="Search top-level directory only"
+                      Foreground="White" FontSize="13" Margin="24,0,24,20"
+                      Checked="TopLevelOnly_Changed" Unchecked="TopLevelOnly_Changed">
+                <CheckBox.Style>
+                    <Style TargetType="CheckBox">
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                    </Style>
+                </CheckBox.Style>
+            </CheckBox>
+
             <TextBlock Text="GAME FILE EXTENSIONS" Foreground="White" Opacity="0.5" FontSize="11" FontWeight="SemiBold" Margin="24,0,24,8"/>
             <Border Margin="24,0,24,20" BorderBrush="#44FFFFFF" BorderThickness="0,0,0,1" Padding="4,4">
                 <TextBox x:Name="GameExtensionsBox" Foreground="White" FontSize="13"

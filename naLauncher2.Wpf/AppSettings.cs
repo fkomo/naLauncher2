@@ -8,6 +8,7 @@ namespace naLauncher2.Wpf
         public string? LogPath { get; set; }
         public string? LibraryPath { get; set; }
         public string[] Sources { get; set; } = [];
+        public bool TopLevelOnly { get; set; } = true;
         public string[] GameExtensions { get; set; } = GameLibrary.SupportedGameExtensions;
         public string? ImageCachePath { get; set; }
         public bool UserGamesSortDescending { get; set; } = false;
@@ -60,6 +61,7 @@ namespace naLauncher2.Wpf
                 NewGamesSortDescending = loaded.NewGamesSortDescending;
                 RecentGamesSortDescending = loaded.RecentGamesSortDescending;
                 Sources = loaded.Sources;
+                TopLevelOnly = loaded.TopLevelOnly;
                 GameExtensions = loaded.GameExtensions;
                 ImageCachePath = loaded.ImageCachePath;
 

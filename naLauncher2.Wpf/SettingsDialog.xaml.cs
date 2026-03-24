@@ -35,6 +35,8 @@ namespace naLauncher2.Wpf
 
             SourcesList.ItemsSource = _sources;
 
+            TopLevelOnlyCheck.IsChecked = appSettings.TopLevelOnly;
+
             GameExtensionsBox.Text = string.Join(", ", appSettings.GameExtensions);
 
             foreach (var ext in GameLibrary.Instance.ExtensionsUsed)
@@ -170,6 +172,8 @@ namespace naLauncher2.Wpf
                 _sources.Remove(path);
         }
 
+        void TopLevelOnly_Changed(object sender, RoutedEventArgs e) => MarkDirty();
+
         async void Save_Click(object sender, MouseButtonEventArgs e)
         {
             if (SelectedLibraryPath == null)
@@ -182,6 +186,7 @@ namespace naLauncher2.Wpf
             AppSettings.Instance.ImageCachePath = SelectedImageCachePath;
             AppSettings.Instance.LogPath = SelectedLogPath;
             AppSettings.Instance.Sources = SelectedSources;
+            AppSettings.Instance.TopLevelOnly = TopLevelOnlyCheck.IsChecked == true;
             AppSettings.Instance.GameExtensions = GameExtensionsBox.Text
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 

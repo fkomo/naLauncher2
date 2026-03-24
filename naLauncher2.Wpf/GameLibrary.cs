@@ -172,7 +172,7 @@ namespace naLauncher2.Wpf
             }
         }
 
-        public async Task<RefreshResult> RefreshSources(string[]? sources, string[]? extensions = null)
+        public async Task<RefreshResult> RefreshSources(string[]? sources, string[]? extensions = null, bool topLevelOnly = true)
         {
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshSources)}()", Log.WriteLine);
 
@@ -181,9 +181,11 @@ namespace naLauncher2.Wpf
 
             extensions ??= SupportedGameExtensions;
 
+            var searchOptions = topLevelOnly ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
+
             var sourceGames = sources
-                .SelectMany(x => Directory.GetFiles(x, "*.*", SearchOption.AllDirectories)
-                .Where(f => extensions.Contains(Path.GetExtension(f))))
+                .SelectMany(x => Directory.GetFiles(x, "*.*", searchOptions))
+                .Where(f => extensions.Contains(Path.GetExtension(f)))
                 .ToDictionary(x => Path.GetFileNameWithoutExtension(x), x => x);
 
             var newGames = new List<string>();
@@ -232,15 +234,15 @@ namespace naLauncher2.Wpf
             return new RefreshResult(changed, NewGames: [.. newGames]);
         }
 
-        public async Task<bool> RefreshMissingGameImagesFromCache()
+        public async Task<bool> RefreshMissingGameImagesFromCache(string? imageCachePath)
         {
-            if (AppSettings.Instance.ImageCachePath is null)
+            if (imageCachePath is null)
             {
                 Log.WriteLine("Image cache not set");
                 return false;
             }
 
-            var cachedImages = Directory.GetFiles(AppSettings.Instance.ImageCachePath, "*.*", SearchOption.AllDirectories);
+            var cachedImages = Directory.GetFiles(imageCachePath, "*.*", SearchOption.AllDirectories);
             if (cachedImages.Length == 0)
             {
                 Log.WriteLine("No cached images found");

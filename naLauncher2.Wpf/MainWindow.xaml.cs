@@ -247,7 +247,10 @@ namespace naLauncher2.Wpf
             // backup on start in case the user has made changes to their library outside of the launcher and we want to avoid losing data
             await GameLibrary.Instance.Backup();
 
-            var refreshResult = await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources, extensions: AppSettings.Instance.GameExtensions);
+            var refreshResult = await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources, 
+                extensions: AppSettings.Instance.GameExtensions,
+                topLevelOnly: AppSettings.Instance.TopLevelOnly);
+            
             if (refreshResult.NewGames?.Length > 0)
                 _pendingNewGameDataRefresh = refreshResult.NewGames;
 
@@ -275,7 +278,7 @@ namespace naLauncher2.Wpf
             if (glow is null)
                 return;
 
-            if (await GameLibrary.Instance.RefreshMissingGameImagesFromCache())
+            if (await GameLibrary.Instance.RefreshMissingGameImagesFromCache(AppSettings.Instance.ImageCachePath))
                 RefreshAllSections();
 
             var games = GameLibrary.Instance.Games.Keys.ToArray();
