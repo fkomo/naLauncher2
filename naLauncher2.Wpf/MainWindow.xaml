@@ -9,7 +9,7 @@
     WindowStyle="None"
     WindowState="Maximized"
     AllowsTransparency="True"
-    Background="#00202020"
+    Background="Transparent"
     KeyDown="Window_KeyDown"
     PreviewTextInput="Window_PreviewTextInput"
     Loaded="Window_Loaded">

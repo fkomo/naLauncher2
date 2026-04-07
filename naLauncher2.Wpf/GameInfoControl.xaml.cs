@@ -335,6 +335,21 @@ namespace naLauncher2.Wpf
             return null;
         }
 
+        public void UpdateCompletedState()
+        {
+            var game = GameLibrary.Instance.Games[_id];
+            if (game.Completed.HasValue)
+            {
+                CompletedFlag.Visibility = Visibility.Visible;
+                CompletedDateText.Text = $"Completed";
+                SessionsText.Text = $"{game.Completed.Value:d MMM yyyy}";
+            }
+            else
+            {
+                CompletedFlag.Visibility = Visibility.Collapsed;
+            }
+        }
+
         public void StartRefreshGlow()
         {
             if (_isRefreshActive)
