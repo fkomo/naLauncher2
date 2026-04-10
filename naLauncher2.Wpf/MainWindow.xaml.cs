@@ -882,6 +882,7 @@ namespace naLauncher2.Wpf
             }
 
             GameInfoControl[]? prevControls = null;
+            var refreshedIds = new List<string>(newGames);
 
             for (var i = 0; i < newGames.Length; i++)
             {
@@ -903,6 +904,7 @@ namespace naLauncher2.Wpf
             while (_contextRefreshQueue.Count > 0)
             {
                 var id = _contextRefreshQueue.Dequeue();
+                refreshedIds.Add(id);
                 RefreshProgressText.Visibility = Visibility.Visible;
                 RefreshProgressText.Text = _contextRefreshQueue.Count > 0
                     ? $"{id} [+{_contextRefreshQueue.Count} queued]"
@@ -920,6 +922,11 @@ namespace naLauncher2.Wpf
                 foreach (var c in prevControls) c.StopRefreshGlow();
             StopRefreshAnimation(glow);
             RefreshAllSections();
+
+            // Reload images on existing controls — they were created before the images
+            // were downloaded, so they rendered the placeholder and need to be updated.
+            foreach (var id in refreshedIds)
+                foreach (var c in FindGameControls(id)) c.RefreshImage();
         }
 
         async void GameContextMenu_Refresh_Click(object sender, MouseButtonEventArgs e)

@@ -350,6 +350,12 @@ namespace naLauncher2.Wpf
             }
         }
 
+        public void RefreshImage()
+        {
+            var game = GameLibrary.Instance.Games[_id];
+            LoadImageAsync(game.ImagePath, game.Installed);
+        }
+
         public void StartRefreshGlow()
         {
             if (_isRefreshActive)
