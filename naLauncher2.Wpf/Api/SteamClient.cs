@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Globalization;
+using System.IO;
 using System.Net;
 using Ujeby.Extensions;
 
@@ -10,6 +11,7 @@ namespace naLauncher2.Wpf.Api
         public int? MetacriticScore { get; init; }
         public string? ImagePath { get; init; }
         public string? Description { get; init; }
+        public DateTime? ReleaseDate { get; init; }
     }
 
     public class SteamClient
@@ -76,7 +78,23 @@ namespace naLauncher2.Wpf.Api
                 MetacriticScore = await GetMetacriticScore(storePageHtml),
                 ImagePath = getImage ? await GetImage(gameTitle, storePageHtml) : null,
                 Description = WebScraper.ExtractValue(storePageHtml, @"<div[^>]*\bclass=""[^""]*\bgame_description_snippet\b[^""]*""[^>]*>\s*(.+?)\s*</div>"),
+                ReleaseDate = GetReleaseDate(storePageHtml),
             };
+        }
+
+        static DateTime? GetReleaseDate(string storePageHtml)
+        {
+            var releaseDateParent = WebScraper.ExtractValues(storePageHtml, "div", "release_date");
+            if (releaseDateParent.Length == 0)
+                return null;
+
+            var releaseDateString = WebScraper.ExtractValues(releaseDateParent.First(), "div", "date");
+            if (releaseDateString.Length == 0)
+                return null;
+
+            return DateTime.TryParseExact(releaseDateString.First().Trim(), "d MMM, yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate)
+                ? parsedDate
+                : null;
         }
 
         static async Task<string?> GetStorePageHtml(string storeUrl) => await WebScraper.RenderAsync(storeUrl);

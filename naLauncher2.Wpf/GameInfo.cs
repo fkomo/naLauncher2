@@ -21,6 +21,7 @@ namespace naLauncher2.Wpf
         public int? Rating { get; set; }
         public string? Developer { get; set; }
         public string[] Genres { get; set; } = [];
+        public DateTime? ReleaseDate { get; set; }
 
         public Dictionary<string, string> Extensions { get; set; } = [];
 
@@ -76,6 +77,7 @@ namespace naLauncher2.Wpf
                 ImagePath = gameData.ImagePath;
 
             Rating ??= gameData.MetacriticScore;
+            ReleaseDate ??= gameData.ReleaseDate;
         }
     }
 }

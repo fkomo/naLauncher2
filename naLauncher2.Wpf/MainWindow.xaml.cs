@@ -196,6 +196,7 @@ namespace naLauncher2.Wpf
                 GamesSortMode.Completed => filtered.OrderBy(x => x.Value.Completed),
                 GamesSortMode.Played => filtered.OrderBy(x => x.Value.Played.Count),
                 GamesSortMode.Rating => filtered.OrderBy(x => x.Value.Rating),
+                GamesSortMode.Released => filtered.OrderBy(x => x.Value.ReleaseDate),
                 _ => filtered.OrderBy(x => x.Key),
             };
 
@@ -1353,6 +1354,7 @@ namespace naLauncher2.Wpf
             SortOptionCompleted.Foreground = _userGamesSortMode == GamesSortMode.Completed ? Brushes.LightSkyBlue : Brushes.White;
             SortOptionPlayed.Foreground = _userGamesSortMode == GamesSortMode.Played ? Brushes.LightSkyBlue : Brushes.White;
             SortOptionRating.Foreground = _userGamesSortMode == GamesSortMode.Rating ? Brushes.LightSkyBlue : Brushes.White;
+            SortOptionReleaseDate.Foreground = _userGamesSortMode == GamesSortMode.Released ? Brushes.LightSkyBlue : Brushes.White;
         }
 
         void UserGamesOrderLabel_Click(object sender, MouseButtonEventArgs e)

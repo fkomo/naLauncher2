@@ -14,6 +14,7 @@ namespace naLauncher2.Wpf
         readonly string _originalSummary;
         readonly string _originalImagePath;
         readonly string _originalCompleted;
+        readonly string _originalReleaseDate;
         readonly int _originalExtensionsCount;
 
         public string NewId => TitleBox.Text.Trim();
@@ -30,6 +31,7 @@ namespace naLauncher2.Wpf
             _originalSummary = game.Summary ?? string.Empty;
             _originalImagePath = game.ImagePath ?? string.Empty;
             _originalCompleted = game.Completed.HasValue ? game.Completed.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty;
+            _originalReleaseDate = game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString("yyyy-MM-dd") : string.Empty;
             _originalExtensionsCount = game.Extensions.Count;
 
             InitializeComponent();
@@ -43,6 +45,7 @@ namespace naLauncher2.Wpf
             ShortcutText.Text = game.Shortcut ?? "(not installed)";
             AddedText.Text = game.Added.ToString("yyyy-MM-dd HH:mm");
             CompletedBox.Text = _originalCompleted;
+            ReleaseDateBox.Text = _originalReleaseDate;
             PlayedText.Text = game.Played.Count > 0
                 ? $"{game.Played.Count} session{(game.Played.Count != 1 ? "s" : "")}, last played {game.LastPlayed!.Value:yyyy-MM-dd HH:mm}"
                 : "(never played)";
@@ -60,6 +63,7 @@ namespace naLauncher2.Wpf
             SummaryBox.TextChanged += (_, _) => UpdateSaveButton();
             ImagePathBox.TextChanged += (_, _) => UpdateSaveButton();
             CompletedBox.TextChanged += (_, _) => UpdateSaveButton();
+            ReleaseDateBox.TextChanged += (_, _) => UpdateSaveButton();
 
             ExtensionKeyBox.KeyDown += (_, e) =>
             {
@@ -139,6 +143,7 @@ namespace naLauncher2.Wpf
             SummaryBox.Text != _originalSummary ||
             ImagePathBox.Text != _originalImagePath ||
             CompletedBox.Text != _originalCompleted ||
+            ReleaseDateBox.Text != _originalReleaseDate ||
             _pendingExtensions.Count != _originalExtensionsCount;
 
         void UpdateSaveButton()
@@ -202,6 +207,9 @@ namespace naLauncher2.Wpf
                 : null;
             Game.Completed = DateTime.TryParse(CompletedBox.Text.Trim(), out var completed)
                 ? completed
+                : null;
+            Game.ReleaseDate = DateTime.TryParse(ReleaseDateBox.Text.Trim(), out var releaseDate)
+                ? releaseDate
                 : null;
             Game.Extensions = new Dictionary<string, string>(_pendingExtensions);
         }

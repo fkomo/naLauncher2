@@ -71,13 +71,37 @@ namespace naLauncher2.Wpf.Api
 		}
 
 		/// <summary>
-		/// Applies each pattern in <paramref name="patterns"/> to <paramref name="html"/> via
-		/// <see cref="ExtractValue"/> and returns the results in the same order.
+		/// Extracts the inner HTML of all elements with a given tag name and optional class names.
 		/// </summary>
-		/// <param name="html">The HTML to search.</param>
-		/// <param name="patterns">.NET regular expressions to apply. Use capture groups to isolate desired values.</param>
-		/// <returns>An array where each element is the extracted value, or <see langword="null"/> if the pattern did not match.</returns>
-		public static string?[] ExtractValues(string html, params string[] patterns)
+		/// <param name="html">The HTML markup to search.</param>
+		/// <param name="elementName">The tag name of the HTML elements to search for (e.g., "span", "div").</param>
+		/// <param name="classList">An optional list of class names. Only elements containing all specified classes will be matched. If no classes are
+		/// provided, all elements with the specified tag name are considered.</param>
+		/// <returns>An array of inner HTML strings from all matching elements. The array is empty if no matches are found.</returns>
+		public static string[] ExtractValues(string? html, string elementName, params string[] classList)
+		{
+			if (string.IsNullOrWhiteSpace(html))
+				return [];
+
+			var escaped = Regex.Escape(elementName);
+			var classLookaheads = string.Join("", classList.Select(c => $@"(?=[^>]*\bclass=""[^""]*\b{Regex.Escape(c)}\b)"));
+			// Balancing groups track nested same-name elements so the closing tag is matched
+			// at the correct depth, not at the first </elementName> encountered.
+			var pattern = $@"<{escaped}\b{classLookaheads}[^>]*>" +
+				$@"((?:[^<]|<(?!/?{escaped}\b)|(?<open><{escaped}\b[^>]*>)|(?<-open></{escaped}>))*(?(open)(?!)))" +
+				$@"</{escaped}>";
+			return [.. Regex.Matches(html, pattern, RegexOptions.Singleline)
+				.Select(m => m.Groups[1].Value)];
+		}
+
+        /// <summary>
+        /// Applies each pattern in <paramref name="patterns"/> to <paramref name="html"/> via
+        /// <see cref="ExtractValue"/> and returns the results in the same order.
+        /// </summary>
+        /// <param name="html">The HTML to search.</param>
+        /// <param name="patterns">.NET regular expressions to apply. Use capture groups to isolate desired values.</param>
+        /// <returns>An array where each element is the extracted value, or <see langword="null"/> if the pattern did not match.</returns>
+        public static string?[] ExtractValues(string html, params string[] patterns)
 			=> [.. patterns.Select(p => ExtractValue(html, p))];
 
 		/// <summary>

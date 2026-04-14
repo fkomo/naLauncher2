@@ -1,13 +1,12 @@
-using System.Diagnostics;
 using System.IO;
 using System.Windows;
-using System.Windows.Threading;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace naLauncher2.Wpf
 {
@@ -59,8 +58,15 @@ namespace naLauncher2.Wpf
             var game = GameLibrary.Instance.Games[_id];
             _isRemoved = game.Removed;
 
-            if (!string.IsNullOrEmpty(game.Developer))
-                DeveloperText.Text = game.Developer;
+            if (!string.IsNullOrEmpty(game.Developer) || game.ReleaseDate.HasValue)
+            {
+                var parts = new List<string>();
+                if (!string.IsNullOrEmpty(game.Developer))
+                    parts.Add(game.Developer);
+                if (game.ReleaseDate.HasValue)
+                    parts.Add($"({game.ReleaseDate.Value.Year})");
+                DeveloperText.Text = string.Join(" ", parts);
+            }
             else
                 DeveloperText.Visibility = Visibility.Collapsed;
 
@@ -77,14 +83,15 @@ namespace naLauncher2.Wpf
             _hasInfoOverlay = !string.IsNullOrEmpty(game.Developer)
                 || (game.Genres?.Length > 0)
                 || !string.IsNullOrEmpty(game.Summary)
-                || game.Rating.HasValue;
+                || game.Rating.HasValue
+                || game.ReleaseDate.HasValue;
 
             if (game.Rating.HasValue)
             {
                 _hasRating = true;
                 RatingBadge.Background = new SolidColorBrush(GetMetacriticColor(game.Rating.Value));
                 RatingText.Text = game.Rating.Value.ToString();
-               
+
                 if (_isRatingSortActive)
                     RatingBadge.Visibility = Visibility.Visible;
             }
@@ -354,9 +361,14 @@ namespace naLauncher2.Wpf
         {
             var game = GameLibrary.Instance.Games[_id];
 
-            if (!string.IsNullOrEmpty(game.Developer))
+            if (!string.IsNullOrEmpty(game.Developer) || game.ReleaseDate.HasValue)
             {
-                DeveloperText.Text = game.Developer;
+                var parts = new List<string>();
+                if (!string.IsNullOrEmpty(game.Developer))
+                    parts.Add(game.Developer);
+                if (game.ReleaseDate.HasValue)
+                    parts.Add($"({game.ReleaseDate.Value.Year})");
+                DeveloperText.Text = string.Join(" ", parts);
                 DeveloperText.Visibility = Visibility.Visible;
             }
             else
@@ -390,7 +402,8 @@ namespace naLauncher2.Wpf
             _hasInfoOverlay = !string.IsNullOrEmpty(game.Developer)
                 || (game.Genres?.Length > 0)
                 || !string.IsNullOrEmpty(game.Summary)
-                || game.Rating.HasValue;
+                || game.Rating.HasValue
+                || game.ReleaseDate.HasValue;
 
             if (game.Rating.HasValue)
             {

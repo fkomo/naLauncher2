@@ -77,6 +77,9 @@
             <TextBlock Style="{StaticResource LabelStyle}" Text="RATING (0–100)"/>
             <TextBox x:Name="RatingBox" Style="{StaticResource FieldStyle}"/>
 
+            <TextBlock Style="{StaticResource LabelStyle}" Text="RELEASE DATE"/>
+            <TextBox x:Name="ReleaseDateBox" Style="{StaticResource FieldStyle}"/>
+
             <TextBlock Style="{StaticResource LabelStyle}" Text="SUMMARY"/>
             <TextBox x:Name="SummaryBox" Style="{StaticResource FieldStyle}"
                      TextWrapping="Wrap" AcceptsReturn="True"
