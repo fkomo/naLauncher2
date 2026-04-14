@@ -113,7 +113,10 @@ namespace naLauncher2.Wpf.Api
 
             var images = WebScraper.ExtractAllAttributeValues(storePageHtml, "src", "img", "game_header_image_full");
             if (images.Length == 0)
+            {
+                Log.WriteLine($"SteamDb image for '{gameTitle}' not found.");
                 return null;
+            }
 
             // download & save image
             var (image, iamgeFormat) = await Tools.DownloadImage(images.First());

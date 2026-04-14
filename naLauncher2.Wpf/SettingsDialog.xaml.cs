@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -153,6 +154,19 @@ namespace naLauncher2.Wpf
                 LogPathText.Text = dialog.FolderName;
                 MarkDirty();
             }
+        }
+
+        void OpenLog_Click(object sender, MouseButtonEventArgs e)
+        {
+            var logPath = AppSettings.Instance.LogPath;
+            if (logPath == null)
+                return;
+
+            var filePath = Path.Combine(logPath, Log.LogFileName);
+            if (!File.Exists(filePath))
+                return;
+
+            Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
         }
 
         void AddSource_Click(object sender, MouseButtonEventArgs e)

@@ -5,7 +5,7 @@ namespace naLauncher2.Wpf
 {
     public class Log
     {
-        const string LogFileName = "naLauncher2.log";
+        public const string LogFileName = "naLauncher2.log";
 
         public static void WriteLine(string message)
         {
