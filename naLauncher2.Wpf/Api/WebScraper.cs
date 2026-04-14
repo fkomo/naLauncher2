@@ -94,5 +94,26 @@ namespace naLauncher2.Wpf.Api
 			return [.. Regex.Matches(html, pattern, RegexOptions.Singleline)
 				.Select(m => m.Groups[1].Value)];
 		}
+
+		/// <summary>
+		/// Extracts the values of a specified attribute from all HTML elements with a given tag name and optional class
+		/// names.
+		/// </summary>
+		/// <remarks>The search is case-sensitive and does not parse malformed HTML. Use this method for simple
+		/// extraction scenarios where performance and strict HTML compliance are not critical.</remarks>
+		/// <param name="html">The HTML markup to search for matching elements.</param>
+		/// <param name="attributeName">The name of the attribute whose values are to be extracted.</param>
+		/// <param name="elementName">The tag name of the HTML elements to search for (e.g., "a", "div").</param>
+		/// <param name="classList">An optional list of class names. Only elements containing all specified classes will be matched. If no classes are
+		/// provided, all elements with the specified tag name are considered.</param>
+		/// <returns>An array of strings containing the values of the specified attribute from all matching elements. The array is
+		/// empty if no matches are found.</returns>
+		public static string[] ExtractAllAttributeValues(string html, string attributeName, string elementName, params string[] classList)
+		{
+			var classLookaheads = string.Join("", classList.Select(c => $@"(?=[^>]*\bclass=""[^""]*\b{Regex.Escape(c)}\b)"));
+			var pattern = $@"<{Regex.Escape(elementName)}\b{classLookaheads}[^>]*\b{Regex.Escape(attributeName)}=""([^""]*)""[^>]*>";
+			return [.. Regex.Matches(html, pattern, RegexOptions.Singleline)
+				.Select(m => m.Groups[1].Value)];
+		}
 	}
 }

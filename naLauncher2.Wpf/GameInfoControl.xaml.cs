@@ -32,12 +32,12 @@ namespace naLauncher2.Wpf
         DateTime _lastScrollTick;
         readonly Brush _originalNameLabelForeground;
         readonly Effect _originalNameLabelEffect;
-        readonly bool _hasInfoOverlay;
+        bool _hasInfoOverlay;
 
         readonly string _id;
         public string Id => _id;
         readonly bool _isRemoved;
-        readonly bool _hasRating;
+        bool _hasRating;
         readonly bool _isRatingSortActive;
         bool _isRefreshActive;
 
@@ -348,6 +348,65 @@ namespace naLauncher2.Wpf
             {
                 CompletedFlag.Visibility = Visibility.Collapsed;
             }
+        }
+
+        public void UpdateGameData()
+        {
+            var game = GameLibrary.Instance.Games[_id];
+
+            if (!string.IsNullOrEmpty(game.Developer))
+            {
+                DeveloperText.Text = game.Developer;
+                DeveloperText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                DeveloperText.Text = string.Empty;
+                DeveloperText.Visibility = Visibility.Collapsed;
+            }
+
+            if (game.Genres?.Length > 0)
+            {
+                GenresText.Text = string.Join(" | ", game.Genres);
+                GenresText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                GenresText.Text = string.Empty;
+                GenresText.Visibility = Visibility.Collapsed;
+            }
+
+            if (!string.IsNullOrEmpty(game.Summary))
+            {
+                SummaryText.Text = game.Summary;
+                SummaryScroller.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                SummaryText.Text = string.Empty;
+                SummaryScroller.Visibility = Visibility.Collapsed;
+            }
+
+            _hasInfoOverlay = !string.IsNullOrEmpty(game.Developer)
+                || (game.Genres?.Length > 0)
+                || !string.IsNullOrEmpty(game.Summary)
+                || game.Rating.HasValue;
+
+            if (game.Rating.HasValue)
+            {
+                _hasRating = true;
+                RatingBadge.Background = new SolidColorBrush(GetMetacriticColor(game.Rating.Value));
+                RatingText.Text = game.Rating.Value.ToString();
+                if (_isRatingSortActive)
+                    RatingBadge.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                _hasRating = false;
+                RatingBadge.Visibility = Visibility.Collapsed;
+            }
+
+            UpdateCompletedState();
         }
 
         public void RefreshImage()

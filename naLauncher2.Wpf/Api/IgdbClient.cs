@@ -1,7 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -57,7 +54,6 @@ namespace naLauncher2.Wpf.Api
         readonly string _apiBaseUrl;
 
         readonly HttpClient _httpClient;
-        readonly HttpClient _imageHttpClient;
 
         const string _imagesDirectory = "IgdbCom";
 
@@ -68,8 +64,6 @@ namespace naLauncher2.Wpf.Api
 
             _apiBaseUrl = apiBaseUrl;
             _httpClient = new HttpClient(twitchDevAuthz);
-            
-            _imageHttpClient = new HttpClient();
         }
 
         public static string GetGameSearchUrl(string gameTitle) => $"https://www.igdb.com/search?q={Uri.EscapeDataString(gameTitle)}&type=games";
@@ -212,59 +206,11 @@ namespace naLauncher2.Wpf.Api
             }
 
             // download & save image
-            var (image, iamgeFormat) = await DownloadImage(imageUrl);
+            var (image, iamgeFormat) = await Tools.DownloadImage(imageUrl);
             if (image != null)
-                return await SaveGameImage(gameTitle, image, iamgeFormat, imageDirectory);
+                return await Tools.SaveGameImage(gameTitle, image, iamgeFormat, imageDirectory);
 
             return null;
-        }
-
-        async static Task<string?> SaveGameImage(string gameTitle, Image image, ImageFormat imageFormat, string directory)
-        {
-            Directory.CreateDirectory(directory);
-
-            var invalidChars = Path.GetInvalidFileNameChars();
-            var safeTitle = string.Concat(gameTitle.Select(c => invalidChars.Contains(c) ? '_' : c));
-
-            var extension = imageFormat.Equals(ImageFormat.Png) ? "png"
-                : imageFormat.Equals(ImageFormat.Gif) ? "gif"
-                : imageFormat.Equals(ImageFormat.Bmp) ? "bmp"
-                : "jpg";
-
-            var filePath = Path.Combine(directory, $"{safeTitle}.{extension}");
-            if (File.Exists(filePath))
-            {
-                Log.WriteLine($"Image for '{gameTitle}' already exists at {filePath}. Skipping download.");
-                return filePath;
-            }
-
-            await Task.Run(() => image.Save(filePath, imageFormat));
-
-            return filePath;
-        }
-
-        async Task<(Image, ImageFormat)> DownloadImage(string imageUrl)
-        {
-            using var tb = new TimedBlock($"{nameof(IgdbClient)}.{nameof(DownloadImage)}({imageUrl})", Log.WriteLine);
-
-            using var response = await _imageHttpClient.GetAsync(imageUrl);
-            if (!response.IsSuccessStatusCode)
-                return default!;
-
-            var imageFormat = response.Content.Headers.ContentType?.MediaType switch
-            {
-                "image/png" => ImageFormat.Png,
-                "image/gif" => ImageFormat.Gif,
-                "image/bmp" => ImageFormat.Bmp,
-                _ => ImageFormat.Jpeg
-            };
-
-            using var ms = new MemoryStream();
-            await response.Content.CopyToAsync(ms);
-            ms.Position = 0;
-
-            // copy into a new Bitmap so it no longer depends on the stream
-            return (new Bitmap(Image.FromStream(ms)), imageFormat);
         }
     }
 }

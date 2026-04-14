@@ -974,6 +974,9 @@ namespace naLauncher2.Wpf
             await GameLibrary.Instance.Save();
 
             RefreshAllSections();
+
+            foreach (var c in FindGameControls(newName))
+                c.RefreshImage();
         }
 
         /// <summary>
@@ -1017,7 +1020,7 @@ namespace naLauncher2.Wpf
 
                 if (existing.TryGetValue(id, out var control))
                 {
-                    control.UpdateCompletedState();
+                    control.UpdateGameData();
 
                     var existingTT = control.RenderTransform as TranslateTransform;
                     double visualX = Canvas.GetLeft(control) + (existingTT?.X ?? 0);
@@ -1110,7 +1113,7 @@ namespace naLauncher2.Wpf
 
                 if (existing.TryGetValue(id, out var control))
                 {
-                    control.UpdateCompletedState();
+                    control.UpdateGameData();
 
                     var existingTT = control.RenderTransform as TranslateTransform;
                     double visualX = Canvas.GetLeft(control) + (existingTT?.X ?? 0);

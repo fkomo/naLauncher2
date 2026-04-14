@@ -329,16 +329,13 @@ namespace naLauncher2.Wpf
         {
             var gameInfo = Games[gameTitle];
 
-            if (!gameInfo.Extensions.TryGetValue(GameInfoExtension.SteamAppId.ToString(), out string? steamAppId) || string.IsNullOrWhiteSpace(steamAppId))
-            {
-                steamAppId = await SteamClient.GetAppId(gameTitle);
-                if (steamAppId == null)
-                    return false;
+            gameInfo.Extensions.TryGetValue(GameInfoExtension.SteamAppId.ToString(), out string? steamAppId);
 
-                gameInfo.Extensions.Add(GameInfoExtension.SteamAppId.ToString(), steamAppId);
-            }
+            var gameData = await SteamClient.GetGameData(gameTitle, steamAppId: steamAppId, getImage: true);
+            if (gameData == null)
+                return false;
 
-            gameInfo.Rating ??= await SteamClient.GetMetacriticScore(steamAppId);
+            gameInfo.UpdateFromSteam(gameData);
 
             Log.WriteLine($"'{gameTitle}' updated with SteamAppId={steamAppId}");
 
@@ -354,13 +351,13 @@ namespace naLauncher2.Wpf
 
             gameInfo.Extensions.TryGetValue(GameInfoExtension.IgdbId.ToString(), out string? igdbId);
 
-            var igdbGameData = await App.IgdbClient.GetGameData(gameTitle, gameId: igdbId, getImage: true);
-            if (igdbGameData == null)
+            var gameData = await App.IgdbClient.GetGameData(gameTitle, gameId: igdbId, getImage: true);
+            if (gameData == null)
                 return false;
 
-            gameInfo.UpdateFromIgdb(igdbGameData);
+            gameInfo.UpdateFromIgdb(gameData);
 
-            Log.WriteLine($"'{gameTitle}' updated with IgdbId={igdbGameData.Id}");
+            Log.WriteLine($"'{gameTitle}' updated with IgdbId={gameData.Id}");
 
             return true;
         }

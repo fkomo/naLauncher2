@@ -126,6 +126,11 @@ namespace naLauncher2.Wpf
                 ImagePathBox.Text = dialog.FileName;
         }
 
+        void ClearImagePath_Click(object sender, MouseButtonEventArgs e)
+        {
+            ImagePathBox.Text = string.Empty;
+        }
+
         bool HasChanges() =>
             TitleBox.Text.Trim() != _originalId ||
             DeveloperBox.Text != _originalDeveloper ||

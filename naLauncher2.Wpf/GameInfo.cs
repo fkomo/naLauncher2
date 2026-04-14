@@ -53,11 +53,29 @@ namespace naLauncher2.Wpf
                 Extensions[GameInfoExtension.IgdbUrl.ToString()] = gameData.Url;
 
             Summary ??= gameData.Summary;
-            Developer ??= gameData.Developer;
             ImagePath ??= gameData.ImagePath;
 
+            Developer ??= gameData.Developer;
             if (Genres == null || Genres.Length == 0)
                 Genres = gameData.Genres ?? [];
+        }
+
+        internal void UpdateFromSteam(SteamGameData gameData)
+        {
+            if (gameData == null || string.IsNullOrEmpty(gameData.Id))
+                return;
+
+            Extensions ??= [];
+
+            Extensions[GameInfoExtension.SteamAppId.ToString()] = gameData.Id;
+
+            if (gameData.Description != null)
+                Summary = gameData.Description;
+
+            if (gameData.ImagePath != null)
+                ImagePath = gameData.ImagePath;
+
+            Rating ??= gameData.MetacriticScore;
         }
     }
 }
