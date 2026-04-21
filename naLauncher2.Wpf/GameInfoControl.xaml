@@ -12,6 +12,12 @@
         <ScaleTransform x:Name="HoverScale"/>
     </UserControl.RenderTransform>
     <Grid>
+        <!-- Shadow rectangle: Effect is isolated here so it does not force the image/content to be rasterized before scaling -->
+        <Rectangle x:Name="ShadowRect" Fill="#FF1a1a1a" IsHitTestVisible="False">
+            <Rectangle.Effect>
+                <DropShadowEffect x:Name="ShadowEffect" BlurRadius="16" Color="Black" ShadowDepth="0" Opacity="1"/>
+            </Rectangle.Effect>
+        </Rectangle>
     <Border x:Name="MainBorder" BorderBrush="#FF404040" BorderThickness="1" Background="#FF1a1a1a">
         <Grid>
             <Grid.RowDefinitions>
