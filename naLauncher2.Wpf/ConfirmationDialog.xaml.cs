@@ -23,6 +23,8 @@ namespace naLauncher2.Wpf
         {
             if (e.Key == Key.Escape)
                 DialogResult = false;
+            else if (e.Key == Key.Enter)
+                DialogResult = true;
         }
     }
 }
