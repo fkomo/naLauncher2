@@ -446,9 +446,10 @@ namespace naLauncher2.Wpf
         void PopulateGridSection(Canvas container, string[] games)
         {
             bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
+            bool isReleaseDateSortActive = _userGamesSortMode == GamesSortMode.Released;
             for (int i = 0; i < games.Length; i++)
             {
-                var control = new GameInfoControl(games[i], isRatingSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
+                var control = new GameInfoControl(games[i], isRatingSortActive, isReleaseDateSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
                 container.Children.Add(control);
                 Canvas.SetLeft(control, _gridOffset + (i % _controlsPerRow) * (GameInfoControl.ControlWidth + Gap));
                 Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius + (i / _controlsPerRow) * (GameInfoControl.ControlHeight + Gap));
@@ -1087,6 +1088,7 @@ namespace naLauncher2.Wpf
         void UpdateGridSection(Canvas container, string[] games)
         {
             bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
+            bool isReleaseDateSortActive = _userGamesSortMode == GamesSortMode.Released;
             var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
             var moveDuration = new Duration(TimeSpan.FromMilliseconds(MoveDurationMs));
             var fadeDuration = new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs));
@@ -1132,7 +1134,7 @@ namespace naLauncher2.Wpf
                 }
                 else
                 {
-                    var newControl = new GameInfoControl(id, isRatingSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
+                    var newControl = new GameInfoControl(id, isRatingSortActive, isReleaseDateSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
                     container.Children.Add(newControl);
                     Canvas.SetLeft(newControl, newLeft);
                     Canvas.SetTop(newControl, newTop);

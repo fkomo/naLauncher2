@@ -38,12 +38,14 @@ namespace naLauncher2.Wpf
         readonly bool _isRemoved;
         bool _hasRating;
         readonly bool _isRatingSortActive;
+        readonly bool _isReleaseDateSortActive;
         bool _isRefreshActive;
 
-        public GameInfoControl(string id, bool isRatingSortActive = false)
+        public GameInfoControl(string id, bool isRatingSortActive = false, bool isReleaseDateSortActive = false)
         {
             _id = id;
             _isRatingSortActive = isRatingSortActive;
+            _isReleaseDateSortActive = isReleaseDateSortActive;
 
             InitializeComponent();
 
@@ -56,6 +58,8 @@ namespace naLauncher2.Wpf
             NameLabel.Text = _id;
 
             var game = GameLibrary.Instance.Games[_id];
+            if (_isReleaseDateSortActive && game.ReleaseDate.HasValue)
+                NameLabel.Text = $"{_id} ({game.ReleaseDate.Value.Year})";
             _isRemoved = game.Removed;
 
             if (!string.IsNullOrEmpty(game.Developer) || game.ReleaseDate.HasValue)
@@ -404,6 +408,11 @@ namespace naLauncher2.Wpf
                 || !string.IsNullOrEmpty(game.Summary)
                 || game.Rating.HasValue
                 || game.ReleaseDate.HasValue;
+
+            if (_isReleaseDateSortActive && game.ReleaseDate.HasValue)
+                NameLabel.Text = $"{_id} ({game.ReleaseDate.Value.Year})";
+            else
+                NameLabel.Text = _id;
 
             if (game.Rating.HasValue)
             {
