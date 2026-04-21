@@ -11,9 +11,6 @@
     <UserControl.RenderTransform>
         <ScaleTransform x:Name="HoverScale"/>
     </UserControl.RenderTransform>
-    <UserControl.Effect>
-        <DropShadowEffect x:Name="ShadowEffect" BlurRadius="16" Color="Black" ShadowDepth="0" Opacity="1"/>
-    </UserControl.Effect>
     <Grid>
     <Border x:Name="MainBorder" BorderBrush="#FF404040" BorderThickness="1" Background="#FF1a1a1a">
         <Grid>
@@ -25,7 +22,8 @@
             <!-- Image section -->
             <Grid Grid.Row="0">
                 <Image x:Name="ControlImage" 
-                       Stretch="UniformToFill"/>
+                       Stretch="UniformToFill"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
                 <TextBlock x:Name="LoadingText"
                            Text="Loading..."
                            Foreground="#FF808080"
