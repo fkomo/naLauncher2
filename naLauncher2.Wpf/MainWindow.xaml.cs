@@ -1160,12 +1160,7 @@ namespace naLauncher2.Wpf
 
             UpdateHorizontalSection(NewGamesContainer, newGames, id => $"added {TimeAgo(GameLibrary.Instance.Games[id].Added)}");
 
-            if (newGames.Length > 0 && _newGamesCollapsed)
-            {
-                _newGamesCollapsed = false;
-                ApplyNewGamesState();
-            }
-            else if (newGames.Length == 0 && !_newGamesCollapsed)
+            if (newGames.Length == 0 && !_newGamesCollapsed)
             {
                 _newGamesCollapsed = true;
                 ApplyNewGamesState();
@@ -1173,12 +1168,7 @@ namespace naLauncher2.Wpf
 
             UpdateHorizontalSection(RecentGamesContainer, recentGames, id => $"played {TimeAgo(GameLibrary.Instance.Games[id].LastPlayed!.Value)}");
 
-            if (recentGames.Length > 0 && _recentGamesCollapsed)
-            {
-                _recentGamesCollapsed = false;
-                ApplyRecentGamesState();
-            }
-            else if (recentGames.Length == 0 && !_recentGamesCollapsed)
+            if (recentGames.Length == 0 && !_recentGamesCollapsed)
             {
                 _recentGamesCollapsed = true;
                 ApplyRecentGamesState();
