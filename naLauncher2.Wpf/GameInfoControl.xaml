@@ -9,7 +9,10 @@
          MouseEnter="UserControl_MouseEnter"
          MouseLeave="UserControl_MouseLeave">
     <UserControl.RenderTransform>
-        <ScaleTransform x:Name="HoverScale"/>
+        <TransformGroup>
+            <ScaleTransform x:Name="HoverScale"/>
+            <TranslateTransform x:Name="SlideTransform"/>
+        </TransformGroup>
     </UserControl.RenderTransform>
     <Grid>
         <!-- Shadow rectangle: Effect is isolated here so it does not force the image/content to be rasterized before scaling -->

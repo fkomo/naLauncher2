@@ -1021,15 +1021,13 @@ namespace naLauncher2.Wpf
                 {
                     control.UpdateGameData();
 
-                    var existingTT = control.RenderTransform as TranslateTransform;
-                    double visualX = Canvas.GetLeft(control) + (existingTT?.X ?? 0);
+                    double visualX = Canvas.GetLeft(control) + control.SlideTransform.X;
                     Canvas.SetLeft(control, newX);
                     double deltaX = visualX - newX;
                     if (Math.Abs(deltaX) > 0.5)
                     {
-                        var tt = new TranslateTransform(deltaX, 0);
-                        control.RenderTransform = tt;
-                        tt.BeginAnimation(TranslateTransform.XProperty,
+                        control.SlideTransform.X = deltaX;
+                        control.SlideTransform.BeginAnimation(TranslateTransform.XProperty,
                             new DoubleAnimation(deltaX, 0, moveDuration) { EasingFunction = easing });
                     }
 
@@ -1115,20 +1113,19 @@ namespace naLauncher2.Wpf
                 {
                     control.UpdateGameData();
 
-                    var existingTT = control.RenderTransform as TranslateTransform;
-                    double visualX = Canvas.GetLeft(control) + (existingTT?.X ?? 0);
-                    double visualY = Canvas.GetTop(control) + (existingTT?.Y ?? 0);
+                    double visualX = Canvas.GetLeft(control) + control.SlideTransform.X;
+                    double visualY = Canvas.GetTop(control) + control.SlideTransform.Y;
                     double deltaX = visualX - newLeft;
                     double deltaY = visualY - newTop;
                     Canvas.SetLeft(control, newLeft);
                     Canvas.SetTop(control, newTop);
                     if (Math.Abs(deltaX) > 0.5 || Math.Abs(deltaY) > 0.5)
                     {
-                        var tt = new TranslateTransform(deltaX, deltaY);
-                        control.RenderTransform = tt;
-                        tt.BeginAnimation(TranslateTransform.XProperty,
+                        control.SlideTransform.X = deltaX;
+                        control.SlideTransform.Y = deltaY;
+                        control.SlideTransform.BeginAnimation(TranslateTransform.XProperty,
                             new DoubleAnimation(deltaX, 0, moveDuration) { EasingFunction = easing });
-                        tt.BeginAnimation(TranslateTransform.YProperty,
+                        control.SlideTransform.BeginAnimation(TranslateTransform.YProperty,
                             new DoubleAnimation(deltaY, 0, moveDuration) { EasingFunction = easing });
                     }
                 }
