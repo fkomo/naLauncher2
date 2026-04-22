@@ -37,6 +37,7 @@ namespace naLauncher2.Wpf.Api
             var normalizedGameTitle = gameTitle.NormalizeCustom().Replace("demo", string.Empty);
 
             var exactMatches = allAppUrls
+                .Where(url => url.Contains("/app/"))
                 .Select(url => 
                     new
                     {
@@ -45,6 +46,9 @@ namespace naLauncher2.Wpf.Api
                     })
                 .Where(x => x.Title.NormalizeCustom().Replace("demo", string.Empty).Equals(normalizedGameTitle, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
+
+            if (exactMatches.Length > 1)
+                exactMatches = exactMatches.Where(x => !x.Title.ToLower().Contains("demo")).ToArray();
 
             exactMatches = exactMatches
                 .GroupBy(x => x.AppId)
