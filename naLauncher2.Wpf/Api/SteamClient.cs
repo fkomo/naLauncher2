@@ -133,7 +133,17 @@ namespace naLauncher2.Wpf.Api
                 return existingImages[0];
             }
 
-            var images = WebScraper.ExtractAllAttributeValues(storePageHtml, "src", "img", "game_header_image_full");
+            // sample: <img class="game_header_image_full" alt="" src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1939970/header.jpg?t=1771496637">
+            var images = WebScraper.ExtractAllAttributeValuesFiltered(storePageHtml, "img", "src", 
+                ("class", "game_header_image_full"));
+
+            if (images.Length == 0)
+            {
+                // sample: <meta property="og:image" content="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1939970/capsule_616x353.jpg?t=1771496637">
+                images = WebScraper.ExtractAllAttributeValuesFiltered(storePageHtml, "meta", "content", 
+                    ("property", "og:image"));
+            }
+
             if (images.Length == 0)
             {
                 Log.WriteLine($"SteamDb image for '{gameTitle}' not found.");
