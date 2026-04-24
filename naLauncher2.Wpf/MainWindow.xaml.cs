@@ -333,7 +333,22 @@ namespace naLauncher2.Wpf
         void RefreshContextMenu_AllGames_Click(object sender, MouseButtonEventArgs e)
         {
             HideDropdowns();
+
             RefreshButton_Click(RefreshButton, e);
+        }
+
+        async void RefreshContextMenu_MissingImages_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            var glow = TryStartRefreshAnimation();
+            if (glow is null)
+                return;
+
+            if (await GameLibrary.Instance.RefreshMissingGameImagesFromCache(AppSettings.Instance.ImageCachePath))
+                RefreshAllSections();
+
+            StopRefreshAnimation(glow);
         }
 
         DropShadowEffect? TryStartRefreshAnimation()

@@ -292,6 +292,7 @@
             <Border x:Name="RefreshContextMenuPanel" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160" Visibility="Collapsed">
                 <StackPanel>
                     <TextBlock x:Name="RefreshMenuAllGames" Style="{StaticResource DropdownItemStyle}" Text="Refresh all games" MouseLeftButtonUp="RefreshContextMenu_AllGames_Click"/>
+                    <TextBlock x:Name="RefreshMenuMissingImages" Style="{StaticResource DropdownItemStyle}" Text="Refresh missing images (cache)" MouseLeftButtonUp="RefreshContextMenu_MissingImages_Click"/>
                 </StackPanel>
             </Border>
             <Border x:Name="GameContextMenuPanel" Background="#FF282C2E" BorderBrush="#FF404448" BorderThickness="1" MinWidth="160" Visibility="Collapsed">
