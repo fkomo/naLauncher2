@@ -308,6 +308,34 @@ namespace naLauncher2.Wpf
             StopRefreshAnimation(glow);
         }
 
+        void RefreshButton_RightClick(object sender, MouseButtonEventArgs e)
+        {
+            if (_isRefreshing)
+                return;
+
+            UserGamesFilterPanel.Visibility = Visibility.Collapsed;
+            UserGamesOrderPanel.Visibility = Visibility.Collapsed;
+            UserGamesGenresPanel.Visibility = Visibility.Collapsed;
+            GameContextMenuPanel.Visibility = Visibility.Collapsed;
+            RefreshContextMenuPanel.Visibility = Visibility.Visible;
+            DropdownOverlay.Visibility = Visibility.Visible;
+
+            RefreshContextMenuPanel.UpdateLayout();
+
+            Point pos = RefreshButton.TransformToAncestor(RootGrid).Transform(new Point(0, RefreshButton.ActualHeight + 4));
+            double x = Math.Min(pos.X, RootGrid.ActualWidth - RefreshContextMenuPanel.ActualWidth - 16);
+            Canvas.SetLeft(RefreshContextMenuPanel, Math.Max(0, x));
+            Canvas.SetTop(RefreshContextMenuPanel, pos.Y);
+
+            e.Handled = true;
+        }
+
+        void RefreshContextMenu_AllGames_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+            RefreshButton_Click(RefreshButton, e);
+        }
+
         DropShadowEffect? TryStartRefreshAnimation()
         {
             if (_isRefreshing)
@@ -667,6 +695,7 @@ namespace naLauncher2.Wpf
             UserGamesOrderPanel.Visibility = Visibility.Collapsed;
             UserGamesGenresPanel.Visibility = Visibility.Collapsed;
             GameContextMenuPanel.Visibility = Visibility.Collapsed;
+            RefreshContextMenuPanel.Visibility = Visibility.Collapsed;
             panel.Visibility = Visibility.Visible;
             DropdownOverlay.Visibility = Visibility.Visible;
         }
@@ -692,6 +721,7 @@ namespace naLauncher2.Wpf
             UserGamesFilterPanel.Visibility = Visibility.Collapsed;
             UserGamesOrderPanel.Visibility = Visibility.Collapsed;
             UserGamesGenresPanel.Visibility = Visibility.Collapsed;
+            RefreshContextMenuPanel.Visibility = Visibility.Collapsed;
             GameContextMenuPanel.Visibility = Visibility.Visible;
             DropdownOverlay.Visibility = Visibility.Visible;
 
