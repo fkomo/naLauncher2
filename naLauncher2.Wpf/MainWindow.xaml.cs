@@ -59,6 +59,7 @@ namespace naLauncher2.Wpf
         string? _contextMenuTargetId;
 
         bool _isRefreshing = false;
+        bool _stopRefreshRequested = false;
         readonly Queue<string> _contextRefreshQueue = new();
         string[]? _pendingNewGameDataRefresh;
 
@@ -278,6 +279,8 @@ namespace naLauncher2.Wpf
             if (glow is null)
                 return;
 
+            _stopRefreshRequested = false;
+
             if (await GameLibrary.Instance.RefreshMissingGameImagesFromCache(AppSettings.Instance.ImageCachePath))
                 RefreshAllSections();
 
@@ -297,6 +300,12 @@ namespace naLauncher2.Wpf
 
                 if (await GameLibrary.Instance.RefreshGameData(games[i], silent: true))
                     changed = true;
+
+                if (_stopRefreshRequested)
+                {
+                    Log.WriteLine("Refresh stopped by user.");
+                    break;
+                }
             }
 
             if (prevControls is not null)
@@ -305,13 +314,15 @@ namespace naLauncher2.Wpf
             if (changed)
                 RefreshAllSections();
 
+            _stopRefreshRequested = false;
             StopRefreshAnimation(glow);
         }
 
         void RefreshButton_RightClick(object sender, MouseButtonEventArgs e)
         {
-            if (_isRefreshing)
-                return;
+            RefreshMenuStop.Visibility = _isRefreshing ? Visibility.Visible : Visibility.Collapsed;
+            RefreshMenuAllGames.Visibility = _isRefreshing ? Visibility.Collapsed : Visibility.Visible;
+            RefreshMenuMissingImages.Visibility = _isRefreshing ? Visibility.Collapsed : Visibility.Visible;
 
             UserGamesFilterPanel.Visibility = Visibility.Collapsed;
             UserGamesOrderPanel.Visibility = Visibility.Collapsed;
@@ -328,6 +339,15 @@ namespace naLauncher2.Wpf
             Canvas.SetTop(RefreshContextMenuPanel, pos.Y);
 
             e.Handled = true;
+        }
+
+        void RefreshContextMenu_Stop_Click(object sender, MouseButtonEventArgs e)
+        {
+            Log.WriteLine("Refresh stop attempted by user ...");
+
+            _stopRefreshRequested = true;
+
+            HideDropdowns();
         }
 
         void RefreshContextMenu_AllGames_Click(object sender, MouseButtonEventArgs e)
