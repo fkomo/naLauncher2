@@ -7,14 +7,16 @@ using Ujeby.Tools;
 
 namespace naLauncher2.Wpf.Api
 {
-    public record class IgdbGameData(string Title)
+    public class IgdbGameData : IGameData
     {
+        public string? Title { get; set; }
         public string? Id { get; init; }
+        public string? ImagePath { get; init; }
+
         public string? Summary { get; init; }
         public int? Rating { get; init; }
         public string? Developer { get; init; }
         public string[]? Genres { get; init; }
-        public string? ImagePath { get; init; }
         public string? Url { get; init; }
     }
 
@@ -49,26 +51,25 @@ namespace naLauncher2.Wpf.Api
     /// <summary>
     /// https://www.igdb.com/api
     /// </summary>
-    public class IgdbClient
+    public class IgdbClient : IGameDataProvider<IgdbGameData>
     {
-        readonly string _apiBaseUrl;
-
-        readonly HttpClient _httpClient;
+        const string _apiBaseUrl = "https://api.igdb.com/v4";
 
         const string _imagesDirectory = "IgdbCom";
 
-        public IgdbClient(TwitchDevAuthz? twitchDevAuthz, string apiBaseUrl = "https://api.igdb.com/v4")
+        readonly HttpClient _httpClient;
+
+        public IgdbClient(TwitchDevAuthz? twitchDevAuthz)
         {
             if (twitchDevAuthz == null)
                 throw new ArgumentException($"TwitchDev authz is required for {nameof(IgdbClient)}.");
 
-            _apiBaseUrl = apiBaseUrl;
             _httpClient = new HttpClient(twitchDevAuthz);
         }
 
         public static string GetGameSearchUrl(string gameTitle) => $"https://www.igdb.com/search?q={Uri.EscapeDataString(gameTitle)}&type=games";
 
-        public async Task<IgdbGameData?> GetGameData(string gameTitle, string? gameId = null, bool getImage = true)
+        public async Task<IgdbGameData?> GetGameData(string gameTitle, string? id = null, bool getImage = true)
         {
             using var tb = new TimedBlock($"{nameof(IgdbClient)}.{nameof(GetGameData)}('{gameTitle}')", Log.WriteLine);
 
@@ -76,19 +77,20 @@ namespace naLauncher2.Wpf.Api
 
             try
             {
-                gameId ??= await GetIdFromTitle(gameTitle);
+                id ??= await GetIdFromTitle(gameTitle);
 
                 // get game by id
                 var gameDetail = (await PostAsync<GameDetail[]>($"{_apiBaseUrl}/games",
-                        $"fields name, artworks, cover, genres, total_rating, summary, involved_companies, url; where id = {gameId};"))?
+                        $"fields name, artworks, cover, genres, total_rating, summary, involved_companies, url; where id = {id};"))?
                         .SingleOrDefault();
 
                 if (gameDetail == null)
-                    return null;
+                    return default;
 
-                var gameData = new IgdbGameData(gameTitle)
+                var gameData = new IgdbGameData
                 {
-                    Id = gameId,
+                    Title = gameTitle,
+                    Id = id,
                     Summary = gameDetail.summary,
                     Rating = gameDetail.total_rating.HasValue ? (int)gameDetail.total_rating : null,
                     Developer = await GetDeveloper(gameDetail.involved_companies),
@@ -102,7 +104,7 @@ namespace naLauncher2.Wpf.Api
             catch (Exception ex)
             {
                 Log.WriteLine($"{nameof(GetGameData)}('{gameTitle}') failed with: {ex}");
-                return null;
+                return default;
             }
         }
 

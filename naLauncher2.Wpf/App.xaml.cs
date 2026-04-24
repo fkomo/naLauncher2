@@ -20,7 +20,6 @@ namespace naLauncher2.Wpf
         };
 
         public static TwitchDevAuthz? TwitchDevAuthz { get; set; }
-        public static IgdbClient? IgdbClient { get; set; }
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -36,13 +35,9 @@ namespace naLauncher2.Wpf
         public static void SettingsChanged()
         {
             TwitchDevAuthz = null;
-            IgdbClient = null;
 
             if (AppSettings.Instance.TwitchDev?.ClientId != null && AppSettings.Instance.TwitchDev.ClientSecret != null)
-            {
                 TwitchDevAuthz = new TwitchDevAuthz(AppSettings.Instance.TwitchDev.ClientId, AppSettings.Instance.TwitchDev.ClientSecret);
-                IgdbClient = new IgdbClient(TwitchDevAuthz);
-            }
         }
 
         protected override async void OnExit(ExitEventArgs e)

@@ -5,26 +5,32 @@ using Ujeby.Extensions;
 
 namespace naLauncher2.Wpf.Api
 {
-    public record class SteamGameData(string Title)
+    public record class SteamGameData() : IGameData
     {
+        public string? Title { get; init; }
         public string? Id { get; init; }
-        public int? MetacriticScore { get; init; }
         public string? ImagePath { get; init; }
+
+        public int? MetacriticScore { get; init; }
         public string? Description { get; init; }
         public DateTime? ReleaseDate { get; init; }
     }
 
-    public class SteamClient
+    public class SteamClient : IGameDataProvider<SteamGameData>
     {
         const string _storeUrl = "https://store.steampowered.com";
+
+        const string _searchUrl = "https://store.steampowered.com/search?sort_by=_ASC&term=";
 
         const string _imagesDirectory = "SteamDbInfo";
 
         public static string GetStoreUrl(string appId) => $"{_storeUrl}/app/{appId}";
 
-        const string _searchUrl = "https://store.steampowered.com/search?sort_by=_ASC&term=";
+        public SteamClient()
+        {
+        }
 
-        public static async Task<string?> GetAppId(string gameTitle)
+        public async Task<string?> GetAppId(string gameTitle)
         {
             var html = await WebScraper.RenderAsync(_searchUrl + WebUtility.UrlEncode(gameTitle.ToLower()));
             if (html == null)
@@ -64,21 +70,22 @@ namespace naLauncher2.Wpf.Api
             return null;
         }
 
-        internal static async Task<SteamGameData?> GetGameData(string gameTitle, string? steamAppId = null, bool getImage = false)
+        public async Task<SteamGameData?> GetGameData(string gameTitle, string? id = null, bool getImage = false)
         {
-            steamAppId ??= await GetAppId(gameTitle);
-            if (steamAppId == null)
+            id ??= await GetAppId(gameTitle);
+            if (id == null)
                 return null;
 
-            var storeUrl = GetStoreUrl(steamAppId);
+            var storeUrl = GetStoreUrl(id);
 
             var storePageHtml = await GetStorePageHtml(storeUrl);
             if (storePageHtml == null)
                 return null;
 
-            return new(gameTitle)
+            return new SteamGameData
             {
-                Id = steamAppId,
+                Title = gameTitle,
+                Id = id,
                 MetacriticScore = await GetMetacriticScore(storePageHtml),
                 ImagePath = getImage ? await GetImage(gameTitle, storePageHtml) : null,
                 Description = WebScraper.ExtractValue(storePageHtml, @"<div[^>]*\bclass=""[^""]*\bgame_description_snippet\b[^""]*""[^>]*>\s*(.+?)\s*</div>"),

@@ -121,7 +121,7 @@ namespace naLauncher2.Wpf
 
             PopulateGridSection(UserGamesContainer, userGames);
 
-            UserGamesLabel.Text = GetUserGamesLabelText(_userGamesFilterMode, userGames.Length);
+            UserGamesLabel.Text = GetUserGamesLabelText(_userGamesFilterMode);
             UpdateGenresLabel();
             UserGamesOrderLabel.Text = _userGamesSortMode.ToString();
             UserGamesOrderDirectionToggle.Text = _userGamesSortDescending ? "\u25BC" : "\u25B2";
@@ -1434,7 +1434,7 @@ namespace naLauncher2.Wpf
             UserGamesContainer.Children.Clear();
             PopulateGridSection(UserGamesContainer, userGames);
 
-            UserGamesLabel.Text = GetUserGamesLabelText(_userGamesFilterMode, userGames.Length);
+            UserGamesLabel.Text = GetUserGamesLabelText(_userGamesFilterMode);
             UpdateGenresLabel();
 
             _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
@@ -1450,9 +1450,7 @@ namespace naLauncher2.Wpf
             UpdateScrollThumbs();
         }
 
-        static string GetUserGamesLabelText(UserGamesFilterMode userGamesFilterMode, int length) =>
-            //userGamesFilterMode.ToString() + (length > 0 ? $" ({length})" : null);
-            userGamesFilterMode.ToString();// + (length > 0 ? $" ({length})" : null);   
+        static string GetUserGamesLabelText(UserGamesFilterMode userGamesFilterMode) => userGamesFilterMode.ToString();
 
         /// <summary>
         /// Recalculates the User Games scroll range and viewport culling after the available
@@ -1576,7 +1574,7 @@ namespace naLauncher2.Wpf
                     if (!getCollapsed()) return;
                     canvas.BeginAnimation(UIElement.OpacityProperty, null);
                     canvas.Visibility = Visibility.Collapsed;
-                    if (canvasRow != null) canvasRow.Height = new GridLength(0);
+                    canvasRow?.Height = new GridLength(0);
                     scrollThumb.Visibility = Visibility.Collapsed;
                     onViewportChange?.Invoke();
                 };
@@ -1586,7 +1584,7 @@ namespace naLauncher2.Wpf
             {
                 onExpand?.Invoke();
                 double fromOpacity = canvas.Visibility == Visibility.Collapsed ? 0 : canvas.Opacity;
-                if (canvasRow != null) canvasRow.Height = new GridLength(1, GridUnitType.Star);
+                canvasRow?.Height = new GridLength(1, GridUnitType.Star);
                 canvas.Visibility = Visibility.Visible;
                 scrollThumb.Visibility = Visibility.Visible;
                 canvas.BeginAnimation(UIElement.OpacityProperty, FadeAnimation(fromOpacity, 1));

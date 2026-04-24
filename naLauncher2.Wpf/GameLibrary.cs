@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Text.Json;
+using System.Windows;
 using Ujeby.Tools;
 
 namespace naLauncher2.Wpf
@@ -55,6 +56,9 @@ namespace naLauncher2.Wpf
         static readonly GameLibrary _instance = new();
 
         public static GameLibrary Instance => _instance;
+
+        static SteamClient GetSteamClient() => new();
+        static IgdbClient GetIgdbClient() => new(App.TwitchDevAuthz);
 
         public async Task Load(string path)
         {
@@ -283,27 +287,6 @@ namespace naLauncher2.Wpf
             return changed;
         }
 
-        public async Task<bool> RefreshMissingGameData(IProgress<(int current, int total, string gameTitle)>? progress = null)
-        {
-            using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(RefreshMissingGameData)}()", Log.WriteLine);
-
-            var changed = false;
-
-            var gamesToUpdate = Games.Keys.ToArray();
-
-            for (var i = 0; i < gamesToUpdate.Length; i++)
-            {
-                var game = gamesToUpdate[i];
-
-                progress?.Report((i, gamesToUpdate.Length, game));
-
-                if (await RefreshGameData(game, silent: true))
-                    changed = true;
-            }
-
-            return changed;
-        }
-
         public async Task<bool> RefreshGameData(string gameTitle, bool silent = false)
         {
             if (!Games.ContainsKey(gameTitle))
@@ -331,7 +314,7 @@ namespace naLauncher2.Wpf
 
             gameInfo.Extensions.TryGetValue(GameInfoExtension.SteamAppId.ToString(), out string? steamAppId);
 
-            var gameData = await SteamClient.GetGameData(gameTitle, steamAppId: steamAppId, getImage: true);
+            var gameData = await GetSteamClient().GetGameData(gameTitle, id: steamAppId, getImage: true);
             if (gameData == null)
                 return false;
 
@@ -344,14 +327,11 @@ namespace naLauncher2.Wpf
 
         async Task<bool> RefreshIgdbGameData(string gameTitle)
         {
-            if (App.IgdbClient == null)
-                return false;
-
             var gameInfo = Games[gameTitle];
 
             gameInfo.Extensions.TryGetValue(GameInfoExtension.IgdbId.ToString(), out string? igdbId);
 
-            var gameData = await App.IgdbClient.GetGameData(gameTitle, gameId: igdbId, getImage: true);
+            var gameData = await GetIgdbClient().GetGameData(gameTitle, id: igdbId, getImage: true);
             if (gameData == null)
                 return false;
 
@@ -361,6 +341,7 @@ namespace naLauncher2.Wpf
 
             return true;
         }
+
 
         public async Task RemoveExtensions(params string[] values)
         {
