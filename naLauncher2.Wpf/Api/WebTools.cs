@@ -34,12 +34,21 @@ namespace naLauncher2.Wpf.Api
             return (new Bitmap(Image.FromStream(ms)), imageFormat);
         }
 
+        /// <summary>
+        /// Returns a copy of <paramref name="title"/> with any characters that are invalid in a
+        /// file name replaced by '_', so it can be used to build/look up a cached image path.
+        /// </summary>
+        public static string SafeFileName(string title)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            return string.Concat(title.Select(c => invalidChars.Contains(c) ? '_' : c));
+        }
+
         public async static Task<string?> SaveGameImage(string gameTitle, Image image, ImageFormat imageFormat, string directory)
         {
             Directory.CreateDirectory(directory);
 
-            var invalidChars = Path.GetInvalidFileNameChars();
-            var safeTitle = string.Concat(gameTitle.Select(c => invalidChars.Contains(c) ? '_' : c));
+            var safeTitle = SafeFileName(gameTitle);
 
             var extension = imageFormat.Equals(ImageFormat.Png) ? "png"
                 : imageFormat.Equals(ImageFormat.Gif) ? "gif"

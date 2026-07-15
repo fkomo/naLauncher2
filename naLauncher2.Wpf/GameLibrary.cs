@@ -39,7 +39,7 @@ namespace naLauncher2.Wpf
                 x => Games.Count(xx => xx.Value.Genres?.Contains(x) == true));
 
         public IEnumerable<string> ExtensionsUsed => Games
-            .SelectMany(x => x.Value.Extensions.Keys)
+            .SelectMany(x => x.Value.Extensions?.Keys ?? Enumerable.Empty<string>())
             .Distinct();
 
         public readonly static string[] SupportedGameExtensions =
@@ -128,7 +128,9 @@ namespace naLauncher2.Wpf
                 return;
 
             var backupDir = Path.GetDirectoryName(Path.GetFullPath(_libraryPath)) ?? ".";
-            var backupBaseName = Path.GetFileName(_libraryPath.Trim(".json").ToString()) + "_";
+            // strip the ".json" extension (suffix) to derive the backup base path/name
+            var libraryBase = Path.ChangeExtension(_libraryPath, null);
+            var backupBaseName = Path.GetFileName(libraryBase) + "_";
 
             var serialized = JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions);
             var compressed = GZip.Compress(serialized);
@@ -149,7 +151,7 @@ namespace naLauncher2.Wpf
                 }
             }
 
-            var backupPath = $"{_libraryPath.Trim(".json")}_{DateTime.Now:yyyyMMddHHmmss}";
+            var backupPath = $"{libraryBase}_{DateTime.Now:yyyyMMddHHmmss}";
 
             using var tb = new TimedBlock($"{nameof(GameLibrary)}.{nameof(Backup)}('{backupPath}')", Log.WriteLine);
 
@@ -190,7 +192,10 @@ namespace naLauncher2.Wpf
             var sourceGames = sources
                 .SelectMany(x => Directory.GetFiles(x, "*.*", searchOptions))
                 .Where(f => extensions.Contains(Path.GetExtension(f)))
-                .ToDictionary(x => Path.GetFileNameWithoutExtension(x), x => x);
+                // group by title so multiple files sharing a name (e.g. Game.lnk + Game.exe,
+                // or same-named shortcuts across sources) don't throw a duplicate-key exception
+                .GroupBy(x => Path.GetFileNameWithoutExtension(x))
+                .ToDictionary(g => g.Key, g => g.First());
 
             var newGames = new List<string>();
 
@@ -281,8 +286,10 @@ namespace naLauncher2.Wpf
                 Log.WriteLine($"'{game}' image updated with '{cachedImage}'");
 
                 changed = true;
-                await Save(silent: true);
             }
+
+            if (changed)
+                await Save(silent: true);
 
             return changed;
         }

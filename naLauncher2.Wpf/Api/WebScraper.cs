@@ -10,23 +10,31 @@ namespace naLauncher2.Wpf.Api
 	{
 		static readonly SemaphoreSlim _initLock = new(1, 1);
 		static bool _browserDownloaded;
+		static IBrowser? _browser;
 
 		/// <summary>
-		/// Downloads the Chromium browser revision if not already present.
+		/// Downloads the Chromium revision if needed and returns a shared, reused headless browser
+		/// instance, (re)launching it if it has not been started or has become disconnected.
 		/// </summary>
-		static async Task EnsureBrowserAsync()
+		static async Task<IBrowser> GetBrowserAsync()
 		{
-			if (_browserDownloaded)
-				return;
+			if (_browser is { IsConnected: true })
+				return _browser;
 
 			await _initLock.WaitAsync();
 			try
 			{
+				if (_browser is { IsConnected: true })
+					return _browser;
+
 				if (!_browserDownloaded)
 				{
 					await new BrowserFetcher().DownloadAsync();
 					_browserDownloaded = true;
 				}
+
+				_browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true });
+				return _browser;
 			}
 			finally
 			{
@@ -42,9 +50,8 @@ namespace naLauncher2.Wpf.Api
 		/// <returns>The rendered HTML, or <see langword="null"/> on failure.</returns>
 		public static async Task<string?> RenderAsync(string url)
 		{
-			await EnsureBrowserAsync();
+			var browser = await GetBrowserAsync();
 
-			await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true });
 			await using var page = await browser.NewPageAsync();
 			await page.GoToAsync(url, new NavigationOptions
 			{

@@ -132,7 +132,8 @@ namespace naLauncher2.Wpf.Api
             }
 
             var imageDirectory = Path.Combine(AppSettings.Instance.ImageCachePath, _imagesDirectory);
-            var existingImages = Directory.GetFiles(imageDirectory, $"{gameTitle}.*", SearchOption.AllDirectories);
+            Directory.CreateDirectory(imageDirectory);
+            var existingImages = Directory.GetFiles(imageDirectory, $"{Tools.SafeFileName(gameTitle)}.*", SearchOption.AllDirectories);
 
             if (existingImages.Length != 0)
             {

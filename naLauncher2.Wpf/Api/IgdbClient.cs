@@ -73,10 +73,10 @@ namespace naLauncher2.Wpf.Api
         {
             using var tb = new TimedBlock($"{nameof(IgdbClient)}.{nameof(GetGameData)}('{gameTitle}')", Log.WriteLine);
 
-            await CacheEnums();
-
             try
             {
+                await CacheEnums();
+
                 id ??= await GetIdFromTitle(gameTitle);
 
                 // get game by id
@@ -145,9 +145,12 @@ namespace naLauncher2.Wpf.Api
 
         async Task CacheEnums()
         {
-            if (_genresCache.Count == 0)
-                _genresCache = (await PostAsync<NameId[]>($"{_apiBaseUrl}/genres", $"fields name; limit 100;"))!
-                    .ToDictionary(x => x.id, x => x.name);
+            if (_genresCache.Count != 0)
+                return;
+
+            var genres = await PostAsync<NameId[]>($"{_apiBaseUrl}/genres", $"fields name; limit 100;");
+            if (genres != null)
+                _genresCache = genres.ToDictionary(x => x.id, x => x.name);
         }
 
         readonly ConcurrentDictionary<int, string> _developersCache = [];
@@ -167,8 +170,6 @@ namespace naLauncher2.Wpf.Api
                     continue;
 
                 var developer = (await PostAsync<NameId[]>($"{_apiBaseUrl}/companies", $"fields name; where id = {involvedCompany.company};"))?.SingleOrDefault();
-                if (!involvedCompany.developer)
-                    continue;
 
                 if (developer?.name != null)
                     _developersCache.AddOrUpdate(involvedCompanyId, developer.name, (id, oldValue) => developer.name);
@@ -199,7 +200,8 @@ namespace naLauncher2.Wpf.Api
             }
 
             var imageDirectory = Path.Combine(AppSettings.Instance.ImageCachePath, _imagesDirectory);
-            var existingImages = Directory.GetFiles(imageDirectory, $"{gameTitle}.*", SearchOption.AllDirectories);
+            Directory.CreateDirectory(imageDirectory);
+            var existingImages = Directory.GetFiles(imageDirectory, $"{Tools.SafeFileName(gameTitle)}.*", SearchOption.AllDirectories);
 
             if (existingImages.Length != 0)
             {

@@ -26,15 +26,15 @@ namespace naLauncher2.Wpf
         const double GamePlacementDurationMs = 200; // duration of game placement animation [in milliseconds]
         const double MoveDurationMs = 300; // duration of position-change (move) animation [in milliseconds]
 
-        // horizontal scroll — New Games
+        // horizontal scroll ï¿½ New Games
         readonly TranslateTransform _newGamesTransform = new();
         double _newGamesOffsetX, _newGamesVelocityX, _newGamesMaxScrollX;
 
-        // horizontal scroll — Recent Games
+        // horizontal scroll ï¿½ Recent Games
         readonly TranslateTransform _lastPlayedTransform = new();
         double _lastPlayedOffsetX, _lastPlayedVelocityX, _recentGamesMaxScrollX;
 
-        // vertical scroll — User Games
+        // vertical scroll ï¿½ User Games
         readonly TranslateTransform _allGamesTransform = new();
         double _allGamesOffsetY, _allGamesVelocityY, _userGamesMaxScrollY;
         (GameInfoControl Control, double LocalTop)[] _visibleControls = [];
@@ -826,6 +826,7 @@ namespace naLauncher2.Wpf
             catch (Exception ex)
             {
                 Log.WriteLine($"Error running game '{_contextMenuTargetId}': {ex}");
+                return;
             }
 
             game.Played.Add(DateTime.Now);
