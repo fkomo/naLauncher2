@@ -201,8 +201,15 @@ namespace naLauncher2.Wpf
 
             bool changed = false;
 
-            // add new games from sources
-            foreach (var newGame in sourceGames.Where(x => !Games.ContainsKey(x.Key)))
+            // shortcut paths already tracked in the library. A game renamed in the launcher keeps
+            // its original shortcut file, so its library key/title no longer matches the file name;
+            // matching on the path as well prevents re-adding it as a duplicate on the next refresh.
+            var knownShortcuts = new HashSet<string>(
+                Games.Values.Where(x => x.Shortcut is not null).Select(x => x.Shortcut!),
+                StringComparer.OrdinalIgnoreCase);
+
+            // add new games from sources (unknown by both title and shortcut path)
+            foreach (var newGame in sourceGames.Where(x => !Games.ContainsKey(x.Key) && !knownShortcuts.Contains(x.Value)))
             {
                 Log.WriteLine($"New game found '{newGame.Key}'");
 
