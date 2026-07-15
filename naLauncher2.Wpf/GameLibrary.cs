@@ -197,7 +197,7 @@ namespace naLauncher2.Wpf
             bool changed = false;
 
             // add new games from sources
-            foreach (var newGame in sourceGames.Where(x => !Games.Any(xx => xx.Value.Shortcut == x.Value)))
+            foreach (var newGame in sourceGames.Where(x => !Games.ContainsKey(x.Key)))
             {
                 Log.WriteLine($"New game found '{newGame.Key}'");
 
