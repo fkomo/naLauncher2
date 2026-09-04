@@ -434,9 +434,10 @@ namespace naLauncher2.Wpf
         readonly record struct GridSlot(double Left, double Top);
 
         /// <summary>
-        /// Title divider placed above the first tile row of a group of games sharing a first letter.
+        /// Title divider placed above the first tile row of a group of games sharing a first letter,
+        /// labelled with that letter and the number of games in the group.
         /// </summary>
-        readonly record struct GridDivider(string Letter, double Top);
+        readonly record struct GridDivider(string Letter, double Top, int Count);
 
         /// <summary>
         /// Precomputed User Games grid layout: one slot per game (in the same order), the title
@@ -484,6 +485,7 @@ namespace naLauncher2.Wpf
             double y = GameInfoControl.ShadowBlurRadius;
             string? group = null;
             int column = 0;
+            int groupCount = 0;
 
             for (int i = 0; i < games.Length; i++)
             {
@@ -493,12 +495,16 @@ namespace naLauncher2.Wpf
                 {
                     // close the row the previous group ended on, then open the new group with a divider
                     if (group != null)
+                    {
                         y += GameInfoControl.ControlHeight + Gap;
+                        dividers[^1] = dividers[^1] with { Count = groupCount };
+                    }
 
                     group = letter;
-                    dividers.Add(new GridDivider(letter, y));
+                    dividers.Add(new GridDivider(letter, y, 0));
                     y += TitleDivider.ControlHeight;
                     column = 0;
+                    groupCount = 0;
                 }
                 else if (column == columns)
                 {
@@ -508,7 +514,12 @@ namespace naLauncher2.Wpf
 
                 slots[i] = new GridSlot(_gridOffset + column * (GameInfoControl.ControlWidth + Gap), y);
                 column++;
+                groupCount++;
             }
+
+            // the last group is only closed once the games run out
+            if (dividers.Count > 0)
+                dividers[^1] = dividers[^1] with { Count = groupCount };
 
             return new GridLayout(slots, [.. dividers], y + GameInfoControl.ControlHeight + Gap);
         }
@@ -518,7 +529,7 @@ namespace naLauncher2.Wpf
         /// </summary>
         void AddTitleDivider(Canvas container, GridDivider divider, Duration fadeDuration)
         {
-            var control = new TitleDivider(divider.Letter, GridContentWidth) { Opacity = 0 };
+            var control = new TitleDivider(divider.Letter, divider.Count, GridContentWidth) { Opacity = 0 };
             container.Children.Add(control);
             Canvas.SetLeft(control, _gridOffset);
             Canvas.SetTop(control, divider.Top);
@@ -1284,7 +1295,7 @@ namespace naLauncher2.Wpf
             var existingDividers = container.Children.OfType<TitleDivider>().Where(d => !d.IsRemoving).ToArray();
             for (int i = 0; i < layout.Dividers.Length; i++)
             {
-                var (letter, top) = layout.Dividers[i];
+                var (letter, top, count) = layout.Dividers[i];
                 if (i >= existingDividers.Length)
                 {
                     AddTitleDivider(container, layout.Dividers[i], fadeDuration);
@@ -1293,6 +1304,7 @@ namespace naLauncher2.Wpf
 
                 var divider = existingDividers[i];
                 divider.Letter = letter;
+                divider.Count = count;
 
                 double visualTop = Canvas.GetTop(divider) + divider.SlideTransform.Y;
                 Canvas.SetTop(divider, top);
