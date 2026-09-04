@@ -53,6 +53,8 @@ Merge semantics differ per source and are deliberate: `GameInfo.UpdateFromIgdb` 
 
 Each section has **two code paths that must stay in sync**: `PopulateHorizontalSection`/`PopulateGridSection` (initial fill from `Window_Loaded`) and `UpdateHorizontalSection`/`UpdateGridSection` (diff-based re-layout with move/fade animations, driven by `RefreshAllSections`). After any library mutation, call `RefreshAllSections()`.
 
+`BuildGridLayout` is the single source of tile positions and content height for the user-games grid, used by both paths. When games are ordered by title and the `A-Z` header toggle is on (`AppSettings.UserGamesTitleDividers`), it starts every new first letter on a fresh row and emits a `TitleDivider` above it; otherwise it reproduces the plain `index -> row/column` layout.
+
 Other things that are hand-rolled rather than framework-provided:
 
 - **Scrolling** is momentum physics — mouse wheel adds an impulse, `OnScrollRendering` (a `CompositionTarget.Rendering` hook) applies friction each frame and updates `TranslateTransform`s. The user-games grid additionally culls off-screen controls via `_visibleControls` / `UpdateViewportCulling`.

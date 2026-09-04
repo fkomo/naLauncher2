@@ -15,6 +15,7 @@ namespace naLauncher2.Wpf
         public GamesSortMode UserGamesSortMode { get; set; } = GamesSortMode.Title;
         public UserGamesFilterMode UserGamesFilterMode { get; set; } = UserGamesFilterMode.Installed;
         public string[] UserGamesGenreFilter { get; set; } = [];
+        public bool UserGamesTitleDividers { get; set; } = false;
         public bool NewGamesCollapsed { get; set; } = false;
         public bool RecentGamesCollapsed { get; set; } = false;
         public bool RecentGamesInstalledOnly { get; set; } = true;
@@ -55,6 +56,7 @@ namespace naLauncher2.Wpf
                 UserGamesSortMode = loaded.UserGamesSortMode;
                 UserGamesSortDescending = loaded.UserGamesSortDescending;
                 UserGamesGenreFilter = loaded.UserGamesGenreFilter;
+                UserGamesTitleDividers = loaded.UserGamesTitleDividers;
                 NewGamesCollapsed = loaded.NewGamesCollapsed;
                 RecentGamesCollapsed = loaded.RecentGamesCollapsed;
                 RecentGamesInstalledOnly = loaded.RecentGamesInstalledOnly;

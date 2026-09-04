@@ -181,6 +181,10 @@
                                FontSize="16" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0"
                                MouseLeftButtonUp="UserGamesOrderDirectionToggle_Click"/>
                     <TextBlock x:Name="UserGamesCountLabel" Foreground="#888888" FontSize="16" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="UserGamesTitleDividersToggle" Text="A-Z" Style="{StaticResource ToggleLabelStyle}"
+                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="16,0,0,0"
+                               Cursor="Hand" Visibility="Collapsed"
+                               MouseLeftButtonUp="UserGamesTitleDividersToggle_Click"/>
                 </StackPanel>
 
                 <Grid Grid.Column="4" VerticalAlignment="Center" Margin="8,0,8,0">
