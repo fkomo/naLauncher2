@@ -74,7 +74,7 @@ namespace naLauncher2.Wpf
             {
                 Height = 1,
                 Fill = Brushes.White,
-                Opacity = 0.15,
+                Opacity = 0.06,
                 VerticalAlignment = VerticalAlignment.Center,
             };
             Grid.SetColumn(line, 2);
