@@ -15,6 +15,12 @@ namespace naLauncher2.Wpf
         public GamesSortMode UserGamesSortMode { get; set; } = GamesSortMode.Title;
         public UserGamesFilterMode UserGamesFilterMode { get; set; } = UserGamesFilterMode.Installed;
         public string[] UserGamesGenreFilter { get; set; } = [];
+        public TitleGroupMode UserGamesTitleGroupMode { get; set; } = TitleGroupMode.None;
+        public string[] UserGamesCollapsedTitleGroups { get; set; } = [];
+        /// <summary>
+        /// Superseded by <see cref="UserGamesTitleGroupMode"/>; only still read, to migrate
+        /// settings written before the grouping grew a second mode.
+        /// </summary>
         public bool UserGamesTitleDividers { get; set; } = false;
         public bool NewGamesCollapsed { get; set; } = false;
         public bool RecentGamesCollapsed { get; set; } = false;
@@ -56,7 +62,9 @@ namespace naLauncher2.Wpf
                 UserGamesSortMode = loaded.UserGamesSortMode;
                 UserGamesSortDescending = loaded.UserGamesSortDescending;
                 UserGamesGenreFilter = loaded.UserGamesGenreFilter;
-                UserGamesTitleDividers = loaded.UserGamesTitleDividers;
+                UserGamesTitleGroupMode = loaded.UserGamesTitleGroupMode != TitleGroupMode.None ? loaded.UserGamesTitleGroupMode
+                    : loaded.UserGamesTitleDividers ? TitleGroupMode.Divider : TitleGroupMode.None;
+                UserGamesCollapsedTitleGroups = loaded.UserGamesCollapsedTitleGroups;
                 NewGamesCollapsed = loaded.NewGamesCollapsed;
                 RecentGamesCollapsed = loaded.RecentGamesCollapsed;
                 RecentGamesInstalledOnly = loaded.RecentGamesInstalledOnly;

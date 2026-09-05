@@ -185,6 +185,10 @@
                                FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="16,0,0,0"
                                Cursor="Hand" Visibility="Collapsed"
                                MouseLeftButtonUp="UserGamesTitleDividersToggle_Click"/>
+                    <TextBlock x:Name="UserGamesTitleTilesToggle" Text="[A]" Style="{StaticResource ToggleLabelStyle}"
+                               FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0,0,0"
+                               Cursor="Hand" Visibility="Collapsed"
+                               MouseLeftButtonUp="UserGamesTitleTilesToggle_Click"/>
                 </StackPanel>
 
                 <Grid Grid.Column="4" VerticalAlignment="Center" Margin="8,0,8,0">

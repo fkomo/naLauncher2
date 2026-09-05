@@ -53,7 +53,12 @@ Merge semantics differ per source and are deliberate: `GameInfo.UpdateFromIgdb` 
 
 Each section has **two code paths that must stay in sync**: `PopulateHorizontalSection`/`PopulateGridSection` (initial fill from `Window_Loaded`) and `UpdateHorizontalSection`/`UpdateGridSection` (diff-based re-layout with move/fade animations, driven by `RefreshAllSections`). After any library mutation, call `RefreshAllSections()`.
 
-`BuildGridLayout` is the single source of tile positions and content height for the user-games grid, used by both paths. When games are ordered by title and the `A-Z` header toggle is on (`AppSettings.UserGamesTitleDividers`), it starts every new first letter on a fresh row and emits a `TitleDivider` above it, labelled with the letter and the size of the group; otherwise it reproduces the plain `index -> row/column` layout.
+`BuildGridLayout` is the single source of tile positions and content height for the user-games grid, used by both paths. With no title grouping it reproduces the plain `index -> row/column` layout; otherwise every new first letter starts on a fresh row, headed by one of two mutually exclusive `TitleGroupMode`s (`AppSettings.UserGamesTitleGroupMode`, toggled by the `A-Z` and `[A]` header labels, and only offered while ordering by title):
+
+- `Divider` — a `TitleDivider` line above the group's first row, labelled with the letter and the group size.
+- `Tile` — a `TitleGroupTile` taking the first cell of the group's first row. Clicking one collapses the group (`AppSettings.UserGamesCollapsedTitleGroups`): its games get `GridSlot.Hidden` and no control at all, and consecutive collapsed groups pack their tiles into one row.
+
+Both headings derive from `TitleGroupElement` and are reconciled **by position** rather than by letter, because culture-sensitive title sorting can put the same letter in two non-adjacent groups.
 
 Other things that are hand-rolled rather than framework-provided:
 

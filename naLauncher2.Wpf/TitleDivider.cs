@@ -10,37 +10,18 @@ namespace naLauncher2.Wpf
     /// the capital letter shared by that group and the size of the group on the left,
     /// a thin horizontal line filling the rest.
     /// </summary>
-    internal sealed class TitleDivider : Grid
+    internal sealed class TitleDivider : TitleGroupElement
     {
         public const double ControlHeight = 48;
 
         readonly TextBlock _letterLabel;
         readonly TextBlock _countLabel;
 
-        /// <summary>
-        /// Set while the divider is fading out, so grid updates no longer reuse it.
-        /// </summary>
-        public bool IsRemoving { get; set; }
-
-        public TranslateTransform SlideTransform { get; } = new();
-
-        public string Letter
-        {
-            get => _letterLabel.Text;
-            set => _letterLabel.Text = value;
-        }
-
-        public int Count
-        {
-            set => _countLabel.Text = $"({value})";
-        }
-
         public TitleDivider(string letter, int count, double width)
         {
             Width = width;
             Height = ControlHeight;
             IsHitTestVisible = false;
-            RenderTransform = SlideTransform;
 
             ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -48,7 +29,6 @@ namespace naLauncher2.Wpf
 
             _letterLabel = new TextBlock
             {
-                Text = letter,
                 Foreground = Brushes.White,
                 Opacity = 0.7,
                 FontSize = 22,
@@ -61,7 +41,6 @@ namespace naLauncher2.Wpf
 
             _countLabel = new TextBlock
             {
-                Text = $"({count})",
                 Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
                 FontSize = 14,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -79,6 +58,18 @@ namespace naLauncher2.Wpf
             };
             Grid.SetColumn(line, 2);
             Children.Add(line);
+
+            SetGroup(letter, count);
+        }
+
+        /// <summary>
+        /// Relabels the divider, so a divider already on the canvas can head a different group.
+        /// </summary>
+        public void SetGroup(string letter, int count)
+        {
+            Letter = letter;
+            _letterLabel.Text = letter;
+            _countLabel.Text = $"({count})";
         }
     }
 }
