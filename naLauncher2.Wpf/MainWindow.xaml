@@ -278,6 +278,7 @@
                     <TextBlock x:Name="FilterOptionInstalled" Style="{StaticResource DropdownItemStyle}" Text="Installed" Tag="Installed" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionRemoved" Style="{StaticResource DropdownItemStyle}" Text="Removed" Tag="Removed" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionCompleted" Style="{StaticResource DropdownItemStyle}" Text="Completed" Tag="Completed" MouseLeftButtonUp="UserGamesFilter_Click"/>
+                    <TextBlock x:Name="FilterOptionStarred" Style="{StaticResource DropdownItemStyle}" Text="Starred" Tag="Starred" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionMissingData" Style="{StaticResource DropdownItemStyle}" Text="Missing Data" Tag="MissingData" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionSteam" Style="{StaticResource DropdownItemStyle}" Text="Steam" Tag="Steam" MouseLeftButtonUp="UserGamesFilter_Click"/>
                     <TextBlock x:Name="FilterOptionIgdb" Style="{StaticResource DropdownItemStyle}" Text="IGDB" Tag="Igdb" MouseLeftButtonUp="UserGamesFilter_Click"/>
@@ -312,6 +313,7 @@
                     <Rectangle Height="1" Fill="#FF404448" Margin="0,4,0,4"/>
                     <TextBlock x:Name="ContextMenuDelete" Style="{StaticResource DropdownItemStyle}" Text="Delete" MouseLeftButtonUp="GameContextMenu_Delete_Click"/>
                     <TextBlock x:Name="ContextMenuMarkAsCompleted" Style="{StaticResource DropdownItemStyle}" Text="Mark as Completed" MouseLeftButtonUp="GameContextMenu_MarkAsCompleted_Click"/>
+                    <TextBlock x:Name="ContextMenuStar" Style="{StaticResource DropdownItemStyle}" Text="Star" MouseLeftButtonUp="GameContextMenu_Star_Click"/>
                     <Rectangle Height="1" Fill="#FF404448" Margin="0,4,0,4"/>
                     <TextBlock x:Name="ContextMenuRefresh" Style="{StaticResource DropdownItemStyle}" Text="Refresh" MouseLeftButtonUp="GameContextMenu_Refresh_Click"/>
                     <TextBlock x:Name="ContextMenuProperties" Style="{StaticResource DropdownItemStyle}" Text="Properties" MouseLeftButtonUp="GameContextMenu_Properties_Click"/>

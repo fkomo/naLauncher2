@@ -183,6 +183,7 @@ namespace naLauncher2.Wpf
             {
                 UserGamesFilterMode.Removed => all.Where(x => x.Value.Removed),
                 UserGamesFilterMode.Completed => all.Where(x => x.Value.Completed.HasValue),
+                UserGamesFilterMode.Starred => all.Where(x => x.Value.Starred),
                 UserGamesFilterMode.MissingData => all.Where(x => x.Value.MissingImage),
                 UserGamesFilterMode.Steam => all.Where(x => x.Value.Extensions?.ContainsKey(GameInfoExtension.SteamAppId.ToString()) == true),
                 UserGamesFilterMode.Igdb => all.Where(x => x.Value.Extensions?.ContainsKey(GameInfoExtension.IgdbId.ToString()) == true),
@@ -998,6 +999,8 @@ namespace naLauncher2.Wpf
                 SetMenuItemEnabled(ContextMenuRemove, game.Installed);
                 SetMenuItemEnabled(ContextMenuDelete, !game.Installed);
                 SetMenuItemEnabled(ContextMenuMarkAsCompleted, !game.Completed.HasValue);
+                ContextMenuStar.Text = game.Starred ? "Unstar" : "Star";
+                SetMenuItemEnabled(ContextMenuStar, true);
                 SetMenuItemEnabled(ContextMenuExplore, true);
                 SetMenuItemEnabled(ContextMenuRefresh, AppSettings.Instance.TwitchDev != null);
                 SetMenuItemEnabled(ContextMenuProperties, true);
@@ -1128,6 +1131,23 @@ namespace naLauncher2.Wpf
                 return;
 
             game.Completed = DateTime.Now;
+
+            await GameLibrary.Instance.Save();
+
+            RefreshAllSections();
+        }
+
+        /// <summary>
+        /// Stars or unstars the game the context menu was opened on.
+        /// </summary>
+        async void GameContextMenu_Star_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
+                return;
+
+            game.Starred = !game.Starred;
 
             await GameLibrary.Instance.Save();
 
@@ -1652,6 +1672,7 @@ namespace naLauncher2.Wpf
             FilterOptionInstalled.Foreground = _userGamesFilterMode == UserGamesFilterMode.Installed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionRemoved.Foreground = _userGamesFilterMode == UserGamesFilterMode.Removed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionCompleted.Foreground = _userGamesFilterMode == UserGamesFilterMode.Completed ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionStarred.Foreground = _userGamesFilterMode == UserGamesFilterMode.Starred ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionMissingData.Foreground = _userGamesFilterMode == UserGamesFilterMode.MissingData ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionSteam.Foreground = _userGamesFilterMode == UserGamesFilterMode.Steam ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionIgdb.Foreground = _userGamesFilterMode == UserGamesFilterMode.Igdb ? Brushes.LightSkyBlue : Brushes.White;

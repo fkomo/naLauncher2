@@ -16,6 +16,7 @@ namespace naLauncher2.Wpf
         public string? ImagePath { get; set; }
 
         public DateTime? Completed { get; set; }
+        public bool Starred { get; set; }
         public List<DateTime> Played { get; set; } = [];
         public string? Summary { get; set; }
         public int? Rating { get; set; }

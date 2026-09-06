@@ -8,7 +8,8 @@
         MissingData,
         Steam,
         Igdb,
-        All
+        All,
+        Starred
     }
 
     /// <summary>
