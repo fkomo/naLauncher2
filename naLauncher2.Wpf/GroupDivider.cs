@@ -6,9 +6,9 @@ using System.Windows.Shapes;
 namespace naLauncher2.Wpf
 {
     /// <summary>
-    /// Row separator drawn above the first tile row of a group in the User Games grid: the label
-    /// the group shares - a capital letter or a year, depending on the ordering - and the size of
-    /// the group on the left, a thin horizontal line filling the rest.
+    /// Heading drawn above the first tile row of a group in the User Games grid: the label the
+    /// group shares - a capital letter or a year, depending on the ordering - and the size of the
+    /// group beside it.
     /// </summary>
     internal sealed class GroupDivider : Grid
     {
