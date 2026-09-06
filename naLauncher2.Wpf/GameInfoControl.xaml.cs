@@ -46,13 +46,20 @@ namespace naLauncher2.Wpf
         bool _hasRating;
         readonly bool _isRatingSortActive;
         readonly bool _isReleaseDateSortActive;
+        // a status the section is already filtered by says nothing about the individual game,
+        // so its glyph is left out of the status flag
+        readonly bool _hideStarredGlyph;
+        readonly bool _hideCompletedGlyph;
         bool _isRefreshActive;
 
-        public GameInfoControl(string id, bool isRatingSortActive = false, bool isReleaseDateSortActive = false)
+        public GameInfoControl(string id, bool isRatingSortActive = false, bool isReleaseDateSortActive = false,
+            bool hideStarredGlyph = false, bool hideCompletedGlyph = false)
         {
             _id = id;
             _isRatingSortActive = isRatingSortActive;
             _isReleaseDateSortActive = isReleaseDateSortActive;
+            _hideStarredGlyph = hideStarredGlyph;
+            _hideCompletedGlyph = hideCompletedGlyph;
 
             InitializeComponent();
 
@@ -340,16 +347,19 @@ namespace naLauncher2.Wpf
         /// <summary>
         /// Rebuilds the bookmark ribbon in the top-right corner. It carries one glyph per status
         /// the game has - a star when starred, a check when completed - stacked vertically, and
-        /// is as long as it needs to be to hold them. A game with neither status has no ribbon.
+        /// is as long as it needs to be to hold them. Statuses the section is filtered by are
+        /// left out, and a game left with no glyph at all has no ribbon.
         /// </summary>
         public void UpdateStatusFlag()
         {
             var game = GameLibrary.Instance.Games[_id];
 
-            int glyphs = (game.Starred ? 1 : 0) + (game.Completed.HasValue ? 1 : 0);
+            bool starred = game.Starred && !_hideStarredGlyph;
+            bool completed = game.Completed.HasValue && !_hideCompletedGlyph;
+            int glyphs = (starred ? 1 : 0) + (completed ? 1 : 0);
 
-            StatusFlagStarGlyph.Visibility = game.Starred ? Visibility.Visible : Visibility.Collapsed;
-            StatusFlagCheckGlyph.Visibility = game.Completed.HasValue ? Visibility.Visible : Visibility.Collapsed;
+            StatusFlagStarGlyph.Visibility = starred ? Visibility.Visible : Visibility.Collapsed;
+            StatusFlagCheckGlyph.Visibility = completed ? Visibility.Visible : Visibility.Collapsed;
 
             if (glyphs == 0)
             {
@@ -372,10 +382,10 @@ namespace naLauncher2.Wpf
 
             // the ribbon itself is neutral, so the overlay takes its heading color from the
             // glyph that names the status it is describing
-            CompletedDateText.Foreground = game.Completed.HasValue
+            CompletedDateText.Foreground = completed
                 ? StatusFlagCheckGlyph.Foreground : StatusFlagStarGlyph.Foreground;
-            CompletedDateText.Text = game.Completed.HasValue ? "Completed" : "Starred";
-            SessionsText.Text = game.Completed.HasValue ? $"{game.Completed.Value:d MMM yyyy}" : string.Empty;
+            CompletedDateText.Text = completed ? "Completed" : "Starred";
+            SessionsText.Text = completed ? $"{game.Completed!.Value:d MMM yyyy}" : string.Empty;
         }
 
         public void UpdateGameData()

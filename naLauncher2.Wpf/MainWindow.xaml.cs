@@ -719,6 +719,8 @@ namespace naLauncher2.Wpf
         {
             bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
             bool isReleaseDateSortActive = _userGamesSortMode == GamesSortMode.Released;
+            bool hideStarredGlyph = _userGamesFilterMode == UserGamesFilterMode.Starred;
+            bool hideCompletedGlyph = _userGamesFilterMode == UserGamesFilterMode.Completed;
             var fadeDuration = new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs));
 
             var layout = BuildGridLayout(games);
@@ -736,7 +738,7 @@ namespace naLauncher2.Wpf
                 if (layout.Slots[i].Hidden)
                     continue;
 
-                var control = new GameInfoControl(games[i], isRatingSortActive, isReleaseDateSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
+                var control = new GameInfoControl(games[i], isRatingSortActive, isReleaseDateSortActive, hideStarredGlyph, hideCompletedGlyph) { CacheMode = new BitmapCache(), Opacity = 0 };
                 container.Children.Add(control);
                 Canvas.SetLeft(control, layout.Slots[i].Left);
                 Canvas.SetTop(control, layout.Slots[i].Top);
@@ -1397,6 +1399,8 @@ namespace naLauncher2.Wpf
         {
             bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
             bool isReleaseDateSortActive = _userGamesSortMode == GamesSortMode.Released;
+            bool hideStarredGlyph = _userGamesFilterMode == UserGamesFilterMode.Starred;
+            bool hideCompletedGlyph = _userGamesFilterMode == UserGamesFilterMode.Completed;
             var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
             var moveDuration = new Duration(TimeSpan.FromMilliseconds(MoveDurationMs));
             var fadeDuration = new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs));
@@ -1475,7 +1479,7 @@ namespace naLauncher2.Wpf
                 }
                 else
                 {
-                    var newControl = new GameInfoControl(id, isRatingSortActive, isReleaseDateSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
+                    var newControl = new GameInfoControl(id, isRatingSortActive, isReleaseDateSortActive, hideStarredGlyph, hideCompletedGlyph) { CacheMode = new BitmapCache(), Opacity = 0 };
                     container.Children.Add(newControl);
                     Canvas.SetLeft(newControl, newLeft);
                     Canvas.SetTop(newControl, newTop);
