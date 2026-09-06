@@ -1649,7 +1649,7 @@ namespace naLauncher2.Wpf
         {
             UserGamesGroupDividersToggle.Visibility = CanGroupBy(_userGamesSortMode)
                 ? Visibility.Visible : Visibility.Collapsed;
-            UserGamesGroupDividersToggle.Text = _userGamesSortMode == GamesSortMode.Title ? "A-Z" : "Year";
+            UserGamesGroupDividersToggle.Text = "Groups";//_userGamesSortMode == GamesSortMode.Title ? "A-Z" : "Year";
             UserGamesGroupDividersToggle.Tag = _userGamesGroupDividers ? null : "inactive";
         }
 
