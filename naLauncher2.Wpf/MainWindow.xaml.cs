@@ -445,7 +445,7 @@ namespace naLauncher2.Wpf
         /// <summary>
         /// Letter tile heading a title group, occupying the first cell of the group's first row.
         /// </summary>
-        readonly record struct GridGroupTile(string Letter, double Left, double Top, int Count, bool Collapsed);
+        readonly record struct GridGroupTile(string Letter, double Left, double Top, int Count);
 
         /// <summary>
         /// Precomputed User Games grid layout: one slot per game (in the same order), the title
@@ -555,7 +555,7 @@ namespace naLauncher2.Wpf
                         column = 0;
                     }
 
-                    tiles.Add(new GridGroupTile(letter, SlotLeft(column), y, count, collapsed));
+                    tiles.Add(new GridGroupTile(letter, SlotLeft(column), y, count));
                     column++;
                 }
 
@@ -626,7 +626,7 @@ namespace naLauncher2.Wpf
         /// </summary>
         void AddTitleGroupTile(Canvas container, GridGroupTile tile, Duration fadeDuration)
         {
-            var control = new TitleGroupTile(tile.Letter, tile.Count, tile.Collapsed) { Opacity = 0 };
+            var control = new TitleGroupTile(tile.Letter, tile.Count) { Opacity = 0 };
             control.MouseLeftButtonUp += TitleGroupTile_Click;
             container.Children.Add(control);
             Canvas.SetLeft(control, tile.Left);
@@ -1430,9 +1430,9 @@ namespace naLauncher2.Wpf
                     continue;
                 }
 
-                var (letter, left, top, count, collapsed) = layout.Tiles[i];
+                var (letter, left, top, count) = layout.Tiles[i];
                 var tile = existingTiles[i];
-                tile.SetGroup(letter, count, collapsed);
+                tile.SetGroup(letter, count);
                 SlideToPosition(tile, tile.SlideTransform, left, top, moveDuration, easing);
             }
 

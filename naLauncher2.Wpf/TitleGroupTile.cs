@@ -11,8 +11,8 @@ namespace naLauncher2.Wpf
     /// <summary>
     /// Tile that heads a title group in the User Games grid, sized like a
     /// <see cref="GameInfoControl"/> but on a slightly lighter background: the capital letter
-    /// shared by the group, its size underneath, and a +/- marker showing whether the group
-    /// is collapsed. Clicking it collapses or expands the games that belong to the group.
+    /// shared by the group and its size underneath, centred in the whole tile. Clicking it
+    /// collapses or expands the games that belong to the group.
     /// </summary>
     internal sealed class TitleGroupTile : TitleGroupElement
     {
@@ -24,10 +24,9 @@ namespace naLauncher2.Wpf
         readonly Border _border;
         readonly TextBlock _letterLabel;
         readonly TextBlock _countLabel;
-        readonly TextBlock _marker;
         readonly Rectangle _glassOverlay;
 
-        public TitleGroupTile(string letter, int count, bool collapsed)
+        public TitleGroupTile(string letter, int count)
         {
             Width = GameInfoControl.ControlWidth;
             Height = GameInfoControl.ControlHeight;
@@ -77,17 +76,6 @@ namespace naLauncher2.Wpf
 
             content.Children.Add(stack);
 
-            _marker = new TextBlock
-            {
-                Foreground = Brushes.White,
-                Opacity = 0.35,
-                FontSize = 16,
-                VerticalAlignment = VerticalAlignment.Bottom,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(0, 0, 12, 8),
-            };
-            content.Children.Add(_marker);
-
             _glassOverlay = new Rectangle
             {
                 IsHitTestVisible = false,
@@ -112,18 +100,17 @@ namespace naLauncher2.Wpf
             };
             Children.Add(_border);
 
-            SetGroup(letter, count, collapsed);
+            SetGroup(letter, count);
         }
 
         /// <summary>
         /// Relabels the tile, so a tile already on the canvas can head a different group.
         /// </summary>
-        public void SetGroup(string letter, int count, bool collapsed)
+        public void SetGroup(string letter, int count)
         {
             Letter = letter;
             _letterLabel.Text = letter;
             _countLabel.Text = $"{count}";
-            _marker.Text = collapsed ? "+" : "\u2212";
         }
 
         protected override void OnMouseEnter(MouseEventArgs e)

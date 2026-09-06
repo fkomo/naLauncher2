@@ -56,7 +56,7 @@ Each section has **two code paths that must stay in sync**: `PopulateHorizontalS
 `BuildGridLayout` is the single source of tile positions and content height for the user-games grid, used by both paths. With no title grouping it reproduces the plain `index -> row/column` layout; otherwise every new first letter starts on a fresh row, headed by one of two mutually exclusive `TitleGroupMode`s (`AppSettings.UserGamesTitleGroupMode`, toggled by the `A-Z` and `[A]` header labels, and only offered while ordering by title):
 
 - `Divider` — a `TitleDivider` line above the group's first row, labelled with the letter and the group size.
-- `Tile` — a `TitleGroupTile` taking the first cell of the group's first row. Clicking one collapses the group (`AppSettings.UserGamesCollapsedTitleGroups`): its games get `GridSlot.Hidden` and no control at all, and consecutive collapsed groups pack their tiles into one row.
+- `Tile` — a `TitleGroupTile` (letter and group size centred in a whole game-tile-sized cell) taking the first cell of the group's first row. Clicking one collapses the group (`AppSettings.UserGamesCollapsedTitleGroups`): its games get `GridSlot.Hidden` and no control at all, and consecutive collapsed groups pack their tiles into one row.
 
 Both headings derive from `TitleGroupElement` and are reconciled **by position** rather than by letter, because culture-sensitive title sorting can put the same letter in two non-adjacent groups.
 
