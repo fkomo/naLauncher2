@@ -1,4 +1,4 @@
-<UserControl x:Class="naLauncher2.Wpf.GameInfoControl"
+﻿<UserControl x:Class="naLauncher2.Wpf.GameInfoControl"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
          xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -21,90 +21,90 @@
                 <DropShadowEffect x:Name="ShadowEffect" BlurRadius="16" Color="Black" ShadowDepth="0" Opacity="1"/>
             </Rectangle.Effect>
         </Rectangle>
-    <Border x:Name="MainBorder" BorderBrush="#FF404040" BorderThickness="1" Background="#FF1a1a1a">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="215"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <Border x:Name="MainBorder" BorderBrush="#FF404040" BorderThickness="1" Background="#FF1a1a1a">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="215"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-            <!-- Image section -->
-            <Grid Grid.Row="0">
-                <Image x:Name="ControlImage" 
+                <!-- Image section -->
+                <Grid Grid.Row="0">
+                    <Image x:Name="ControlImage" 
                        Stretch="UniformToFill"
                        RenderOptions.BitmapScalingMode="HighQuality"/>
-                <TextBlock x:Name="LoadingText"
+                    <TextBlock x:Name="LoadingText"
                            Text="Loading..."
                            Foreground="#FF808080"
                            FontSize="16"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"/>
 
-                <!-- Glass sheen overlay -->
-                <Rectangle x:Name="GlassOverlay"
+                    <!-- Glass sheen overlay -->
+                    <Rectangle x:Name="GlassOverlay"
                            IsHitTestVisible="False"
                            Opacity="0">
-                    <Rectangle.Fill>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#38FFFFFF" Offset="0"/>
-                            <GradientStop Color="#18FFFFFF" Offset="0.45"/>
-                            <GradientStop Color="#00FFFFFF" Offset="0.75"/>
-                        </LinearGradientBrush>
-                    </Rectangle.Fill>
-                </Rectangle>
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#38FFFFFF" Offset="0"/>
+                                <GradientStop Color="#18FFFFFF" Offset="0.45"/>
+                                <GradientStop Color="#00FFFFFF" Offset="0.75"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
 
-                <!-- Info overlay (shown on NameLabel hover) -->
-                <Grid x:Name="InfoOverlay"
+                    <!-- Info overlay (shown on NameLabel hover) -->
+                    <Grid x:Name="InfoOverlay"
                       IsHitTestVisible="False"
                       Opacity="0"
                       ClipToBounds="True">
-                    <Grid.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#00000000" Offset="0"/>
-                            <GradientStop Color="#BB000000" Offset="0.35"/>
-                            <GradientStop Color="#EE000000" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Grid.Background>
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#00000000" Offset="0"/>
+                                <GradientStop Color="#BB000000" Offset="0.35"/>
+                                <GradientStop Color="#EE000000" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Grid.Background>
 
-                    <StackPanel VerticalAlignment="Bottom" Margin="10,16,10,10">
-                        <TextBlock x:Name="DeveloperText"
+                        <StackPanel VerticalAlignment="Bottom" Margin="10,16,10,10">
+                            <TextBlock x:Name="DeveloperText"
                                    Foreground="White"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis"/>
-                        <TextBlock x:Name="GenresText"
+                            <TextBlock x:Name="GenresText"
                                    Foreground="#FFAAAAAA"
                                    FontSize="14"
                                    FontStyle="Italic"
                                    TextWrapping="Wrap"
                                    Margin="0,2,0,0"/>
-                        <ScrollViewer x:Name="SummaryScroller"
+                            <ScrollViewer x:Name="SummaryScroller"
                                      MaxHeight="90"
                                      Margin="0,6,0,0"
                                      VerticalScrollBarVisibility="Hidden"
                                      HorizontalScrollBarVisibility="Disabled"
                                      Focusable="False">
-                            <TextBlock x:Name="SummaryText"
+                                <TextBlock x:Name="SummaryText"
                                        Foreground="#FFD0D0D0"
                                        FontSize="14"
                                        TextWrapping="Wrap"/>
-                        </ScrollViewer>
-                    </StackPanel>
-                </Grid>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Grid>
 
-                <!-- Stats overlay (shown on CompletedFlag hover) -->
-                <Grid x:Name="StatsOverlay"
+                    <!-- Stats overlay (shown on StatusFlag hover) -->
+                    <Grid x:Name="StatsOverlay"
                       IsHitTestVisible="False"
                       Opacity="0"
                       ClipToBounds="True">
-                    <Grid.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#EE000000" Offset="0"/>
-                            <GradientStop Color="#BB000000" Offset="0.45"/>
-                            <GradientStop Color="#00000000" Offset="0.8"/>
-                        </LinearGradientBrush>
-                    </Grid.Background>
-                    <TextBlock x:Name="CompletedDateText"
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#EE000000" Offset="0"/>
+                                <GradientStop Color="#BB000000" Offset="0.45"/>
+                                <GradientStop Color="#00000000" Offset="0.8"/>
+                            </LinearGradientBrush>
+                        </Grid.Background>
+                        <TextBlock x:Name="CompletedDateText"
                                VerticalAlignment="Top"
                                HorizontalAlignment="Right"
                                Margin="0,4,40,0"
@@ -112,69 +112,81 @@
                                FontSize="16"
                                FontWeight="SemiBold"
                                TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="SessionsText"
+                        <TextBlock x:Name="SessionsText"
                                VerticalAlignment="Top"
                                HorizontalAlignment="Right"
                                Margin="0,26,40,0"
                                TextAlignment="Right"
                                Foreground="#FFAAAAAA"
                                FontSize="14"/>
-                </Grid>
+                    </Grid>
 
-                <!-- Completed flag (bookmark ribbon, top-right) -->
-                <Canvas x:Name="CompletedFlag"
-                        HorizontalAlignment="Right" VerticalAlignment="Top"
-                        Width="32" Height="40"
-                        IsHitTestVisible="True"
-                        Visibility="Collapsed"
-                        MouseEnter="CompletedFlag_MouseEnter"
-                        MouseLeave="CompletedFlag_MouseLeave">
-                    <Polygon Points="0,0 24,0 24,50 12,40 0,50">
-                        <Polygon.Fill>
-                            <SolidColorBrush Color="DarkSeaGreen"/>
-                        </Polygon.Fill>
-                        <Polygon.Effect>
-                            <DropShadowEffect BlurRadius="4" Color="Black" ShadowDepth="1" Opacity="0.5"/>
-                        </Polygon.Effect>
-                    </Polygon>
-                </Canvas>
+                    <!-- Status flag (bookmark ribbon, top-right). Shape and height are built in
+                     code from however many status glyphs the game carries. -->
+                    <Grid x:Name="StatusFlag"
+                      HorizontalAlignment="Right" VerticalAlignment="Top"
+                      Width="24" Margin="0,0,8,0"
+                      IsHitTestVisible="True"
+                      Visibility="Collapsed"
+                      MouseEnter="StatusFlag_MouseEnter"
+                      MouseLeave="StatusFlag_MouseLeave">
+                        <Polygon x:Name="StatusFlagShape"
+                             Fill="#BB1a1a1a"
+                             Stretch="None"
+                             HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <Polygon.Effect>
+                                <DropShadowEffect BlurRadius="4" Color="Black" ShadowDepth="1" Opacity="0.7"/>
+                            </Polygon.Effect>
+                        </Polygon>
+                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Width="24" Margin="0,2,0,0">
+                            <TextBlock x:Name="StatusFlagStarGlyph" Text="&#x2605;"
+                                   Height="22" LineHeight="22" LineStackingStrategy="BlockLineHeight"
+                                   FontSize="16" FontWeight="Bold" TextAlignment="Center"
+                                   Foreground="Gold" Visibility="Collapsed"/>
+                            <TextBlock x:Name="StatusFlagCheckGlyph" Text="&#x2713;"
+                                   Height="22" LineHeight="22" LineStackingStrategy="BlockLineHeight"
+                                   FontSize="16" FontWeight="Bold" TextAlignment="Center"
+                                   Foreground="DarkSeaGreen" Visibility="Collapsed"/>
+                        </StackPanel>
+                    </Grid>
 
-                <!-- Rating badge (metacritic-style colored square, top-right) -->
-                <Border x:Name="RatingBadge"
+                    <!-- Rating badge (metacritic-style colored square, top-right) -->
+                    <Border x:Name="RatingBadge"
                         Width="40" Height="40"
                         CornerRadius="6"
                         HorizontalAlignment="Left" VerticalAlignment="Top"
                         Margin="8,8,8,8"
                         IsHitTestVisible="False"
                         Visibility="Collapsed">
-                    <TextBlock x:Name="RatingText"
+                        <TextBlock x:Name="RatingText"
                                Foreground="Black"
                                FontSize="18"
                                FontWeight="Bold"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center"/>
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="4" Color="Black" ShadowDepth="1" Opacity="0.5"/>
-                    </Border.Effect>
-                </Border>
-            </Grid>
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="4" Color="Black" ShadowDepth="1" Opacity="0.5"/>
+                        </Border.Effect>
+                    </Border>
+                </Grid>
 
-            <!-- Name label section -->
-            <Grid Grid.Row="1"
+                <!-- Name label section -->
+                <Grid Grid.Row="1"
                   Background="Transparent"
                   MouseEnter="NameLabel_MouseEnter"
                   MouseLeave="NameLabel_MouseLeave">
-                <TextBlock x:Name="NameLabel"
+                    <TextBlock x:Name="NameLabel"
                            Foreground="#FFCCCCCC"
                            FontSize="16"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
                            TextTrimming="CharacterEllipsis"
                            Padding="8,0,8,0"/>
+                </Grid>
             </Grid>
-        </Grid>
-    </Border>
-    <Rectangle x:Name="SnakeRect"
+        </Border>
+        <Rectangle x:Name="SnakeRect"
                IsHitTestVisible="False"
                Fill="Transparent"
                StrokeThickness="4"

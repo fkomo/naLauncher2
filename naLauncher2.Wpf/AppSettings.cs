@@ -15,6 +15,12 @@ namespace naLauncher2.Wpf
         public GamesSortMode UserGamesSortMode { get; set; } = GamesSortMode.Title;
         public UserGamesFilterMode UserGamesFilterMode { get; set; } = UserGamesFilterMode.Installed;
         public string[] UserGamesGenreFilter { get; set; } = [];
+        public bool UserGamesGroupDividers { get; set; } = false;
+        /// <summary>
+        /// Superseded by <see cref="UserGamesGroupDividers"/>; only still read, as a number, to
+        /// migrate settings written while the grouping had a second (letter tile) mode.
+        /// </summary>
+        public int UserGamesTitleGroupMode { get; set; }
         public bool NewGamesCollapsed { get; set; } = false;
         public bool RecentGamesCollapsed { get; set; } = false;
         public bool RecentGamesInstalledOnly { get; set; } = true;
@@ -55,6 +61,7 @@ namespace naLauncher2.Wpf
                 UserGamesSortMode = loaded.UserGamesSortMode;
                 UserGamesSortDescending = loaded.UserGamesSortDescending;
                 UserGamesGenreFilter = loaded.UserGamesGenreFilter;
+                UserGamesGroupDividers = loaded.UserGamesGroupDividers || loaded.UserGamesTitleGroupMode != 0;
                 NewGamesCollapsed = loaded.NewGamesCollapsed;
                 RecentGamesCollapsed = loaded.RecentGamesCollapsed;
                 RecentGamesInstalledOnly = loaded.RecentGamesInstalledOnly;

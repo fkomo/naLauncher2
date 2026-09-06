@@ -38,6 +38,7 @@ namespace naLauncher2.Wpf
         readonly TranslateTransform _allGamesTransform = new();
         double _allGamesOffsetY, _allGamesVelocityY, _userGamesMaxScrollY;
         (GameInfoControl Control, double LocalTop)[] _visibleControls = [];
+        double _userGamesContentHeight;
 
         bool _scrollAnimating = false;
         int _controlsPerRow;
@@ -47,6 +48,7 @@ namespace naLauncher2.Wpf
 
         GamesSortMode _userGamesSortMode = GamesSortMode.Title;
         bool _userGamesSortDescending = false;
+        bool _userGamesGroupDividers = false;
 
         string _userGamesTitleFilter = string.Empty;
         HashSet<string> _userGamesGenreFilter = [];
@@ -92,6 +94,7 @@ namespace naLauncher2.Wpf
             _userGamesSortMode = AppSettings.Instance.UserGamesSortMode;
             _userGamesSortDescending = AppSettings.Instance.UserGamesSortDescending;
             _userGamesGenreFilter = [.. AppSettings.Instance.UserGamesGenreFilter];
+            _userGamesGroupDividers = AppSettings.Instance.UserGamesGroupDividers;
             _newGamesCollapsed = AppSettings.Instance.NewGamesCollapsed;
             _recentGamesCollapsed = AppSettings.Instance.RecentGamesCollapsed;
             _recentGamesInstalledOnly = AppSettings.Instance.RecentGamesInstalledOnly;
@@ -125,6 +128,7 @@ namespace naLauncher2.Wpf
             UserGamesLabel.Text = GetUserGamesLabelText(_userGamesFilterMode);
             UpdateGenresLabel();
             UserGamesOrderLabel.Text = _userGamesSortMode.ToString();
+            UpdateUserGamesGroupDividersToggle();
             UserGamesOrderDirectionToggle.Text = _userGamesSortDescending ? "\u25BC" : "\u25B2";
             NewGamesOrderDirectionToggle.Text = _newGamesSortDescending ? "\u25BC" : "\u25B2";
             RecentGamesOrderDirectionToggle.Text = _recentGamesSortDescending ? "\u25BC" : "\u25B2";
@@ -147,7 +151,7 @@ namespace naLauncher2.Wpf
             _newGamesMaxScrollX = Math.Max(0, HorizontalContentWidth(newGames.Length) - screenWidth);
             _recentGamesMaxScrollX = Math.Max(0, HorizontalContentWidth(recentGames.Length) - screenWidth);
 
-            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _userGamesMaxScrollY = Math.Max(0, _userGamesContentHeight - UserGamesCanvas.ActualHeight + _gridOffset);
 
             _visibleControls = UserGamesContainer.Children.OfType<GameInfoControl>()
                 .Select(c => (Control: c, LocalTop: Canvas.GetTop(c)))
@@ -177,6 +181,7 @@ namespace naLauncher2.Wpf
             {
                 UserGamesFilterMode.Removed => all.Where(x => x.Value.Removed),
                 UserGamesFilterMode.Completed => all.Where(x => x.Value.Completed.HasValue),
+                UserGamesFilterMode.Starred => all.Where(x => x.Value.Starred),
                 UserGamesFilterMode.MissingData => all.Where(x => x.Value.MissingImage),
                 UserGamesFilterMode.Steam => all.Where(x => x.Value.Extensions?.ContainsKey(GameInfoExtension.SteamAppId.ToString()) == true),
                 UserGamesFilterMode.Igdb => all.Where(x => x.Value.Extensions?.ContainsKey(GameInfoExtension.IgdbId.ToString()) == true),
@@ -425,15 +430,173 @@ namespace naLauncher2.Wpf
         }
 
         /// <summary>
-        /// Calculates the total pixel height required to display <paramref name="count"/> games in a grid layout.
+        /// Absolute canvas position of a single tile in the User Games grid.
         /// </summary>
-        /// <param name="count">Number of game items to lay out.</param>
-        /// <returns>Total content height in pixels, or 0 if the count is zero.</returns>
-        double GridContentHeight(int count)
+        readonly record struct GridSlot(double Left, double Top);
+
+        /// <summary>
+        /// Divider placed above the first tile row of a group of consecutive games, labelled with
+        /// what the group shares and the number of games in it.
+        /// </summary>
+        readonly record struct GridDivider(string Label, double Top, int Count);
+
+        /// <summary>
+        /// Precomputed User Games grid layout: one slot per game (in the same order), the dividers
+        /// heading the groups, and the total content height in pixels.
+        /// </summary>
+        readonly record struct GridLayout(GridSlot[] Slots, GridDivider[] Dividers, double ContentHeight);
+
+        /// <summary>
+        /// Orderings the User Games grid can be split into groups by. The rest (played count and
+        /// rating) have no grouping worth drawing, so the toggle is not offered for them.
+        /// </summary>
+        static bool CanGroupBy(GamesSortMode sortMode) => sortMode is GamesSortMode.Title
+            or GamesSortMode.Added or GamesSortMode.Completed or GamesSortMode.Released;
+
+        /// <summary>
+        /// True when the User Games grid is currently split into groups.
+        /// </summary>
+        bool GroupDividersActive => _userGamesGroupDividers && CanGroupBy(_userGamesSortMode);
+
+        /// <summary>
+        /// Width of the tile area of the User Games grid, i.e. how wide a divider is drawn.
+        /// </summary>
+        double GridContentWidth => Math.Max(1, _controlsPerRow) * (GameInfoControl.ControlWidth + Gap) - Gap;
+
+        /// <summary>
+        /// Returns the group a game belongs to under the active ordering: its capitalized first
+        /// letter when ordered by title, otherwise the year of the date being ordered by. Games
+        /// that have no such date group under "Unknown", where the ordering puts them anyway.
+        /// </summary>
+        string GameGroupLabel(string gameTitle)
         {
-            if (count == 0) return 0;
-            int rows = (int)Math.Ceiling((double)count / _controlsPerRow);
-            return GameInfoControl.ShadowBlurRadius + rows * GameInfoControl.ControlHeight + (rows - 1) * Gap + Gap;
+            static string Year(DateTime? date) => date.HasValue ? $"{date.Value.Year}" : "Unknown";
+
+            var game = GameLibrary.Instance.Games[gameTitle];
+
+            return _userGamesSortMode switch
+            {
+                GamesSortMode.Added => Year(game.Added),
+                GamesSortMode.Completed => Year(game.Completed),
+                GamesSortMode.Released => Year(game.ReleaseDate),
+                _ => TitleGroupLetter(gameTitle),
+            };
+        }
+
+        /// <summary>
+        /// Returns the group a game title belongs to: its capitalized first letter,
+        /// or "#" for titles that do not start with a letter.
+        /// </summary>
+        static string TitleGroupLetter(string gameTitle)
+        {
+            var first = gameTitle.TrimStart().FirstOrDefault();
+            return char.IsLetter(first) ? char.ToUpperInvariant(first).ToString() : "#";
+        }
+
+        /// <summary>
+        /// Calculates where every tile of the User Games grid goes. When grouping is active each
+        /// new group starts on a fresh row, preceded by a divider that labels it.
+        /// </summary>
+        /// <param name="games">Ordered array of games to lay out.</param>
+        GridLayout BuildGridLayout(string[] games)
+        {
+            if (games.Length == 0)
+                return new GridLayout([], [], 0);
+
+            bool grouped = GroupDividersActive;
+            int columns = Math.Max(1, _controlsPerRow);
+            double rowStep = GameInfoControl.ControlHeight + Gap;
+
+            var slots = new GridSlot[games.Length];
+            var dividers = new List<GridDivider>();
+
+            double y = GameInfoControl.ShadowBlurRadius;
+            int column = 0;
+
+            double SlotLeft(int c) => _gridOffset + c * (GameInfoControl.ControlWidth + Gap);
+
+            for (int i = 0; i < games.Length;)
+            {
+                int count = 1;
+
+                if (grouped)
+                {
+                    string label = GameGroupLabel(games[i]);
+                    while (i + count < games.Length && GameGroupLabel(games[i + count]) == label)
+                        count++;
+
+                    // close the row the previous group ended on, then open this one with a divider
+                    if (i > 0)
+                        y += rowStep;
+
+                    dividers.Add(new GridDivider(label, y, count));
+                    y += GroupDivider.ControlHeight;
+                    column = 0;
+                }
+
+                for (int n = 0; n < count; n++)
+                {
+                    if (column == columns)
+                    {
+                        y += rowStep;
+                        column = 0;
+                    }
+
+                    slots[i + n] = new GridSlot(SlotLeft(column), y);
+                    column++;
+                }
+
+                i += count;
+            }
+
+            return new GridLayout(slots, [.. dividers], y + rowStep);
+        }
+
+        /// <summary>
+        /// Moves an element to a new position on its canvas, sliding it there from wherever it
+        /// currently is so a re-layout reads as motion rather than a jump.
+        /// </summary>
+        static void SlideToPosition(UIElement element, TranslateTransform slide, double left, double top,
+            Duration duration, IEasingFunction easing)
+        {
+            double visualX = Canvas.GetLeft(element) + slide.X;
+            double visualY = Canvas.GetTop(element) + slide.Y;
+
+            Canvas.SetLeft(element, left);
+            Canvas.SetTop(element, top);
+
+            double deltaX = visualX - left;
+            double deltaY = visualY - top;
+            if (Math.Abs(deltaX) <= 0.5 && Math.Abs(deltaY) <= 0.5)
+                return;
+
+            slide.X = deltaX;
+            slide.Y = deltaY;
+            slide.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(deltaX, 0, duration) { EasingFunction = easing });
+            slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(deltaY, 0, duration) { EasingFunction = easing });
+        }
+
+        /// <summary>
+        /// Adds a group divider to the given canvas at its laid-out position and fades it in.
+        /// </summary>
+        void AddGroupDivider(Canvas container, GridDivider divider, Duration fadeDuration)
+        {
+            var control = new GroupDivider(divider.Label, divider.Count, GridContentWidth) { Opacity = 0 };
+            container.Children.Add(control);
+            Canvas.SetLeft(control, _gridOffset);
+            Canvas.SetTop(control, divider.Top);
+            control.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, fadeDuration));
+        }
+
+        /// <summary>
+        /// Fades a group divider out and removes it from its canvas once the animation completes.
+        /// </summary>
+        static void RemoveGroupDivider(Canvas container, GroupDivider divider, Duration fadeDuration)
+        {
+            divider.IsRemoving = true;
+            var anim = new DoubleAnimation(divider.Opacity, 0, fadeDuration);
+            anim.Completed += (_, _) => container.Children.Remove(divider);
+            divider.BeginAnimation(UIElement.OpacityProperty, anim);
         }
 
         /// <summary>
@@ -509,14 +672,24 @@ namespace naLauncher2.Wpf
         {
             bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
             bool isReleaseDateSortActive = _userGamesSortMode == GamesSortMode.Released;
+            bool hideStarredGlyph = _userGamesFilterMode == UserGamesFilterMode.Starred;
+            bool hideCompletedGlyph = _userGamesFilterMode == UserGamesFilterMode.Completed;
+            var fadeDuration = new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs));
+
+            var layout = BuildGridLayout(games);
+            _userGamesContentHeight = layout.ContentHeight;
+
+            foreach (var divider in layout.Dividers)
+                AddGroupDivider(container, divider, fadeDuration);
+
             for (int i = 0; i < games.Length; i++)
             {
-                var control = new GameInfoControl(games[i], isRatingSortActive, isReleaseDateSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
+                var control = new GameInfoControl(games[i], isRatingSortActive, isReleaseDateSortActive, hideStarredGlyph, hideCompletedGlyph) { CacheMode = new BitmapCache(), Opacity = 0 };
                 container.Children.Add(control);
-                Canvas.SetLeft(control, _gridOffset + (i % _controlsPerRow) * (GameInfoControl.ControlWidth + Gap));
-                Canvas.SetTop(control, GameInfoControl.ShadowBlurRadius + (i / _controlsPerRow) * (GameInfoControl.ControlHeight + Gap));
+                Canvas.SetLeft(control, layout.Slots[i].Left);
+                Canvas.SetTop(control, layout.Slots[i].Top);
 
-                var fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs)))
+                var fadeIn = new DoubleAnimation(0, 1, fadeDuration)
                 {
                     BeginTime = TimeSpan.FromMilliseconds(i * GamePlacementDelayMs)
                 };
@@ -773,6 +946,8 @@ namespace naLauncher2.Wpf
                 SetMenuItemEnabled(ContextMenuRemove, game.Installed);
                 SetMenuItemEnabled(ContextMenuDelete, !game.Installed);
                 SetMenuItemEnabled(ContextMenuMarkAsCompleted, !game.Completed.HasValue);
+                ContextMenuStar.Text = game.Starred ? "Unstar" : "Star";
+                SetMenuItemEnabled(ContextMenuStar, true);
                 SetMenuItemEnabled(ContextMenuExplore, true);
                 SetMenuItemEnabled(ContextMenuRefresh, AppSettings.Instance.TwitchDev != null);
                 SetMenuItemEnabled(ContextMenuProperties, true);
@@ -903,6 +1078,23 @@ namespace naLauncher2.Wpf
                 return;
 
             game.Completed = DateTime.Now;
+
+            await GameLibrary.Instance.Save();
+
+            RefreshAllSections();
+        }
+
+        /// <summary>
+        /// Stars or unstars the game the context menu was opened on.
+        /// </summary>
+        async void GameContextMenu_Star_Click(object sender, MouseButtonEventArgs e)
+        {
+            HideDropdowns();
+
+            if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
+                return;
+
+            game.Starred = !game.Starred;
 
             await GameLibrary.Instance.Save();
 
@@ -1152,9 +1344,14 @@ namespace naLauncher2.Wpf
         {
             bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
             bool isReleaseDateSortActive = _userGamesSortMode == GamesSortMode.Released;
+            bool hideStarredGlyph = _userGamesFilterMode == UserGamesFilterMode.Starred;
+            bool hideCompletedGlyph = _userGamesFilterMode == UserGamesFilterMode.Completed;
             var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
             var moveDuration = new Duration(TimeSpan.FromMilliseconds(MoveDurationMs));
             var fadeDuration = new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs));
+
+            var layout = BuildGridLayout(games);
+            _userGamesContentHeight = layout.ContentHeight;
 
             var existing = container.Children.OfType<GameInfoControl>().ToDictionary(c => c.Id);
             var newSet = new HashSet<string>(games);
@@ -1168,35 +1365,39 @@ namespace naLauncher2.Wpf
                 c.BeginAnimation(UIElement.OpacityProperty, anim);
             }
 
+            // dividers are reconciled by position rather than by label: they always run top to
+            // bottom in the same order, so the n-th one just takes over the n-th group
+            var existingDividers = container.Children.OfType<GroupDivider>().Where(d => !d.IsRemoving).ToArray();
+            for (int i = 0; i < layout.Dividers.Length; i++)
+            {
+                if (i >= existingDividers.Length)
+                {
+                    AddGroupDivider(container, layout.Dividers[i], fadeDuration);
+                    continue;
+                }
+
+                var (label, top, count) = layout.Dividers[i];
+                var divider = existingDividers[i];
+                divider.SetGroup(label, count);
+                SlideToPosition(divider, divider.SlideTransform, Canvas.GetLeft(divider), top, moveDuration, easing);
+            }
+
+            for (int i = layout.Dividers.Length; i < existingDividers.Length; i++)
+                RemoveGroupDivider(container, existingDividers[i], fadeDuration);
+
             for (int i = 0; i < games.Length; i++)
             {
                 string id = games[i];
-                double newLeft = _gridOffset + (i % _controlsPerRow) * (GameInfoControl.ControlWidth + Gap);
-                double newTop = GameInfoControl.ShadowBlurRadius + (i / _controlsPerRow) * (GameInfoControl.ControlHeight + Gap);
+                var (newLeft, newTop) = layout.Slots[i];
 
                 if (existing.TryGetValue(id, out var control))
                 {
                     control.UpdateGameData();
-
-                    double visualX = Canvas.GetLeft(control) + control.SlideTransform.X;
-                    double visualY = Canvas.GetTop(control) + control.SlideTransform.Y;
-                    double deltaX = visualX - newLeft;
-                    double deltaY = visualY - newTop;
-                    Canvas.SetLeft(control, newLeft);
-                    Canvas.SetTop(control, newTop);
-                    if (Math.Abs(deltaX) > 0.5 || Math.Abs(deltaY) > 0.5)
-                    {
-                        control.SlideTransform.X = deltaX;
-                        control.SlideTransform.Y = deltaY;
-                        control.SlideTransform.BeginAnimation(TranslateTransform.XProperty,
-                            new DoubleAnimation(deltaX, 0, moveDuration) { EasingFunction = easing });
-                        control.SlideTransform.BeginAnimation(TranslateTransform.YProperty,
-                            new DoubleAnimation(deltaY, 0, moveDuration) { EasingFunction = easing });
-                    }
+                    SlideToPosition(control, control.SlideTransform, newLeft, newTop, moveDuration, easing);
                 }
                 else
                 {
-                    var newControl = new GameInfoControl(id, isRatingSortActive, isReleaseDateSortActive) { CacheMode = new BitmapCache(), Opacity = 0 };
+                    var newControl = new GameInfoControl(id, isRatingSortActive, isReleaseDateSortActive, hideStarredGlyph, hideCompletedGlyph) { CacheMode = new BitmapCache(), Opacity = 0 };
                     container.Children.Add(newControl);
                     Canvas.SetLeft(newControl, newLeft);
                     Canvas.SetTop(newControl, newTop);
@@ -1252,7 +1453,7 @@ namespace naLauncher2.Wpf
             _newGamesOffsetX = 0; _newGamesVelocityX = 0; _newGamesTransform.X = 0;
             _lastPlayedOffsetX = 0; _lastPlayedVelocityX = 0; _lastPlayedTransform.X = 0;
 
-            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _userGamesMaxScrollY = Math.Max(0, _userGamesContentHeight - UserGamesCanvas.ActualHeight + _gridOffset);
             _allGamesOffsetY = Math.Min(_allGamesOffsetY, _userGamesMaxScrollY);
             _allGamesVelocityY = 0;
             _allGamesTransform.Y = -_allGamesOffsetY;
@@ -1391,6 +1592,7 @@ namespace naLauncher2.Wpf
             FilterOptionInstalled.Foreground = _userGamesFilterMode == UserGamesFilterMode.Installed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionRemoved.Foreground = _userGamesFilterMode == UserGamesFilterMode.Removed ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionCompleted.Foreground = _userGamesFilterMode == UserGamesFilterMode.Completed ? Brushes.LightSkyBlue : Brushes.White;
+            FilterOptionStarred.Foreground = _userGamesFilterMode == UserGamesFilterMode.Starred ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionMissingData.Foreground = _userGamesFilterMode == UserGamesFilterMode.MissingData ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionSteam.Foreground = _userGamesFilterMode == UserGamesFilterMode.Steam ? Brushes.LightSkyBlue : Brushes.White;
             FilterOptionIgdb.Foreground = _userGamesFilterMode == UserGamesFilterMode.Igdb ? Brushes.LightSkyBlue : Brushes.White;
@@ -1420,10 +1622,35 @@ namespace naLauncher2.Wpf
                 _userGamesSortMode = mode;
                 HideDropdowns();
                 UserGamesOrderLabel.Text = _userGamesSortMode.ToString();
+                UpdateUserGamesGroupDividersToggle();
                 RefreshUserGames();
 
                 AppSettings.Instance.UserGamesSortMode = _userGamesSortMode;
             }
+        }
+
+        /// <summary>
+        /// Turns the group dividers of the User Games grid on or off.
+        /// </summary>
+        void UserGamesGroupDividersToggle_Click(object sender, MouseButtonEventArgs e)
+        {
+            _userGamesGroupDividers = !_userGamesGroupDividers;
+            UpdateUserGamesGroupDividersToggle();
+            RefreshUserGames();
+
+            AppSettings.Instance.UserGamesGroupDividers = _userGamesGroupDividers;
+        }
+
+        /// <summary>
+        /// Shows the group divider toggle only for the orderings that can be grouped, labels it
+        /// with what the dividers would say, and marks it inactive when they are turned off.
+        /// </summary>
+        void UpdateUserGamesGroupDividersToggle()
+        {
+            UserGamesGroupDividersToggle.Visibility = CanGroupBy(_userGamesSortMode)
+                ? Visibility.Visible : Visibility.Collapsed;
+            UserGamesGroupDividersToggle.Text = "Groups";//_userGamesSortMode == GamesSortMode.Title ? "A-Z" : "Year";
+            UserGamesGroupDividersToggle.Tag = _userGamesGroupDividers ? null : "inactive";
         }
 
         void UserGamesOrderDirectionToggle_Click(object sender, MouseButtonEventArgs e)
@@ -1473,7 +1700,7 @@ namespace naLauncher2.Wpf
             UserGamesLabel.Text = GetUserGamesLabelText(_userGamesFilterMode);
             UpdateGenresLabel();
 
-            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(userGames.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _userGamesMaxScrollY = Math.Max(0, _userGamesContentHeight - UserGamesCanvas.ActualHeight + _gridOffset);
             _allGamesOffsetY = 0;
             _allGamesVelocityY = 0;
             _allGamesTransform.Y = 0;
@@ -1495,7 +1722,7 @@ namespace naLauncher2.Wpf
         void RefreshUserGamesViewport()
         {
             RootGrid.UpdateLayout();
-            _userGamesMaxScrollY = Math.Max(0, GridContentHeight(_visibleControls.Length) - UserGamesCanvas.ActualHeight + _gridOffset);
+            _userGamesMaxScrollY = Math.Max(0, _userGamesContentHeight - UserGamesCanvas.ActualHeight + _gridOffset);
             _allGamesOffsetY = Math.Min(_allGamesOffsetY, _userGamesMaxScrollY);
             _allGamesTransform.Y = -_allGamesOffsetY;
             UpdateViewportCulling();
