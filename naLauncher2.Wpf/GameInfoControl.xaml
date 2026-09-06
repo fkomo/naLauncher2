@@ -131,6 +131,7 @@
                       MouseEnter="StatusFlag_MouseEnter"
                       MouseLeave="StatusFlag_MouseLeave">
                     <Polygon x:Name="StatusFlagShape"
+                             Fill="#CC000000"
                              Stretch="None"
                              HorizontalAlignment="Left" VerticalAlignment="Top">
                         <Polygon.Effect>
@@ -142,11 +143,11 @@
                         <TextBlock x:Name="StatusFlagStarGlyph" Text="&#x2605;"
                                    Height="22" LineHeight="22" LineStackingStrategy="BlockLineHeight"
                                    FontSize="15" TextAlignment="Center"
-                                   Foreground="#FF1F1F1F" Visibility="Collapsed"/>
+                                   Foreground="Gold" Visibility="Collapsed"/>
                         <TextBlock x:Name="StatusFlagCheckGlyph" Text="&#x2713;"
                                    Height="22" LineHeight="22" LineStackingStrategy="BlockLineHeight"
                                    FontSize="15" FontWeight="Bold" TextAlignment="Center"
-                                   Foreground="#FF1F1F1F" Visibility="Collapsed"/>
+                                   Foreground="DarkSeaGreen" Visibility="Collapsed"/>
                     </StackPanel>
                 </Grid>
 

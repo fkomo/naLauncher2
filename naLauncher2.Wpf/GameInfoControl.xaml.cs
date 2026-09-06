@@ -367,13 +367,13 @@ namespace naLauncher2.Wpf
                 new Point(0, height),
             };
 
-            // completed keeps the original green; a game that is only starred gets the star's own color
-            var flagColor = game.Completed.HasValue ? Colors.DarkSeaGreen : Colors.Goldenrod;
-            StatusFlagShape.Fill = new SolidColorBrush(flagColor);
             StatusFlag.Height = height;
             StatusFlag.Visibility = Visibility.Visible;
 
-            CompletedDateText.Foreground = new SolidColorBrush(flagColor);
+            // the ribbon itself is neutral, so the overlay takes its heading color from the
+            // glyph that names the status it is describing
+            CompletedDateText.Foreground = game.Completed.HasValue
+                ? StatusFlagCheckGlyph.Foreground : StatusFlagStarGlyph.Foreground;
             CompletedDateText.Text = game.Completed.HasValue ? "Completed" : "Starred";
             SessionsText.Text = game.Completed.HasValue ? $"{game.Completed.Value:d MMM yyyy}" : string.Empty;
         }
