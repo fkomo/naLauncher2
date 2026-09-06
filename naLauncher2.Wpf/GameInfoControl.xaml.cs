@@ -383,7 +383,9 @@ namespace naLauncher2.Wpf
             // the ribbon itself is neutral, so the overlay takes its heading color from the
             // glyph that names the status it is describing
             CompletedDateText.Foreground = completed
-                ? StatusFlagCheckGlyph.Foreground : StatusFlagStarGlyph.Foreground;
+                ? StatusFlagCheckGlyph.Foreground 
+                : StatusFlagStarGlyph.Foreground;
+            
             CompletedDateText.Text = completed ? "Completed" : "Starred";
             SessionsText.Text = completed ? $"{game.Completed!.Value:d MMM yyyy}" : string.Empty;
         }
