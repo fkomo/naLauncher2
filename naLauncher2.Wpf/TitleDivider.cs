@@ -25,16 +25,16 @@ namespace naLauncher2.Wpf
 
             ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            //ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             _letterLabel = new TextBlock
             {
                 Foreground = Brushes.White,
                 Opacity = 0.7,
-                FontSize = 22,
-                FontWeight = FontWeights.SemiBold,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 8, 0),
+                FontSize = 32,
+                FontWeight = FontWeights.Bold,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 8, 8),
             };
             Grid.SetColumn(_letterLabel, 0);
             Children.Add(_letterLabel);
@@ -43,21 +43,21 @@ namespace naLauncher2.Wpf
             {
                 Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
                 FontSize = 14,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 12, 0),
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 12, 14),
             };
             Grid.SetColumn(_countLabel, 1);
             Children.Add(_countLabel);
 
-            var line = new Rectangle
-            {
-                Height = 1,
-                Fill = Brushes.White,
-                Opacity = 0.06,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Grid.SetColumn(line, 2);
-            Children.Add(line);
+            //var line = new Rectangle
+            //{
+            //    Height = 1,
+            //    Fill = Brushes.White,
+            //    Opacity = 0.06,
+            //    VerticalAlignment = VerticalAlignment.Center,
+            //};
+            //Grid.SetColumn(line, 2);
+            //Children.Add(line);
 
             SetGroup(letter, count);
         }
