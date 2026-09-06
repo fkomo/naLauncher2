@@ -1,4 +1,4 @@
-<UserControl x:Class="naLauncher2.Wpf.GameInfoControl"
+﻿<UserControl x:Class="naLauncher2.Wpf.GameInfoControl"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
          xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -92,7 +92,7 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Stats overlay (shown on CompletedFlag hover) -->
+                <!-- Stats overlay (shown on StatusFlag hover) -->
                 <Grid x:Name="StatsOverlay"
                       IsHitTestVisible="False"
                       Opacity="0"
@@ -121,23 +121,34 @@
                                FontSize="14"/>
                 </Grid>
 
-                <!-- Completed flag (bookmark ribbon, top-right) -->
-                <Canvas x:Name="CompletedFlag"
-                        HorizontalAlignment="Right" VerticalAlignment="Top"
-                        Width="32" Height="40"
-                        IsHitTestVisible="True"
-                        Visibility="Collapsed"
-                        MouseEnter="CompletedFlag_MouseEnter"
-                        MouseLeave="CompletedFlag_MouseLeave">
-                    <Polygon Points="0,0 24,0 24,50 12,40 0,50">
-                        <Polygon.Fill>
-                            <SolidColorBrush Color="DarkSeaGreen"/>
-                        </Polygon.Fill>
+                <!-- Status flag (bookmark ribbon, top-right). Shape and height are built in
+                     code from however many status glyphs the game carries. -->
+                <Grid x:Name="StatusFlag"
+                      HorizontalAlignment="Right" VerticalAlignment="Top"
+                      Width="24" Margin="0,0,8,0"
+                      IsHitTestVisible="True"
+                      Visibility="Collapsed"
+                      MouseEnter="StatusFlag_MouseEnter"
+                      MouseLeave="StatusFlag_MouseLeave">
+                    <Polygon x:Name="StatusFlagShape"
+                             Stretch="None"
+                             HorizontalAlignment="Left" VerticalAlignment="Top">
                         <Polygon.Effect>
                             <DropShadowEffect BlurRadius="4" Color="Black" ShadowDepth="1" Opacity="0.5"/>
                         </Polygon.Effect>
                     </Polygon>
-                </Canvas>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Width="24" Margin="0,8,0,0">
+                        <TextBlock x:Name="StatusFlagStarGlyph" Text="&#x2605;"
+                                   Height="22" LineHeight="22" LineStackingStrategy="BlockLineHeight"
+                                   FontSize="15" TextAlignment="Center"
+                                   Foreground="#FF1F1F1F" Visibility="Collapsed"/>
+                        <TextBlock x:Name="StatusFlagCheckGlyph" Text="&#x2713;"
+                                   Height="22" LineHeight="22" LineStackingStrategy="BlockLineHeight"
+                                   FontSize="15" FontWeight="Bold" TextAlignment="Center"
+                                   Foreground="#FF1F1F1F" Visibility="Collapsed"/>
+                    </StackPanel>
+                </Grid>
 
                 <!-- Rating badge (metacritic-style colored square, top-right) -->
                 <Border x:Name="RatingBadge"

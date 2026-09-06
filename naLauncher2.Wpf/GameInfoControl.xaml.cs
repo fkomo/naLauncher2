@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -22,6 +22,13 @@ namespace naLauncher2.Wpf
         public const double OnHoverScale = 1.05;
         public const double SummaryScrollSpeed = 10.0; // pixels per second
         public const double SummaryScrollDelay = 2000.0; // milliseconds before scroll starts
+
+        // bookmark ribbon in the top-right corner, sized to the number of status glyphs in it
+        const double StatusFlagWidth = 24;
+        const double StatusFlagGlyphSlot = 22; // vertical space taken by one glyph
+        const double StatusFlagPaddingTop = 8;
+        const double StatusFlagPaddingBottom = 8;
+        const double StatusFlagNotchDepth = 10; // depth of the V cut into the bottom edge
 
         readonly int _originalZIndex;
         readonly Brush _originalBorderBrush;
@@ -100,23 +107,7 @@ namespace naLauncher2.Wpf
                     RatingBadge.Visibility = Visibility.Visible;
             }
 
-            if (game.Completed.HasValue)
-            {
-                CompletedFlag.Visibility = Visibility.Visible;
-                CompletedDateText.Text = $"Completed";
-
-                //if (game.Played?.Count > 0)
-                //{
-                //    if (game.Played.Count == 1)
-                //        SessionsText.Text = $"1 session on {game.Played.Single():d MMM yyyy}";
-                //    else
-                //        SessionsText.Text = $"{game.Played.Count} sessions from {game.Played.First():d MMM yyyy} to {game.Played.Last():d MMM yyyy}";
-                //}
-                //else
-                //    SessionsText.Visibility = Visibility.Collapsed;
-
-                SessionsText.Text = $"{game.Completed.Value:d MMM yyyy}";
-            }
+            UpdateStatusFlag();
 
             LoadImageAsync(game.ImagePath, game.Installed);
         }
@@ -145,13 +136,13 @@ namespace naLauncher2.Wpf
             StopSummaryScroll();
         }
 
-        void CompletedFlag_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        void StatusFlag_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             StatsOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(StatsOverlay.Opacity, 1, dur));
         }
 
-        void CompletedFlag_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        void StatusFlag_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             StatsOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(StatsOverlay.Opacity, 0, dur));
@@ -346,19 +337,45 @@ namespace naLauncher2.Wpf
             return null;
         }
 
-        public void UpdateCompletedState()
+        /// <summary>
+        /// Rebuilds the bookmark ribbon in the top-right corner. It carries one glyph per status
+        /// the game has - a star when starred, a check when completed - stacked vertically, and
+        /// is as long as it needs to be to hold them. A game with neither status has no ribbon.
+        /// </summary>
+        public void UpdateStatusFlag()
         {
             var game = GameLibrary.Instance.Games[_id];
-            if (game.Completed.HasValue)
+
+            int glyphs = (game.Starred ? 1 : 0) + (game.Completed.HasValue ? 1 : 0);
+
+            StatusFlagStarGlyph.Visibility = game.Starred ? Visibility.Visible : Visibility.Collapsed;
+            StatusFlagCheckGlyph.Visibility = game.Completed.HasValue ? Visibility.Visible : Visibility.Collapsed;
+
+            if (glyphs == 0)
             {
-                CompletedFlag.Visibility = Visibility.Visible;
-                CompletedDateText.Text = $"Completed";
-                SessionsText.Text = $"{game.Completed.Value:d MMM yyyy}";
+                StatusFlag.Visibility = Visibility.Collapsed;
+                return;
             }
-            else
+
+            double height = StatusFlagPaddingTop + glyphs * StatusFlagGlyphSlot + StatusFlagPaddingBottom;
+            StatusFlagShape.Points = new PointCollection
             {
-                CompletedFlag.Visibility = Visibility.Collapsed;
-            }
+                new Point(0, 0),
+                new Point(StatusFlagWidth, 0),
+                new Point(StatusFlagWidth, height),
+                new Point(StatusFlagWidth / 2, height - StatusFlagNotchDepth),
+                new Point(0, height),
+            };
+
+            // completed keeps the original green; a game that is only starred gets the star's own color
+            var flagColor = game.Completed.HasValue ? Colors.DarkSeaGreen : Colors.Goldenrod;
+            StatusFlagShape.Fill = new SolidColorBrush(flagColor);
+            StatusFlag.Height = height;
+            StatusFlag.Visibility = Visibility.Visible;
+
+            CompletedDateText.Foreground = new SolidColorBrush(flagColor);
+            CompletedDateText.Text = game.Completed.HasValue ? "Completed" : "Starred";
+            SessionsText.Text = game.Completed.HasValue ? $"{game.Completed.Value:d MMM yyyy}" : string.Empty;
         }
 
         public void UpdateGameData()
@@ -428,7 +445,7 @@ namespace naLauncher2.Wpf
                 RatingBadge.Visibility = Visibility.Collapsed;
             }
 
-            UpdateCompletedState();
+            UpdateStatusFlag();
         }
 
         public void RefreshImage()
