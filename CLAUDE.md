@@ -53,12 +53,9 @@ Merge semantics differ per source and are deliberate: `GameInfo.UpdateFromIgdb` 
 
 Each section has **two code paths that must stay in sync**: `PopulateHorizontalSection`/`PopulateGridSection` (initial fill from `Window_Loaded`) and `UpdateHorizontalSection`/`UpdateGridSection` (diff-based re-layout with move/fade animations, driven by `RefreshAllSections`). After any library mutation, call `RefreshAllSections()`.
 
-`BuildGridLayout` is the single source of tile positions and content height for the user-games grid, used by both paths. With no title grouping it reproduces the plain `index -> row/column` layout; otherwise every new first letter starts on a fresh row, headed by one of two mutually exclusive `TitleGroupMode`s (`AppSettings.UserGamesTitleGroupMode`, toggled by the `A-Z` and `[A]` header labels, and only offered while ordering by title):
+`BuildGridLayout` is the single source of tile positions and content height for the user-games grid, used by both paths. Ungrouped it reproduces the plain `index -> row/column` layout. Grouped (`AppSettings.UserGamesGroupDividers`, the header label right of the game count) each new group starts on a fresh row under a `GroupDivider` line labelled with the group and its size. `GameGroupLabel` decides the group from the active ordering — first letter for `Title`, year for `Added`/`Completed`/`Released`, `"Unknown"` for a missing date — and `CanGroupBy` gates which orderings offer the toggle at all; grouping relies on `GetUserGames` returning each group's games consecutively, which every one of those orderings does.
 
-- `Divider` — a `TitleDivider` line above the group's first row, labelled with the letter and the group size.
-- `Tile` — a `TitleGroupTile` (letter and group size centred in a whole game-tile-sized cell) taking the first cell of the group's first row. Clicking one collapses the group (`AppSettings.UserGamesCollapsedTitleGroups`): its games get `GridSlot.Hidden` and no control at all, and consecutive collapsed groups pack their tiles into one row.
-
-Both headings derive from `TitleGroupElement` and are reconciled **by position** rather than by letter, because culture-sensitive title sorting can put the same letter in two non-adjacent groups.
+Dividers are reconciled **by position** rather than by label, because culture-sensitive title sorting can put the same letter in two non-adjacent groups.
 
 Other things that are hand-rolled rather than framework-provided:
 
