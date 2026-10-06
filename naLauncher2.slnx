@@ -1,3 +1,8 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
+  <Project Path="naLauncher2.Core/naLauncher2.Core.csproj" />
   <Project Path="naLauncher2.Wpf/naLauncher2.Wpf.csproj" />
 </Solution>

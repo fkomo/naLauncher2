@@ -1,4 +1,4 @@
-namespace naLauncher2.Wpf
+namespace naLauncher2.Core
 {
     /// <summary>
     /// One play session of a game. <see cref="End"/> is null while the session is running,

@@ -1,6 +1,3 @@
-﻿using naLauncher2.Wpf.Api;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Windows;
 
 namespace naLauncher2.Wpf
@@ -10,17 +7,6 @@ namespace naLauncher2.Wpf
     /// </summary>
     public partial class App : Application
     {
-        public static readonly JsonSerializerOptions JsonSerializerOptions = new()
-        {
-            PropertyNameCaseInsensitive = true,
-            IgnoreReadOnlyFields = true,
-            WriteIndented = false,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            IgnoreReadOnlyProperties = true,
-        };
-
-        public static TwitchDevAuthz? TwitchDevAuthz { get; set; }
-
         protected override async void OnStartup(StartupEventArgs e)
         {
             await AppSettings.Instance.Load(System.IO.Path.Combine(AppContext.BaseDirectory, "settings.json"));
@@ -34,10 +20,10 @@ namespace naLauncher2.Wpf
 
         public static void SettingsChanged()
         {
-            TwitchDevAuthz = null;
+            GameLibrary.TwitchDevAuthz = null;
 
             if (AppSettings.Instance.TwitchDev?.ClientId != null && AppSettings.Instance.TwitchDev.ClientSecret != null)
-                TwitchDevAuthz = new TwitchDevAuthz(AppSettings.Instance.TwitchDev.ClientId, AppSettings.Instance.TwitchDev.ClientSecret);
+                GameLibrary.TwitchDevAuthz = new TwitchDevAuthz(AppSettings.Instance.TwitchDev.ClientId, AppSettings.Instance.TwitchDev.ClientSecret);
         }
 
         protected override async void OnExit(ExitEventArgs e)

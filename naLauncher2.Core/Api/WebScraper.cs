@@ -1,7 +1,7 @@
 using PuppeteerSharp;
 using System.Text.RegularExpressions;
 
-namespace naLauncher2.Wpf.Api
+namespace naLauncher2.Core.Api
 {
 	/// <summary>
 	/// Simple web scraper with client-side rendering support via headless Chromium (PuppeteerSharp).

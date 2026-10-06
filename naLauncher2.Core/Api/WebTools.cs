@@ -1,10 +1,10 @@
-﻿using naLauncher2.Wpf.Tools;
+﻿using naLauncher2.Core.Tools;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Http;
 
-namespace naLauncher2.Wpf.Api
+namespace naLauncher2.Core.Api
 {
     internal class Tools
     {

@@ -19,7 +19,6 @@ A WPF-based personal game launcher for Windows. Manages a local library of game 
 
 - Windows 10 or later
 - [.NET 10 Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
-- `Ujeby.Core.dll` placed at `..\..\Ujeby\publish\Ujeby.Core.dll` relative to the solution root
 
 ## Building
 
@@ -38,7 +37,7 @@ Settings are stored in `settings.json` next to the executable and are edited via
 | `TopLevelOnly` | Scan only the top level of each source directory |
 | `GameExtensions` | File extensions to treat as game shortcuts (default: `.lnk .exe .url .cmd .bat`) |
 | `ImageCachePath` | Directory containing pre-downloaded cover images (matched by file name) |
-| `LogPath` | Custom log file path (defaults to app directory) |
+| `LogPath` | Directory for `naLauncher2.log`; when empty, nothing is logged to a file |
 | `TwitchDev.ClientId` / `TwitchDev.ClientSecret` | [Twitch Developer](https://dev.twitch.tv/console) credentials required for IGDB metadata |
 
 ### Twitch / IGDB setup
@@ -48,10 +47,12 @@ Settings are stored in `settings.json` next to the executable and are edited via
 
 ## Dependencies
 
+Two projects: `naLauncher2.Core` (library, settings, metadata providers) and `naLauncher2.Wpf` (the UI). Package versions are managed centrally in `Directory.Packages.props`.
+
 | Package | Version |
 |---|---|
 | [PuppeteerSharp](https://github.com/hardkoded/puppeteer-sharp) | 24.40.0 |
-| Ujeby.Core | local reference |
+| System.Drawing.Common | 10.0.0 |
 
 ## License
 

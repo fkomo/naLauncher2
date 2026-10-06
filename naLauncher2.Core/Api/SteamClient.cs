@@ -1,9 +1,9 @@
-﻿using naLauncher2.Wpf.Tools;
+﻿using naLauncher2.Core.Tools;
 using System.Globalization;
 using System.IO;
 using System.Net;
 
-namespace naLauncher2.Wpf.Api
+namespace naLauncher2.Core.Api
 {
     public record class SteamGameData() : IGameData
     {

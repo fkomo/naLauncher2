@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO;
 
-namespace naLauncher2.Wpf
+namespace naLauncher2.Core
 {
     public class Log
     {

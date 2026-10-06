@@ -1,6 +1,6 @@
-﻿namespace naLauncher2.Wpf
+﻿namespace naLauncher2.Core
 {
-    internal enum UserGamesFilterMode 
+    public enum UserGamesFilterMode 
     { 
         Installed, 
         Removed, 
@@ -12,7 +12,7 @@
         Starred
     }
 
-    internal enum GamesSortMode
+    public enum GamesSortMode
     {
         Title, // GameLibrary.Games[Key]
         Added, // GameInfo.Added

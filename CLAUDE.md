@@ -12,13 +12,18 @@ dotnet publish naLauncher2.Wpf -p:PublishProfile=FolderProfile   # -> %AppData%\
 
 There is no test project and no linter config — build warnings are the only static feedback.
 
-### Ujeby.Core
+`settings.json` is read from next to the executable, so each build output has its own settings. `dotnet run` uses `naLauncher2.Wpf\bin\<Configuration>\net10.0-windows\settings.json`; the Debug one points at a separate dev library (`%AppData%\Ujeby\naLauncher2-dev\library-dev.json`). The real library and settings belong to the published app in `%AppData%\Ujeby\naLauncher2`. The `FolderProfile` publish writes straight into that live install folder.
 
-The project has a raw DLL `<Reference>` to `..\..\Ujeby\publish\Ujeby.Core.dll` (i.e. `<repos>\fkomo\Ujeby\publish\Ujeby.Core.dll`), built from the sibling `fkomo/Ujeby` solution. It is not on NuGet; if that DLL is missing the build fails. Used for `Ujeby.Tools.TimedBlock` (the `using var tb = new TimedBlock(...)` timing/logging idiom used throughout), `Ujeby.Tools.GZip` (library backups), and the `Ujeby.Extensions.NormalizeCustom()` string extension (title matching against IGDB/Steam).
+### Solution layout
+
+- **`naLauncher2.Core`** (class library): the model (`GameInfo`, `Session`, enums), `GameLibrary`, `AppSettings`, `Log`, `JsonDefaults`, the metadata providers in `Api/`, and the helpers in `Tools/`. `Tools/` holds `TimedBlock` (the `using var tb = new TimedBlock(...)` timing/logging idiom used throughout), `GZip` (library backups) and `StringExtensions.NormalizeCustom()` (title matching against IGDB/Steam). Core has no WPF references; keep it that way.
+- **`naLauncher2.Wpf`** (WinExe, assembly name `naLauncher2`): `App`, `MainWindow`, controls and dialogs. It imports `naLauncher2.Core`, `.Api` and `.Tools` as global usings from its `.csproj`, so its files carry no `using` lines for them.
+- Both projects target `net10.0-windows`. Shared properties (target framework, nullable, implicit usings, debug type) live in `Directory.Build.props`.
+- **Central package management:** package versions are set only in `Directory.Packages.props` (`<PackageVersion>`). A project's `<PackageReference>` must not carry a `Version`.
 
 ## Architecture
 
-Single WPF project, no MVVM, no DI, no data binding for game content. Two process-wide singletons hold all state:
+No MVVM, no DI, no data binding for game content. Two process-wide singletons, both in Core, hold all state:
 
 - **`AppSettings.Instance`** — `settings.json` next to the executable (`AppContext.BaseDirectory`). Loaded in `App.OnStartup`, saved in `App.OnExit` and by `SettingsDialog`.
 - **`GameLibrary.Instance`** — a `ConcurrentDictionary<string, GameInfo>` persisted as JSON at `AppSettings.LibraryPath`.
@@ -32,16 +37,16 @@ Single WPF project, no MVVM, no DI, no data binding for game content. Two proces
 ### Persistence rules
 
 - Every mutation is followed by an explicit `await GameLibrary.Instance.Save()` from the caller — nothing auto-saves.
-- Both library and settings serialize through the shared `App.JsonSerializerOptions`; use it on any new read/write or round-tripping breaks.
+- Both library and settings serialize through the shared `JsonDefaults.Options`; use it on any new read/write or round-tripping breaks.
 - `Backup()` writes a GZip `.bak` named `<library>_<yyyyMMddHHmmss>.bak`, skips when the SHA-256 matches the previous backup, and keeps the 10 newest. DEBUG builds additionally drop an uncompressed `.json` next to each `.bak`.
-- Library JSON passes through `GameLibrary.Migrate` (a `JsonNode` rewrite) before deserialization, for both `Load` and `Restore`, so old files and old backups keep loading. A breaking change to `GameInfo`'s shape needs a step there. When `Load` migrates, it writes the original next to the library as `<library>_premigration_<timestamp>.json` and saves right away. Current step: `Played` changed from `List<DateTime>` to `List<Session>` (`Start`, nullable `End`).
+- Library JSON passes through `GameLibrary.Migrate` (a `JsonNode` rewrite) before deserialization, for both `Load` and `Restore`, so old files and old backups keep loading. A breaking change to `GameInfo`'s shape needs a step there. When `Load` migrates, it writes the original next to the library as `<library>_premigration_<timestamp>.json` and saves right away. Current step: `Played` changed from `List<DateTime>` to `List<Session>` (`Start`, nullable `End`). Nothing sets `End` yet: `RunGame` records only the start. How to measure playtime is still undecided; the options are analysed in `docs/playtime-tracking.md`.
 - `AppSettings.Load` copies each property one by one out of the deserialized instance. A new setting that isn't added to that copy block will silently never load.
 
 ### Metadata providers (`Api/`)
 
 `IGameDataProvider<T>` has two implementations with very different mechanics:
 
-- **`IgdbClient`** — real REST API (Apicalypse query strings POSTed to `api.igdb.com/v4`). Auth is `TwitchDevAuthz`, a `DelegatingHandler` that fetches and caches a client-credentials token and injects `Client-ID`/`Authorization`. Without Twitch credentials in settings, `App.TwitchDevAuthz` is null and constructing the client throws.
+- **`IgdbClient`** — real REST API (Apicalypse query strings POSTed to `api.igdb.com/v4`). Auth is `TwitchDevAuthz`, a `DelegatingHandler` that fetches and caches a client-credentials token and injects `Client-ID`/`Authorization`. `App.SettingsChanged()` builds it from the settings into `GameLibrary.TwitchDevAuthz`; without Twitch credentials it is null and constructing the client throws.
 - **`SteamClient`** — no API; it scrapes the store HTML with regexes (`WebScraper`), rendered through headless Chromium via PuppeteerSharp. `WebScraper` lazily downloads a Chromium revision on first use (slow, one-time) and reuses one shared browser instance.
 
 Both resolve a title to an id only on an unambiguous exact match after `NormalizeCustom()`; multiple matches are logged and treated as no match. Covers download into `ImageCachePath\IgdbCom` and `ImageCachePath\SteamDbInfo`; with no `ImageCachePath` set, images are skipped entirely.
@@ -70,4 +75,4 @@ Only one metadata refresh may run at a time; `TryStartRefreshAnimation()` double
 
 ### Logging
 
-`Log.WriteLine` always writes to `Debug`, and appends to `naLauncher2.log` only when `AppSettings.LogPath` is set. Long-running operations are wrapped in `TimedBlock` so the log doubles as timing data.
+`Log.WriteLine` always writes to `Debug`, and appends to `naLauncher2.log` only when `AppSettings.LogPath` is set. `LogPath` is a directory, not a file path. Long-running operations are wrapped in `TimedBlock` so the log doubles as timing data.

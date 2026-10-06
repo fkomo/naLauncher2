@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 
-namespace naLauncher2.Wpf.Tools
+namespace naLauncher2.Core.Tools
 {
-    internal class TimedBlock(string message, Action<string> writeLineAction) : IDisposable
+    public class TimedBlock(string message, Action<string> writeLineAction) : IDisposable
     {
         readonly string _message = message;
         readonly Stopwatch _stopwatch = Stopwatch.StartNew();

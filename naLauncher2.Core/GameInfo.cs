@@ -1,6 +1,6 @@
-﻿using naLauncher2.Wpf.Api;
+﻿using naLauncher2.Core.Api;
 
-namespace naLauncher2.Wpf
+namespace naLauncher2.Core
 {
     public enum GameInfoExtension
     {

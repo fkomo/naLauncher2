@@ -1,10 +1,10 @@
-﻿using naLauncher2.Wpf.Tools;
+﻿using naLauncher2.Core.Tools;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 
-namespace naLauncher2.Wpf.Api
+namespace naLauncher2.Core.Api
 {
     public class IgdbGameData : IGameData
     {

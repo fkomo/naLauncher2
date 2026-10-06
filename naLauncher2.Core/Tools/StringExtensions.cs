@@ -1,6 +1,6 @@
-﻿namespace naLauncher2.Wpf.Tools
+﻿namespace naLauncher2.Core.Tools
 {
-    internal static class StringExtensions
+    public static class StringExtensions
     {
         public static string NormalizeCustom(this string s)
         {

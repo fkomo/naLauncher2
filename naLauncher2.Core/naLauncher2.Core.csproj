@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<PackageReference Include="PuppeteerSharp" />
+		<PackageReference Include="System.Drawing.Common" />
+	</ItemGroup>
+
+</Project>

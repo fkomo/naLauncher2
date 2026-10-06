@@ -1,9 +1,9 @@
 using System.IO;
 using System.Text.Json;
 
-namespace naLauncher2.Wpf
+namespace naLauncher2.Core
 {
-    internal class AppSettings
+    public class AppSettings
     {
         public string? LogPath { get; set; }
         public string? LibraryPath { get; set; }
@@ -52,7 +52,7 @@ namespace naLauncher2.Wpf
                 return;
 
             var content = await File.ReadAllTextAsync(path);
-            var loaded = JsonSerializer.Deserialize<AppSettings>(content, App.JsonSerializerOptions);
+            var loaded = JsonSerializer.Deserialize<AppSettings>(content, JsonDefaults.Options);
             if (loaded != null)
             {
                 LogPath = loaded.LogPath;
@@ -89,7 +89,7 @@ namespace naLauncher2.Wpf
         public async Task Save()
         {
             if (!string.IsNullOrEmpty(_settingsPath))
-                await File.WriteAllTextAsync(_settingsPath, JsonSerializer.Serialize(this, App.JsonSerializerOptions));
+                await File.WriteAllTextAsync(_settingsPath, JsonSerializer.Serialize(this, JsonDefaults.Options));
         }
     }
 }

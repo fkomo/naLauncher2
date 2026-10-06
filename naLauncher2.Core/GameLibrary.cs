@@ -1,13 +1,13 @@
-﻿using naLauncher2.Wpf.Api;
-using naLauncher2.Wpf.Tools;
+﻿using naLauncher2.Core.Api;
+using naLauncher2.Core.Tools;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace naLauncher2.Wpf
+namespace naLauncher2.Core
 {
-    internal class GameLibrary
+    public class GameLibrary
     {
         public ConcurrentDictionary<string, GameInfo> Games { get; set; } = [];
 
@@ -58,7 +58,13 @@ namespace naLauncher2.Wpf
         public static GameLibrary Instance => _instance;
 
         static SteamClient GetSteamClient() => new();
-        static IgdbClient GetIgdbClient() => new(App.TwitchDevAuthz);
+        /// <summary>
+        /// IGDB auth built from the Twitch credentials in settings, set by the host whenever settings change.
+        /// Null without credentials, in which case constructing the IGDB client throws.
+        /// </summary>
+        public static TwitchDevAuthz? TwitchDevAuthz { get; set; }
+
+        static IgdbClient GetIgdbClient() => new(TwitchDevAuthz);
 
         public async Task Load(string path)
         {
@@ -98,7 +104,7 @@ namespace naLauncher2.Wpf
         {
             libraryContent = Migrate(libraryContent, out migrated);
 
-            return JsonSerializer.Deserialize<ConcurrentDictionary<string, GameInfo>>(libraryContent, options: App.JsonSerializerOptions)
+            return JsonSerializer.Deserialize<ConcurrentDictionary<string, GameInfo>>(libraryContent, options: JsonDefaults.Options)
                 ?? throw new InvalidOperationException("Failed to deserialize game library.");
         }
 
@@ -165,7 +171,7 @@ namespace naLauncher2.Wpf
         {
             if (!string.IsNullOrEmpty(_libraryPath))
             {
-                await File.WriteAllTextAsync(_libraryPath, JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions));
+                await File.WriteAllTextAsync(_libraryPath, JsonSerializer.Serialize(Games, options: JsonDefaults.Options));
 
                 if (!silent)
                     Log.WriteLine($"{nameof(GameLibrary)}.{nameof(Save)}({Games.Count} games)");
@@ -182,7 +188,7 @@ namespace naLauncher2.Wpf
             var libraryBase = Path.ChangeExtension(_libraryPath, null);
             var backupBaseName = Path.GetFileName(libraryBase) + "_";
 
-            var serialized = JsonSerializer.Serialize(Games, options: App.JsonSerializerOptions);
+            var serialized = JsonSerializer.Serialize(Games, options: JsonDefaults.Options);
             var compressed = GZip.Compress(serialized);
             var newHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(compressed));
 

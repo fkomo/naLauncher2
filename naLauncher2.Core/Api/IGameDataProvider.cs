@@ -1,4 +1,4 @@
-﻿namespace naLauncher2.Wpf.Api
+﻿namespace naLauncher2.Core.Api
 {
     public interface IGameData
     {

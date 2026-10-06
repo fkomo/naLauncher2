@@ -2,9 +2,9 @@
 using System.IO.Compression;
 using System.Text;
 
-namespace naLauncher2.Wpf.Tools
+namespace naLauncher2.Core.Tools
 {
-    internal static class GZip
+    public static class GZip
     {
         public static byte[] Compress(string stringToCompress)
         {
