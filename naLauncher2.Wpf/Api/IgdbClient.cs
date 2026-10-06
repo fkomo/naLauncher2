@@ -1,9 +1,8 @@
-﻿using System.Collections.Concurrent;
+﻿using naLauncher2.Wpf.Tools;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
-using Ujeby.Extensions;
-using Ujeby.Tools;
 
 namespace naLauncher2.Wpf.Api
 {

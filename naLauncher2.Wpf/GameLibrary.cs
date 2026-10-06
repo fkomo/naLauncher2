@@ -1,10 +1,9 @@
 ﻿using naLauncher2.Wpf.Api;
+using naLauncher2.Wpf.Tools;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Windows;
-using Ujeby.Tools;
 
 namespace naLauncher2.Wpf
 {

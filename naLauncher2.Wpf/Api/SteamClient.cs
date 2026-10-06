@@ -1,7 +1,7 @@
-﻿using System.Globalization;
+﻿using naLauncher2.Wpf.Tools;
+using System.Globalization;
 using System.IO;
 using System.Net;
-using Ujeby.Extensions;
 
 namespace naLauncher2.Wpf.Api
 {

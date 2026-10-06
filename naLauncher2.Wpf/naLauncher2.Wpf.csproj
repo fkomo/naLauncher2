@@ -29,13 +29,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Reference Include="Ujeby.Core">
-	    <HintPath>..\..\Ujeby\publish\Ujeby.Core.dll</HintPath>
-	  </Reference>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Include="PuppeteerSharp" Version="24.40.0" />
+		<PackageReference Include="PuppeteerSharp" Version="24.40.0" />
 	</ItemGroup>
 
 </Project>
