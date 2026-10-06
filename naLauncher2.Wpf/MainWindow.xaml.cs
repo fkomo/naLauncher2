@@ -1004,7 +1004,8 @@ namespace naLauncher2.Wpf
                 return;
             }
 
-            game.Played.Add(DateTime.Now);
+            // end time stays null until playtime tracking exists
+            game.Played.Add(new Session(DateTime.Now));
 
             await GameLibrary.Instance.Save();
 
@@ -1649,7 +1650,7 @@ namespace naLauncher2.Wpf
         {
             UserGamesGroupDividersToggle.Visibility = CanGroupBy(_userGamesSortMode)
                 ? Visibility.Visible : Visibility.Collapsed;
-            UserGamesGroupDividersToggle.Text = "Groups";//_userGamesSortMode == GamesSortMode.Title ? "A-Z" : "Year";
+            UserGamesGroupDividersToggle.Text = "with Dividers";//_userGamesSortMode == GamesSortMode.Title ? "A-Z" : "Year";
             UserGamesGroupDividersToggle.Tag = _userGamesGroupDividers ? null : "inactive";
         }
 

@@ -17,7 +17,7 @@ namespace naLauncher2.Wpf
 
         public DateTime? Completed { get; set; }
         public bool Starred { get; set; }
-        public List<DateTime> Played { get; set; } = [];
+        public List<Session> Played { get; set; } = [];
         public string? Summary { get; set; }
         public int? Rating { get; set; }
         public string? Developer { get; set; }
@@ -29,7 +29,7 @@ namespace naLauncher2.Wpf
         public bool Installed => Shortcut is not null;
         public bool Removed => !Installed;
         public bool NotPlayed => Played == null || Played.Count == 0;
-        public DateTime? LastPlayed => Played.Count > 0 ? Played.Last() : null;
+        public DateTime? LastPlayed => Played.Count > 0 ? Played.Last().Start : null;
         public bool MissingImage => ImagePath is null;
 
         public GameInfo()

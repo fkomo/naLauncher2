@@ -34,6 +34,7 @@ Single WPF project, no MVVM, no DI, no data binding for game content. Two proces
 - Every mutation is followed by an explicit `await GameLibrary.Instance.Save()` from the caller — nothing auto-saves.
 - Both library and settings serialize through the shared `App.JsonSerializerOptions`; use it on any new read/write or round-tripping breaks.
 - `Backup()` writes a GZip `.bak` named `<library>_<yyyyMMddHHmmss>.bak`, skips when the SHA-256 matches the previous backup, and keeps the 10 newest. DEBUG builds additionally drop an uncompressed `.json` next to each `.bak`.
+- Library JSON passes through `GameLibrary.Migrate` (a `JsonNode` rewrite) before deserialization, for both `Load` and `Restore`, so old files and old backups keep loading. A breaking change to `GameInfo`'s shape needs a step there. When `Load` migrates, it writes the original next to the library as `<library>_premigration_<timestamp>.json` and saves right away. Current step: `Played` changed from `List<DateTime>` to `List<Session>` (`Start`, nullable `End`).
 - `AppSettings.Load` copies each property one by one out of the deserialized instance. A new setting that isn't added to that copy block will silently never load.
 
 ### Metadata providers (`Api/`)

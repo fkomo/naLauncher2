@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows;
 using Ujeby.Tools;
 
@@ -18,7 +19,7 @@ namespace naLauncher2.Wpf
 
         public IEnumerable<string> RecentGames() => Games
             .Where(x => x.Value.Installed && !x.Value.NotPlayed)
-            .OrderByDescending(x => x.Value.Played.Last())
+            .OrderByDescending(x => x.Value.LastPlayed)
             .Select(x => x.Key);
 
         public IEnumerable<string> Steam() => Games
@@ -81,13 +82,62 @@ namespace naLauncher2.Wpf
 
             _libraryPath = path;
 
-            Games = Deserialize(libraryContent);
+            Games = Deserialize(libraryContent, out var migrated);
+
+            if (migrated)
+            {
+                // keep the pre-migration file around, the migrated library overwrites the original
+                var premigrationPath = $"{Path.ChangeExtension(path, null)}_premigration_{DateTime.Now:yyyyMMddHHmmss}.json";
+                await File.WriteAllTextAsync(premigrationPath, libraryContent);
+                Log.WriteLine($"Game library migrated - original saved to '{premigrationPath}'");
+
+                await Save();
+            }
         }
 
-        static ConcurrentDictionary<string, GameInfo> Deserialize(string libraryContent)
+        static ConcurrentDictionary<string, GameInfo> Deserialize(string libraryContent, out bool migrated)
         {
+            libraryContent = Migrate(libraryContent, out migrated);
+
             return JsonSerializer.Deserialize<ConcurrentDictionary<string, GameInfo>>(libraryContent, options: App.JsonSerializerOptions)
                 ?? throw new InvalidOperationException("Failed to deserialize game library.");
+        }
+
+        /// <summary>
+        /// Upgrades older library JSON to the current <see cref="GameInfo"/> shape.
+        /// Returns the content unchanged (and <paramref name="migrated"/> false) when nothing needed upgrading.
+        /// </summary>
+        static string Migrate(string libraryContent, out bool migrated)
+        {
+            migrated = false;
+
+            if (JsonNode.Parse(libraryContent) is not JsonObject library)
+                return libraryContent;
+
+            foreach (var (_, game) in library)
+            {
+                // GameInfo.Played: List<DateTime> -> List<Session>. Old entries only knew when the game
+                // was launched, so each timestamp becomes a session with no end.
+                var played = game?[nameof(GameInfo.Played)] as JsonArray;
+                if (played is null)
+                    continue;
+
+                for (int i = 0; i < played.Count; i++)
+                {
+                    if (played[i] is JsonValue start && start.GetValueKind() == JsonValueKind.String)
+                    {
+                        played[i] = new JsonObject { [nameof(Session.Start)] = start.GetValue<string>() };
+                        migrated = true;
+                    }
+                }
+            }
+
+            if (!migrated)
+                return libraryContent;
+
+            Log.WriteLine($"{nameof(GameLibrary)}.{nameof(Migrate)}() - converted '{nameof(GameInfo.Played)}' timestamps to sessions");
+
+            return library.ToJsonString();
         }
 
         public async Task Restore(string backupPath)
@@ -106,7 +156,8 @@ namespace naLauncher2.Wpf
             var backupContent = await File.ReadAllBytesAsync(backupPath);
             var libraryContent = GZip.Decompress(backupContent);
 
-            Games = Deserialize(libraryContent);
+            // backups taken before a data model change are migrated in memory; the caller's Save() persists them
+            Games = Deserialize(libraryContent, out _);
 
             Log.WriteLine($"Game library restored - {Games.Count} games");
         }
