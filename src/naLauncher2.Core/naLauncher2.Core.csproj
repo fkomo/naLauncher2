@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.Data.Sqlite" />
 		<PackageReference Include="PuppeteerSharp" />
 		<PackageReference Include="System.Drawing.Common" />
 	</ItemGroup>

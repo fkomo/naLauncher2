@@ -42,22 +42,30 @@ namespace naLauncher2.Wpf
 
         readonly string _id;
         public string Id => _id;
+
+        /// <summary>
+        /// Set while the tile is fading out of the grid, so grid updates no longer reuse it.
+        /// </summary>
+        public bool IsRemoving { get; set; }
         readonly bool _isRemoved;
-        bool _hasRating;
-        readonly bool _isRatingSortActive;
+        // sort of the section the tile is in (null for the New/Recent strips): its badge is always shown
+        readonly GamesSortMode? _sortMode;
         readonly bool _isReleaseDateSortActive;
+        // badges currently in the strip, with the sort mode each one belongs to
+        readonly List<(GamesSortMode SortMode, Border Badge)> _badges = [];
+        bool _isNameHovered;
         // a status the section is already filtered by says nothing about the individual game,
         // so its glyph is left out of the status flag
         readonly bool _hideStarredGlyph;
         readonly bool _hideCompletedGlyph;
         bool _isRefreshActive;
 
-        public GameInfoControl(string id, bool isRatingSortActive = false, bool isReleaseDateSortActive = false,
+        public GameInfoControl(string id, GamesSortMode? sortMode = null,
             bool hideStarredGlyph = false, bool hideCompletedGlyph = false)
         {
             _id = id;
-            _isRatingSortActive = isRatingSortActive;
-            _isReleaseDateSortActive = isReleaseDateSortActive;
+            _sortMode = sortMode;
+            _isReleaseDateSortActive = sortMode == GamesSortMode.Released;
             _hideStarredGlyph = hideStarredGlyph;
             _hideCompletedGlyph = hideCompletedGlyph;
 
@@ -104,42 +112,67 @@ namespace naLauncher2.Wpf
                 || game.Rating.HasValue
                 || game.ReleaseDate.HasValue;
 
-            if (game.Rating.HasValue)
-            {
-                _hasRating = true;
-                RatingBadge.Background = new SolidColorBrush(GetMetacriticColor(game.Rating.Value));
-                RatingText.Text = game.Rating.Value.ToString();
-
-                if (_isRatingSortActive)
-                    RatingBadge.Visibility = Visibility.Visible;
-            }
+            UpdateBadges(game);
 
             UpdateStatusFlag();
 
             LoadImageAsync(game.ImagePath, game.Installed);
         }
 
+        /// <summary>
+        /// Rebuilds the badge strip in the top-left corner: the badge of the active sort first,
+        /// then the others in <see cref="TileBadges.All"/> order. Badges the game has no value for are left out.
+        /// </summary>
+        void UpdateBadges(GameInfo game)
+        {
+            BadgeStrip.Children.Clear();
+            _badges.Clear();
+
+            foreach (var definition in TileBadges.Ordered(_sortMode))
+            {
+                if (definition.GetContent(game) is not TileBadgeContent content)
+                    continue;
+
+                var badge = TileBadges.Create(content);
+                BadgeStrip.Children.Add(badge);
+                _badges.Add((definition.SortMode, badge));
+            }
+
+            UpdateBadgeVisibility();
+        }
+
+        /// <summary>
+        /// The active sort's badge is always visible; the others only while the name label is hovered.
+        /// </summary>
+        void UpdateBadgeVisibility()
+        {
+            foreach (var (sortMode, badge) in _badges)
+                badge.Visibility = sortMode == _sortMode || _isNameHovered ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         void NameLabel_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
+            _isNameHovered = true;
+            UpdateBadgeVisibility();
+
             if (!_hasInfoOverlay)
                 return;
 
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             InfoOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(InfoOverlay.Opacity, 1, dur));
-            if (_hasRating && !_isRatingSortActive)
-                RatingBadge.Visibility = Visibility.Visible;
             StartSummaryScroll();
         }
 
         void NameLabel_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
+            _isNameHovered = false;
+            UpdateBadgeVisibility();
+
             if (!_hasInfoOverlay)
                 return;
 
             var dur = new Duration(TimeSpan.FromMilliseconds(GlassOverlayDuration));
             InfoOverlay.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(InfoOverlay.Opacity, 0, dur));
-            if (!_isRatingSortActive)
-                RatingBadge.Visibility = Visibility.Collapsed;
             StopSummaryScroll();
         }
 
@@ -443,19 +476,7 @@ namespace naLauncher2.Wpf
             else
                 NameLabel.Text = _id;
 
-            if (game.Rating.HasValue)
-            {
-                _hasRating = true;
-                RatingBadge.Background = new SolidColorBrush(GetMetacriticColor(game.Rating.Value));
-                RatingText.Text = game.Rating.Value.ToString();
-                if (_isRatingSortActive)
-                    RatingBadge.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                _hasRating = false;
-                RatingBadge.Visibility = Visibility.Collapsed;
-            }
+            UpdateBadges(game);
 
             UpdateStatusFlag();
         }
@@ -506,18 +527,6 @@ namespace naLauncher2.Wpf
 
             SnakeRect.BeginAnimation(Shape.StrokeDashOffsetProperty, null);
             SnakeRect.Opacity = 0;
-        }
-
-        static Color GetMetacriticColor(int score)
-        {
-            if (score >= 75)
-                return Color.FromArgb(0xff, 0x00, 0xce, 0x7a);
-
-            else if (score < 50)
-                return Color.FromArgb(0xff, 0xff, 0x6b, 0x73);
-
-            else
-                return Color.FromArgb(0xff, 0xff, 0xbd, 0x3f);
         }
     }
 }

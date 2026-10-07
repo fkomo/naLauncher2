@@ -3,6 +3,8 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<UseWPF>true</UseWPF>
+		<!-- only for the tray icon (System.Windows.Forms.NotifyIcon); its global usings are removed below so WinForms types never clash with WPF ones -->
+		<UseWindowsForms>true</UseWindowsForms>
 		<ApplicationIcon>Assets\na-launcher.ico</ApplicationIcon>
 		<AssemblyName>naLauncher2</AssemblyName>
 	</PropertyGroup>
@@ -32,6 +34,9 @@
 		<Using Include="naLauncher2.Core" />
 		<Using Include="naLauncher2.Core.Api" />
 		<Using Include="naLauncher2.Core.Tools" />
+		<Using Include="naLauncher2.Core.Tracking" />
+		<Using Remove="System.Windows.Forms" />
+		<Using Remove="System.Drawing" />
 	</ItemGroup>
 
 </Project>

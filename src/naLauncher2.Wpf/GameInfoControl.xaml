@@ -151,24 +151,13 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Rating badge (metacritic-style colored square, top-right) -->
-                    <Border x:Name="RatingBadge"
-                        Width="40" Height="40"
-                        CornerRadius="6"
+                    <!-- Badge strip (top-left): the active sort's badge first and always visible,
+                     the other badges to its right while the name label is hovered. Built in code from TileBadges. -->
+                    <StackPanel x:Name="BadgeStrip"
+                        Orientation="Horizontal"
                         HorizontalAlignment="Left" VerticalAlignment="Top"
-                        Margin="8,8,8,8"
-                        IsHitTestVisible="False"
-                        Visibility="Collapsed">
-                        <TextBlock x:Name="RatingText"
-                               Foreground="Black"
-                               FontSize="18"
-                               FontWeight="Bold"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center"/>
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="4" Color="Black" ShadowDepth="1" Opacity="0.5"/>
-                        </Border.Effect>
-                    </Border>
+                        Margin="8,8,0,0"
+                        IsHitTestVisible="False"/>
                 </Grid>
 
                 <!-- Name label section -->

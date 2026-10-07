@@ -3,7 +3,7 @@
 Goal: fill `Session.End` (and the session's duration) for every game launched from naLauncher,
 across all the ways games in the library get launched, and add the playtime the launchers (Steam, GOG Galaxy) already recorded – without counting anything twice.
 
-Status: **design decided, ready to implement** – see §0 (decisions), §1 (design, with the implementation order in §1.9), §2 (assumptions).
+Status: **implemented** (Oct 2026). See §0 (decisions), §1 (design) and §2 (assumptions). §3 lists where the implementation differs from the design and what wasn't verified.
 The original options analysis is kept as reference in §A–§E; section numbers in the decisions below point there.
 *(verified)* = checked on the dev machine (Oct 2026); *(verify)* = from documentation/memory, confirm before relying on it.
 
@@ -112,7 +112,7 @@ public class LauncherPlayTime
 {
     public LaunchVia Source { get; set; }       // Steam or Gog
     public TimeSpan Total { get; set; }         // the launcher's own total (minutes in both sources)
-    public DateTime ReadAt { get; set; }        // when we read it
+    public DateTime ReadAt { get; set; }        // when the total last changed (see §3)
 }
 
 // computed: TrackedPlayTime, TotalPlayTime (see §1.4)
@@ -254,6 +254,43 @@ Assumptions written into the design (say if you disagree):
 - The badge and the sort use **`TotalPlayTime`** (tracked + launcher, §1.4), not just naLauncher's own tracking.
 - Games with no known time (never played, or only unmeasured sessions such as all migrated history) sort as **0**: at the bottom in descending order, without a badge, and in the `Unknown` group.
 - The badge refactor (§1.7) also moves the existing rating badge onto the new badge strip. Its look and behaviour in rating sort and on hover stay the same.
+
+---
+
+## 3. Implementation notes
+
+Code: `src/naLauncher2.Core/Tracking/` (`SessionTracker`, `GameLauncher`, `Detectors`, `ShortcutResolver`, `LauncherSync`, `SteamLocal`, `GogGalaxy`, `Native`, `Vdf`), `src/naLauncher2.Core/PlayTimeFormat.cs`, and in the Wpf project `TrayIcon`, `TileBadges`, plus changes to `App`, `MainWindow`, `GameInfoControl`, `GamePropertiesDialog` and `SettingsDialog`.
+
+Where the implementation differs from the design above:
+
+- **Job Object + install folder are combined, not switched (§1.1).** For direct launches, the game counts as running while *either* the Job Object has a process *or* (when `InstallDir` is known) something runs from the install folder. The design switched to the folder only if the job emptied within 30 s. The combined check covers the same cases (hand-off to an already-running instance, relaunch through a launcher) with less special-casing.
+- **`LauncherPlayTime.ReadAt` is when the total last *changed*, not when it was last read (§1.3, §1.4).** It's bumped only when the launcher's total differs from the stored one.
+  - Steam recorded the session: the total changed after the session ended, so the session falls before `ReadAt` and isn't added again.
+  - Steam didn't record it (offline, failed to write): the total is unchanged, `ReadAt` stays older than the session, and the session is still added.
+  - Edge case: a total that changes later only because of play on another PC moves `ReadAt` past an unrecorded session, which then stops being added.
+- **Resumed sessions (§1.2)** don't count the time naLauncher wasn't running. That time is unknown and could include sleep.
+- **The first poll after the game appears isn't counted**, so a session can be up to ~2 s short (a 15 s test run measured 12 s).
+- **Sessions added by hand** have no `Via`, so they're always added on top of a launcher total. If Steam already counted that play, it's counted twice; delete the session in that case.
+- **Exiting from the tray while tracking** ends the sessions at that moment, even if the games keep running.
+- **Tray icon:** WinForms `NotifyIcon` (D10). Its *Show* also brings the window back when naLauncher is started a second time.
+- **Dependency:** `Microsoft.Data.Sqlite` 10.0.12. 10.0.0 pulled in a native SQLite build with a known high-severity advisory (NU1903).
+
+Verified on the dev machine:
+- Shortcut resolution over all 118 shortcuts: 68 executables, 14 scripts, 21 Steam, 13 GOG Galaxy, 1 Epic, none marked "run as administrator".
+- Install folders resolved for 97 of 117 installed games; Steam playtime imported for 83 games and GOG playtime for 7. The sync takes about 0.5 s.
+- A Job Object followed a process tree after the launching script exited.
+- End-to-end tracking: the session was measured, a too-short session was dropped, and the state file was written and then removed.
+- Crash recovery, including the merge rule.
+- Single instance: a second start signalled the first instance and exited.
+- Playtime sort with dividers and badges in the running app.
+
+Not verified yet:
+- Hiding to the tray, then Show and Exit from the tray.
+- Hover order of the badges.
+- The properties dialog's playtime block and session editing.
+- A real Steam / GOG Galaxy / Epic launch end to end.
+- An elevated game falling back to shell launch.
+- Windows logoff/shutdown while tracking.
 
 ---
 ---

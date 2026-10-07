@@ -64,6 +64,17 @@ namespace naLauncher2.Wpf
         readonly Queue<string> _contextRefreshQueue = new();
         string[]? _pendingNewGameDataRefresh;
 
+        // sections are filled in Window_Loaded; tracker events before that must not touch them
+        bool _sectionsPopulated;
+
+        TrayIcon? _trayIcon;
+        bool _exitRequested;
+
+        /// <summary>
+        /// How long after a session ends the launchers' playtime is re-read; Steam writes it when the game exits.
+        /// </summary>
+        static readonly TimeSpan LauncherSyncDelay = TimeSpan.FromSeconds(15);
+
         /// <summary>
         /// Initializes the main window and assigns render transforms to scrollable containers.
         /// </summary>
@@ -76,6 +87,11 @@ namespace naLauncher2.Wpf
             ApplyNewGamesState();
             ApplyRecentGamesState();
             ApplyUserGamesState();
+
+            SessionTracker.Instance.SessionsChanged += Tracker_SessionsChanged;
+            SessionTracker.Instance.SessionEnded += Tracker_SessionEnded;
+            Closing += MainWindow_Closing;
+            Closed += (_, _) => _trayIcon?.Dispose();
         }
 
         /// <summary>
@@ -159,6 +175,10 @@ namespace naLauncher2.Wpf
             UpdateViewportCulling();
             UpdateScrollThumbs();
 
+            _sectionsPopulated = true;
+
+            _ = SyncLaunchers();
+
             if (_pendingNewGameDataRefresh is not null)
                 await RefreshNewGameDataInBackground(_pendingNewGameDataRefresh);
         }
@@ -201,6 +221,7 @@ namespace naLauncher2.Wpf
                 GamesSortMode.Played => filtered.OrderBy(x => x.Value.Played.Count),
                 GamesSortMode.Rating => filtered.OrderBy(x => x.Value.Rating),
                 GamesSortMode.Released => filtered.OrderBy(x => x.Value.ReleaseDate),
+                GamesSortMode.PlayTime => filtered.OrderBy(x => x.Value.TotalPlayTime ?? TimeSpan.Zero),
                 _ => filtered.OrderBy(x => x.Key),
             };
 
@@ -251,6 +272,9 @@ namespace naLauncher2.Wpf
 
             // backup on start in case the user has made changes to their library outside of the launcher and we want to avoid losing data
             await GameLibrary.Instance.Backup();
+
+            // sessions left open by a crash or kill: resume them if the game still runs, otherwise close them
+            await SessionTracker.Instance.Restore();
 
             var refreshResult = await GameLibrary.Instance.RefreshSources(AppSettings.Instance.Sources, 
                 extensions: AppSettings.Instance.GameExtensions,
@@ -435,22 +459,52 @@ namespace naLauncher2.Wpf
 
         /// <summary>
         /// Divider placed above the first tile row of a group of consecutive games, labelled with
-        /// what the group shares and the number of games in it.
+        /// what the group shares and the number of games in it. A collapsed group shows only its divider.
         /// </summary>
-        readonly record struct GridDivider(string Label, double Top, int Count);
+        readonly record struct GridDivider(string Label, double Top, int Count, bool Collapsed);
 
         /// <summary>
         /// Precomputed User Games grid layout: one slot per game (in the same order), the dividers
         /// heading the groups, and the total content height in pixels.
         /// </summary>
-        readonly record struct GridLayout(GridSlot[] Slots, GridDivider[] Dividers, double ContentHeight);
+        readonly record struct GridLayout(GridSlot?[] Slots, GridDivider[] Dividers, double ContentHeight);
+
+        /// <summary>
+        /// Groups whose collapsed state differs from the default, per ordering. "Unknown" groups start
+        /// collapsed, every other group expanded; clicking a divider flips it. Kept for the session only.
+        /// </summary>
+        readonly HashSet<(GamesSortMode SortMode, string Label)> _toggledGroups = [];
+
+        /// <summary>
+        /// Games of the User Games grid that currently have a tile, i.e. are not in a collapsed group.
+        /// </summary>
+        HashSet<string> _userGamesShown = [];
+
+        bool IsGroupCollapsed(string label) =>
+            (label == "Unknown") != _toggledGroups.Contains((_userGamesSortMode, label));
 
         /// <summary>
         /// Orderings the User Games grid can be split into groups by. The rest (played count and
         /// rating) have no grouping worth drawing, so the toggle is not offered for them.
         /// </summary>
         static bool CanGroupBy(GamesSortMode sortMode) => sortMode is GamesSortMode.Title
-            or GamesSortMode.Added or GamesSortMode.Completed or GamesSortMode.Released;
+            or GamesSortMode.Added or GamesSortMode.Completed or GamesSortMode.Released or GamesSortMode.PlayTime;
+
+        /// <summary>
+        /// Playtime groups as (upper bound in hours, label), in ascending order.
+        /// </summary>
+        static readonly (double MaxHours, string Label)[] PlayTimeGroups =
+        [
+            (1, "< 1 h"),
+            (10, "1–10 h"),
+            (50, "10–50 h"),
+            (100, "50–100 h"),
+            (double.MaxValue, "100 h+"),
+        ];
+
+        static string PlayTimeGroup(TimeSpan? playTime) => playTime is TimeSpan time
+            ? PlayTimeGroups.First(g => time.TotalHours < g.MaxHours).Label
+            : "Unknown";
 
         /// <summary>
         /// True when the User Games grid is currently split into groups.
@@ -464,8 +518,9 @@ namespace naLauncher2.Wpf
 
         /// <summary>
         /// Returns the group a game belongs to under the active ordering: its capitalized first
-        /// letter when ordered by title, otherwise the year of the date being ordered by. Games
-        /// that have no such date group under "Unknown", where the ordering puts them anyway.
+        /// letter when ordered by title, its playtime bucket when ordered by playtime, otherwise
+        /// the year of the date being ordered by. Games that have no such date or no known playtime
+        /// group under "Unknown", where the ordering puts them anyway.
         /// </summary>
         string GameGroupLabel(string gameTitle)
         {
@@ -478,6 +533,7 @@ namespace naLauncher2.Wpf
                 GamesSortMode.Added => Year(game.Added),
                 GamesSortMode.Completed => Year(game.Completed),
                 GamesSortMode.Released => Year(game.ReleaseDate),
+                GamesSortMode.PlayTime => PlayTimeGroup(game.TotalPlayTime),
                 _ => TitleGroupLetter(gameTitle),
             };
         }
@@ -494,7 +550,8 @@ namespace naLauncher2.Wpf
 
         /// <summary>
         /// Calculates where every tile of the User Games grid goes. When grouping is active each
-        /// new group starts on a fresh row, preceded by a divider that labels it.
+        /// new group starts on a fresh row, preceded by a divider that labels it. Games of a
+        /// collapsed group get no slot (null): only their divider is drawn.
         /// </summary>
         /// <param name="games">Ordered array of games to lay out.</param>
         GridLayout BuildGridLayout(string[] games)
@@ -506,17 +563,20 @@ namespace naLauncher2.Wpf
             int columns = Math.Max(1, _controlsPerRow);
             double rowStep = GameInfoControl.ControlHeight + Gap;
 
-            var slots = new GridSlot[games.Length];
+            var slots = new GridSlot?[games.Length];
             var dividers = new List<GridDivider>();
 
             double y = GameInfoControl.ShadowBlurRadius;
             int column = 0;
+            // whether the current row holds tiles, i.e. must be closed before anything goes below it
+            bool rowOpen = false;
 
             double SlotLeft(int c) => _gridOffset + c * (GameInfoControl.ControlWidth + Gap);
 
             for (int i = 0; i < games.Length;)
             {
                 int count = 1;
+                bool collapsed = false;
 
                 if (grouped)
                 {
@@ -525,30 +585,69 @@ namespace naLauncher2.Wpf
                         count++;
 
                     // close the row the previous group ended on, then open this one with a divider
-                    if (i > 0)
+                    if (rowOpen)
                         y += rowStep;
+                    rowOpen = false;
 
-                    dividers.Add(new GridDivider(label, y, count));
+                    collapsed = IsGroupCollapsed(label);
+                    dividers.Add(new GridDivider(label, y, count, collapsed));
                     y += GroupDivider.ControlHeight;
                     column = 0;
                 }
 
-                for (int n = 0; n < count; n++)
+                if (!collapsed)
                 {
-                    if (column == columns)
+                    for (int n = 0; n < count; n++)
                     {
-                        y += rowStep;
-                        column = 0;
-                    }
+                        if (column == columns)
+                        {
+                            y += rowStep;
+                            column = 0;
+                        }
 
-                    slots[i + n] = new GridSlot(SlotLeft(column), y);
-                    column++;
+                        slots[i + n] = new GridSlot(SlotLeft(column), y);
+                        column++;
+                        rowOpen = true;
+                    }
                 }
 
                 i += count;
             }
 
-            return new GridLayout(slots, [.. dividers], y + rowStep);
+            return new GridLayout(slots, [.. dividers], rowOpen ? y + rowStep : y);
+        }
+
+        /// <summary>
+        /// Collapses or expands the group a divider heads, then re-lays the grid out in place.
+        /// </summary>
+        void GroupDivider_Toggle(GroupDivider divider)
+        {
+            var key = (_userGamesSortMode, divider.Label);
+            if (!_toggledGroups.Remove(key))
+                _toggledGroups.Add(key);
+
+            UpdateGridSection(UserGamesContainer, GetUserGames());
+
+            _userGamesMaxScrollY = Math.Max(0, _userGamesContentHeight - UserGamesCanvas.ActualHeight + _gridOffset);
+            _allGamesOffsetY = Math.Min(_allGamesOffsetY, _userGamesMaxScrollY);
+            _allGamesVelocityY = 0;
+            _allGamesTransform.Y = -_allGamesOffsetY;
+
+            UpdateVisibleControls();
+            UpdateViewportCulling();
+            UpdateScrollThumbs();
+        }
+
+        /// <summary>
+        /// Rebuilds the list of User Games tiles the viewport culling looks after: tiles of games
+        /// that are shown, leaving out tiles still fading out of a collapsed group or a past filter.
+        /// </summary>
+        void UpdateVisibleControls()
+        {
+            _visibleControls = UserGamesContainer.Children.OfType<GameInfoControl>()
+                .Where(c => !c.IsRemoving && _userGamesShown.Contains(c.Id))
+                .Select(c => (Control: c, LocalTop: Canvas.GetTop(c)))
+                .ToArray();
         }
 
         /// <summary>
@@ -580,7 +679,8 @@ namespace naLauncher2.Wpf
         /// </summary>
         void AddGroupDivider(Canvas container, GridDivider divider, Duration fadeDuration)
         {
-            var control = new GroupDivider(divider.Label, divider.Count, GridContentWidth) { Opacity = 0 };
+            var control = new GroupDivider(divider.Label, divider.Count, divider.Collapsed, GridContentWidth) { Opacity = 0 };
+            control.Toggled += GroupDivider_Toggle;
             container.Children.Add(control);
             Canvas.SetLeft(control, _gridOffset);
             Canvas.SetTop(control, divider.Top);
@@ -669,28 +769,31 @@ namespace naLauncher2.Wpf
         /// <param name="games">Ordered array of games to display.</param>
         void PopulateGridSection(Canvas container, string[] games)
         {
-            bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
-            bool isReleaseDateSortActive = _userGamesSortMode == GamesSortMode.Released;
             bool hideStarredGlyph = _userGamesFilterMode == UserGamesFilterMode.Starred;
             bool hideCompletedGlyph = _userGamesFilterMode == UserGamesFilterMode.Completed;
             var fadeDuration = new Duration(TimeSpan.FromMilliseconds(GamePlacementDurationMs));
 
             var layout = BuildGridLayout(games);
             _userGamesContentHeight = layout.ContentHeight;
+            _userGamesShown = [.. games.Where((_, i) => layout.Slots[i].HasValue)];
 
             foreach (var divider in layout.Dividers)
                 AddGroupDivider(container, divider, fadeDuration);
 
+            int placed = 0;
             for (int i = 0; i < games.Length; i++)
             {
-                var control = new GameInfoControl(games[i], isRatingSortActive, isReleaseDateSortActive, hideStarredGlyph, hideCompletedGlyph) { CacheMode = new BitmapCache(), Opacity = 0 };
+                if (layout.Slots[i] is not GridSlot slot)
+                    continue;
+
+                var control = new GameInfoControl(games[i], _userGamesSortMode, hideStarredGlyph, hideCompletedGlyph) { CacheMode = new BitmapCache(), Opacity = 0 };
                 container.Children.Add(control);
-                Canvas.SetLeft(control, layout.Slots[i].Left);
-                Canvas.SetTop(control, layout.Slots[i].Top);
+                Canvas.SetLeft(control, slot.Left);
+                Canvas.SetTop(control, slot.Top);
 
                 var fadeIn = new DoubleAnimation(0, 1, fadeDuration)
                 {
-                    BeginTime = TimeSpan.FromMilliseconds(i * GamePlacementDelayMs)
+                    BeginTime = TimeSpan.FromMilliseconds(placed++ * GamePlacementDelayMs)
                 };
                 control.BeginAnimation(UIElement.OpacityProperty, fadeIn);
             }
@@ -977,7 +1080,7 @@ namespace naLauncher2.Wpf
 
             e.Handled = true;
 
-            await RunGame(game);
+            await RunGame(control.Id, game);
         }
 
         void RootGrid_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
@@ -991,24 +1094,119 @@ namespace naLauncher2.Wpf
             e.Handled = true;
         }
 
-        async Task RunGame(GameInfo game)
+        /// <summary>
+        /// Launches the game through the session tracker, which records the session and follows the
+        /// game until it exits; the sections refresh from its <see cref="SessionTracker.SessionsChanged"/>.
+        /// </summary>
+        static async Task RunGame(string id, GameInfo game)
         {
             try
             {
-                Process.Start(new ProcessStartInfo(game.Shortcut!) { UseShellExecute = true });
+                await SessionTracker.Instance.Launch(id, game);
             }
             catch (Exception ex)
             {
-                Log.WriteLine($"Error running game '{_contextMenuTargetId}': {ex}");
+                Log.WriteLine($"Error running game '{id}': {ex}");
+            }
+        }
+
+        void Tracker_SessionsChanged()
+        {
+            UpdateTrayText();
+
+            if (_sectionsPopulated)
+                RefreshAllSections();
+        }
+
+        /// <summary>
+        /// Re-reads the launchers' playtime a little after a session ended, once Steam has written its total.
+        /// </summary>
+        async void Tracker_SessionEnded(GameInfo game)
+        {
+            await Task.Delay(LauncherSyncDelay);
+            await SyncLaunchers();
+        }
+
+        /// <summary>
+        /// Updates install folders and Steam / GOG Galaxy playtime in the background.
+        /// </summary>
+        async Task SyncLaunchers()
+        {
+            try
+            {
+                if (await LauncherSync.Refresh() && _sectionsPopulated)
+                    RefreshAllSections();
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine($"Launcher sync failed: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// While a game is being tracked, closing the window (Escape) only hides it to the tray,
+        /// so tracking goes on; the app really exits through the tray's "Exit".
+        /// </summary>
+        void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (_exitRequested || !SessionTracker.Instance.IsTracking)
                 return;
+
+            e.Cancel = true;
+            HideDropdowns();
+            Hide();
+
+            _trayIcon ??= new TrayIcon(ShowFromTray, ExitFromTray);
+            UpdateTrayText();
+            _trayIcon.Visible = true;
+        }
+
+        /// <summary>
+        /// Brings the window back from the tray (tray "Show", or naLauncher started again).
+        /// </summary>
+        internal void ShowFromTray()
+        {
+            if (_trayIcon is not null)
+                _trayIcon.Visible = false;
+
+            Show();
+            WindowState = WindowState.Maximized;
+            Activate();
+        }
+
+        async void ExitFromTray()
+        {
+            if (SessionTracker.Instance.IsTracking)
+            {
+                var playing = string.Join(", ", SessionTracker.Instance.TrackedGames
+                    .Select(g => GameLibrary.Instance.Games.FirstOrDefault(x => x.Value == g).Key));
+
+                var confirm = new ConfirmationDialog($"Exit and stop tracking {playing}?")
+                {
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true,
+                };
+                if (confirm.ShowDialog() != true)
+                    return;
+
+                await SessionTracker.Instance.StopAll();
             }
 
-            // end time stays null until playtime tracking exists
-            game.Played.Add(new Session(DateTime.Now));
+            _exitRequested = true;
+            Close();
+        }
 
-            await GameLibrary.Instance.Save();
+        void UpdateTrayText()
+        {
+            if (_trayIcon is null)
+                return;
 
-            RefreshAllSections();
+            var playing = SessionTracker.Instance.TrackedGames
+                .Select(g => GameLibrary.Instance.Games.FirstOrDefault(x => x.Value == g).Key)
+                .Where(t => t is not null)
+                .ToArray();
+
+            _trayIcon.Text = playing.Length > 0 ? $"naLauncher2 - tracking {string.Join(", ", playing)}" : "naLauncher2";
         }
 
         async void GameContextMenu_Run_Click(object sender, MouseButtonEventArgs e)
@@ -1018,7 +1216,7 @@ namespace naLauncher2.Wpf
             if (_contextMenuTargetId is null || !GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game) || !game.Installed)
                 return;
 
-            await RunGame(game);
+            await RunGame(_contextMenuTargetId, game);
         }
 
         async void GameContextMenu_Remove_Click(object sender, MouseButtonEventArgs e)
@@ -1233,6 +1431,10 @@ namespace naLauncher2.Wpf
 
             foreach (var c in FindGameControls(newName))
                 c.RefreshImage();
+
+            // an install folder handed back to automatic detection gets resolved again
+            if (!game.InstallDirIsManual && game.InstallDir is null)
+                await SyncLaunchers();
         }
 
         /// <summary>
@@ -1342,8 +1544,6 @@ namespace naLauncher2.Wpf
         /// </summary>
         void UpdateGridSection(Canvas container, string[] games)
         {
-            bool isRatingSortActive = _userGamesSortMode == GamesSortMode.Rating;
-            bool isReleaseDateSortActive = _userGamesSortMode == GamesSortMode.Released;
             bool hideStarredGlyph = _userGamesFilterMode == UserGamesFilterMode.Starred;
             bool hideCompletedGlyph = _userGamesFilterMode == UserGamesFilterMode.Completed;
             var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
@@ -1353,13 +1553,17 @@ namespace naLauncher2.Wpf
             var layout = BuildGridLayout(games);
             _userGamesContentHeight = layout.ContentHeight;
 
-            var existing = container.Children.OfType<GameInfoControl>().ToDictionary(c => c.Id);
-            var newSet = new HashSet<string>(games);
+            // tiles still fading out are left alone; a game whose tile is fading out gets a new one
+            var existing = container.Children.OfType<GameInfoControl>().Where(c => !c.IsRemoving).ToDictionary(c => c.Id);
+            // games of a collapsed group lose their tile like games filtered out
+            var newSet = new HashSet<string>(games.Where((_, i) => layout.Slots[i].HasValue));
+            _userGamesShown = newSet;
 
             foreach (var (id, control) in existing)
             {
                 if (newSet.Contains(id)) continue;
                 var c = control;
+                c.IsRemoving = true;
                 var anim = new DoubleAnimation(c.Opacity, 0, fadeDuration);
                 anim.Completed += (_, _) => container.Children.Remove(c);
                 c.BeginAnimation(UIElement.OpacityProperty, anim);
@@ -1376,19 +1580,23 @@ namespace naLauncher2.Wpf
                     continue;
                 }
 
-                var (label, top, count) = layout.Dividers[i];
+                var (label, top, count, collapsed) = layout.Dividers[i];
                 var divider = existingDividers[i];
-                divider.SetGroup(label, count);
+                divider.SetGroup(label, count, collapsed);
                 SlideToPosition(divider, divider.SlideTransform, Canvas.GetLeft(divider), top, moveDuration, easing);
             }
 
             for (int i = layout.Dividers.Length; i < existingDividers.Length; i++)
                 RemoveGroupDivider(container, existingDividers[i], fadeDuration);
 
+            int placed = 0;
             for (int i = 0; i < games.Length; i++)
             {
                 string id = games[i];
-                var (newLeft, newTop) = layout.Slots[i];
+                if (layout.Slots[i] is not GridSlot slot)
+                    continue;
+
+                var (newLeft, newTop) = slot;
 
                 if (existing.TryGetValue(id, out var control))
                 {
@@ -1397,12 +1605,14 @@ namespace naLauncher2.Wpf
                 }
                 else
                 {
-                    var newControl = new GameInfoControl(id, isRatingSortActive, isReleaseDateSortActive, hideStarredGlyph, hideCompletedGlyph) { CacheMode = new BitmapCache(), Opacity = 0 };
+                    var newControl = new GameInfoControl(id, _userGamesSortMode, hideStarredGlyph, hideCompletedGlyph) { CacheMode = new BitmapCache(), Opacity = 0 };
                     container.Children.Add(newControl);
                     Canvas.SetLeft(newControl, newLeft);
                     Canvas.SetTop(newControl, newTop);
+                    // stagger by the number of tiles added in this update, not by grid position, so
+                    // expanding a group far down the grid doesn't wait for every tile above it
                     newControl.BeginAnimation(UIElement.OpacityProperty,
-                        new DoubleAnimation(0, 1, fadeDuration) { BeginTime = TimeSpan.FromMilliseconds(i * GamePlacementDelayMs) });
+                        new DoubleAnimation(0, 1, fadeDuration) { BeginTime = TimeSpan.FromMilliseconds(placed++ * GamePlacementDelayMs) });
                 }
             }
         }
@@ -1458,11 +1668,7 @@ namespace naLauncher2.Wpf
             _allGamesVelocityY = 0;
             _allGamesTransform.Y = -_allGamesOffsetY;
 
-            var newUserGamesSet = new HashSet<string>(userGames);
-            _visibleControls = UserGamesContainer.Children.OfType<GameInfoControl>()
-                .Where(c => newUserGamesSet.Contains(c.Id))
-                .Select(c => (Control: c, LocalTop: Canvas.GetTop(c)))
-                .ToArray();
+            UpdateVisibleControls();
 
             UpdateViewportCulling();
             UpdateScrollThumbs();
@@ -1607,6 +1813,7 @@ namespace naLauncher2.Wpf
             SortOptionPlayed.Foreground = _userGamesSortMode == GamesSortMode.Played ? Brushes.LightSkyBlue : Brushes.White;
             SortOptionRating.Foreground = _userGamesSortMode == GamesSortMode.Rating ? Brushes.LightSkyBlue : Brushes.White;
             SortOptionReleaseDate.Foreground = _userGamesSortMode == GamesSortMode.Released ? Brushes.LightSkyBlue : Brushes.White;
+            SortOptionPlayTime.Foreground = _userGamesSortMode == GamesSortMode.PlayTime ? Brushes.LightSkyBlue : Brushes.White;
         }
 
         void UserGamesOrderLabel_Click(object sender, MouseButtonEventArgs e)

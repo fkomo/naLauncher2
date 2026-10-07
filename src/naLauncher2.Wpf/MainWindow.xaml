@@ -287,6 +287,7 @@
                     <TextBlock x:Name="SortOptionAdded" Style="{StaticResource DropdownItemStyle}" Text="Added" Tag="Added" MouseLeftButtonUp="UserGamesOrder_Click"/>
                     <TextBlock x:Name="SortOptionCompleted" Style="{StaticResource DropdownItemStyle}" Text="Completed" Tag="Completed" MouseLeftButtonUp="UserGamesOrder_Click"/>
                     <TextBlock x:Name="SortOptionPlayed" Style="{StaticResource DropdownItemStyle}" Text="Played" Tag="Played" MouseLeftButtonUp="UserGamesOrder_Click"/>
+                    <TextBlock x:Name="SortOptionPlayTime" Style="{StaticResource DropdownItemStyle}" Text="Play Time" Tag="PlayTime" MouseLeftButtonUp="UserGamesOrder_Click"/>
                     <TextBlock x:Name="SortOptionRating" Style="{StaticResource DropdownItemStyle}" Text="Rating" Tag="Rating" MouseLeftButtonUp="UserGamesOrder_Click"/>
                     <TextBlock x:Name="SortOptionReleaseDate" Style="{StaticResource DropdownItemStyle}" Text="Release Date" Tag="Released" MouseLeftButtonUp="UserGamesOrder_Click"/>
                 </StackPanel>

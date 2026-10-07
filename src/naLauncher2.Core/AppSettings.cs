@@ -28,6 +28,10 @@ namespace naLauncher2.Core
         public bool RecentGamesInstalledOnly { get; set; } = true;
         public bool NewGamesSortDescending { get; set; } = true;
         public bool RecentGamesSortDescending { get; set; } = true;
+        /// <summary>
+        /// Tracked sessions shorter than this are discarded (crashed or aborted launches).
+        /// </summary>
+        public int MinSessionDurationSeconds { get; set; } = 60;
 
         public class TwitchDevSettings
         {
@@ -69,6 +73,7 @@ namespace naLauncher2.Core
                 RecentGamesInstalledOnly = loaded.RecentGamesInstalledOnly;
                 NewGamesSortDescending = loaded.NewGamesSortDescending;
                 RecentGamesSortDescending = loaded.RecentGamesSortDescending;
+                MinSessionDurationSeconds = loaded.MinSessionDurationSeconds;
                 Sources = loaded.Sources;
                 TopLevelOnly = loaded.TopLevelOnly;
                 GameExtensions = loaded.GameExtensions;

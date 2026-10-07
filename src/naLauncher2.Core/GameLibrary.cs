@@ -53,6 +53,11 @@ namespace naLauncher2.Core
 
         string? _libraryPath;
 
+        /// <summary>
+        /// Path of the currently loaded library file.
+        /// </summary>
+        public string? LibraryPath => _libraryPath;
+
         static readonly GameLibrary _instance = new();
 
         public static GameLibrary Instance => _instance;

@@ -19,6 +19,7 @@
         Completed, // GameInfo.Completed
         Played, // GameInfo.Played.Count
         Rating, // GameInfo.Rating
-        Released // GameInfo.ReleaseDate
+        Released, // GameInfo.ReleaseDate
+        PlayTime // GameInfo.TotalPlayTime
     }
 }

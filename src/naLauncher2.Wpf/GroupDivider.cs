@@ -1,14 +1,14 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Shapes;
 
 namespace naLauncher2.Wpf
 {
     /// <summary>
     /// Heading drawn above the first tile row of a group in the User Games grid: the label the
-    /// group shares - a capital letter or a year, depending on the ordering - and the size of the
-    /// group beside it.
+    /// group shares - a capital letter, a year or a playtime range, depending on the ordering -
+    /// and the size of the group beside it. Clicking it collapses or expands the group.
     /// </summary>
     internal sealed class GroupDivider : Grid
     {
@@ -22,6 +22,8 @@ namespace naLauncher2.Wpf
         /// </summary>
         public string Label { get; private set; } = string.Empty;
 
+        public bool Collapsed { get; private set; }
+
         /// <summary>
         /// Set while the divider is fading out, so grid updates no longer reuse it.
         /// </summary>
@@ -29,16 +31,36 @@ namespace naLauncher2.Wpf
 
         public TranslateTransform SlideTransform { get; } = new();
 
-        public GroupDivider(string label, int count, double width)
+        /// <summary>
+        /// Raised when the divider is clicked; the owner flips the group's collapsed state.
+        /// </summary>
+        public event Action<GroupDivider>? Toggled;
+
+        public GroupDivider(string label, int count, bool collapsed, double width)
         {
             Width = width;
             Height = ControlHeight;
-            IsHitTestVisible = false;
             RenderTransform = SlideTransform;
 
             ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            //ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            // only the heading itself is clickable, not the empty width of the row
+            var heading = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Background = Brushes.Transparent,
+                Cursor = Cursors.Hand,
+            };
+            heading.MouseLeftButtonUp += (_, e) =>
+            {
+                e.Handled = true;
+                Toggled?.Invoke(this);
+            };
+            heading.MouseEnter += (_, _) => _labelText!.Opacity = 1;
+            heading.MouseLeave += (_, _) => _labelText!.Opacity = 0.7;
+            Children.Add(heading);
 
             _labelText = new TextBlock
             {
@@ -49,8 +71,7 @@ namespace naLauncher2.Wpf
                 VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(0, 0, 8, 8),
             };
-            Grid.SetColumn(_labelText, 0);
-            Children.Add(_labelText);
+            heading.Children.Add(_labelText);
 
             _countText = new TextBlock
             {
@@ -59,28 +80,18 @@ namespace naLauncher2.Wpf
                 VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(0, 0, 12, 14),
             };
-            Grid.SetColumn(_countText, 1);
-            Children.Add(_countText);
+            heading.Children.Add(_countText);
 
-            //var line = new Rectangle
-            //{
-            //    Height = 1,
-            //    Fill = Brushes.White,
-            //    Opacity = 0.06,
-            //    VerticalAlignment = VerticalAlignment.Center,
-            //};
-            //Grid.SetColumn(line, 2);
-            //Children.Add(line);
-
-            SetGroup(label, count);
+            SetGroup(label, count, collapsed);
         }
 
         /// <summary>
         /// Relabels the divider, so a divider already on the canvas can head a different group.
         /// </summary>
-        public void SetGroup(string label, int count)
+        public void SetGroup(string label, int count, bool collapsed)
         {
             Label = label;
+            Collapsed = collapsed;
             _labelText.Text = label;
             _countText.Text = $"({count})";
         }

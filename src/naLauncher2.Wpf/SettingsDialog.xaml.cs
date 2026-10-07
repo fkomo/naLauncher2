@@ -40,6 +40,8 @@ namespace naLauncher2.Wpf
 
             GameExtensionsBox.Text = string.Join(", ", appSettings.GameExtensions);
 
+            MinSessionDurationBox.Text = appSettings.MinSessionDurationSeconds.ToString();
+
             foreach (var ext in GameLibrary.Instance.ExtensionsUsed)
                 _extensions.Add(ext);
 
@@ -53,6 +55,7 @@ namespace naLauncher2.Wpf
 
             _sources.CollectionChanged += (_, _) => MarkDirty();
             GameExtensionsBox.TextChanged += (_, _) => MarkDirty();
+            MinSessionDurationBox.TextChanged += (_, _) => MarkDirty();
             TwitchClientIdBox.TextChanged += (_, _) => MarkDirty();
             TwitchClientSecretBox.TextChanged += (_, _) => MarkDirty();
         }
@@ -195,6 +198,14 @@ namespace naLauncher2.Wpf
                 new MessageDialog("Error", "Please select a game library file.") { Owner = this }.ShowDialog();
                 return;
             }
+
+            if (!int.TryParse(MinSessionDurationBox.Text.Trim(), out int minSessionSeconds) || minSessionSeconds < 0)
+            {
+                new MessageDialog("Error", "Minimum session length must be a whole number of seconds (0 or more).") { Owner = this }.ShowDialog();
+                return;
+            }
+
+            AppSettings.Instance.MinSessionDurationSeconds = minSessionSeconds;
 
             AppSettings.Instance.LibraryPath = SelectedLibraryPath;
             AppSettings.Instance.ImageCachePath = SelectedImageCachePath;
