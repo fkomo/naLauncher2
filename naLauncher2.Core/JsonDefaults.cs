@@ -15,6 +15,9 @@ namespace naLauncher2.Core
             WriteIndented = false,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             IgnoreReadOnlyProperties = true,
+            // enums are written by name so reordering or inserting members can't silently change stored values;
+            // numbers are still accepted on read, which migrates files written before this was added
+            Converters = { new JsonStringEnumConverter() },
         };
     }
 }

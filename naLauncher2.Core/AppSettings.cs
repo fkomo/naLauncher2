@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace naLauncher2.Core
 {
@@ -18,8 +19,9 @@ namespace naLauncher2.Core
         public bool UserGamesGroupDividers { get; set; } = false;
         /// <summary>
         /// Superseded by <see cref="UserGamesGroupDividers"/>; only still read, as a number, to
-        /// migrate settings written while the grouping had a second (letter tile) mode.
+        /// migrate settings written while the grouping had a second (letter tile) mode. Never written back.
         /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int UserGamesTitleGroupMode { get; set; }
         public bool NewGamesCollapsed { get; set; } = false;
         public bool RecentGamesCollapsed { get; set; } = false;
