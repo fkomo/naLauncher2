@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace naLauncher2.Wpf
 {
@@ -19,20 +18,7 @@ namespace naLauncher2.Wpf
         readonly int _originalExtensionsCount;
         readonly string _originalInstallDir;
 
-        /// <summary>
-        /// Working copy of one session in the list. <see cref="Original"/> is null for sessions added in the dialog.
-        /// </summary>
-        sealed class SessionRow
-        {
-            public Session? Original { get; init; }
-            public DateTime Start { get; init; }
-            public TimeSpan? Duration { get; set; }
-            public bool Deleted { get; set; }
-            public bool Invalid { get; set; }
-            public bool Running { get; init; }
-        }
-
-        readonly List<SessionRow> _sessions;
+        List<SessionRow> _sessions;
 
         public string NewId => TitleBox.Text.Trim();
         public GameInfo Game { get; }
@@ -72,8 +58,7 @@ namespace naLauncher2.Wpf
             ReleaseDateBox.Text = _originalReleaseDate;
 
             UpdatePlayTimeText();
-            BuildSessionRows();
-            NewSessionStartBox.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+            UpdateSessionsButton();
 
             InstallDirBox.Text = _originalInstallDir;
             UpdateInstallDirLabel();
@@ -188,125 +173,20 @@ namespace naLauncher2.Wpf
             PlayTimeDetailText.Text = parts.Count > 0 ? string.Join("\n", parts) : "(never played)";
         }
 
-        /// <summary>
-        /// Builds one row per session, newest first: when it was played, its duration (editable;
-        /// empty means unmeasured) and a delete button. A session being tracked right now is read-only.
-        /// </summary>
-        void BuildSessionRows()
+        void UpdateSessionsButton()
         {
-            SessionsList.Children.Clear();
-
-            var visible = _sessions.Where(r => !r.Deleted).OrderByDescending(r => r.Start).ToArray();
-            SessionsLabel.Text = $"SESSIONS ({visible.Length})";
-
-            foreach (var row in visible)
-            {
-                var grid = new Grid { Margin = new Thickness(0, 0, 0, 2) };
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var end = row.Duration.HasValue ? row.Original?.End ?? row.Start + row.Duration.Value : (DateTime?)null;
-                var via = row.Original?.Via is LaunchVia v ? $"  ·  {v}" : string.Empty;
-                var when = new TextBlock
-                {
-                    Text = $"{row.Start:yyyy-MM-dd HH:mm}{(end.HasValue ? $" – {end.Value:HH:mm}" : string.Empty)}{via}",
-                    Foreground = Brushes.White,
-                    Opacity = 0.7,
-                    FontSize = 12,
-                    Padding = new Thickness(0, 2, 0, 2),
-                    VerticalAlignment = VerticalAlignment.Center,
-                };
-                grid.Children.Add(when);
-
-                if (row.Running)
-                {
-                    var running = new TextBlock
-                    {
-                        Text = "playing…",
-                        Foreground = Brushes.LightSkyBlue,
-                        FontSize = 12,
-                        Padding = new Thickness(4, 2, 4, 2),
-                        VerticalAlignment = VerticalAlignment.Center,
-                    };
-                    Grid.SetColumn(running, 1);
-                    grid.Children.Add(running);
-                }
-                else
-                {
-                    var duration = new TextBox
-                    {
-                        Text = row.Duration.HasValue ? PlayTimeFormat.FormatEditable(row.Duration.Value) : string.Empty,
-                        ToolTip = "Duration: 1:30, 90 (minutes), 2h, 45m. Empty = unmeasured.",
-                        Foreground = Brushes.White,
-                        FontSize = 12,
-                        Background = Brushes.Transparent,
-                        BorderThickness = new Thickness(0, 0, 0, 1),
-                        BorderBrush = new SolidColorBrush(Color.FromArgb(0x44, 0xFF, 0xFF, 0xFF)),
-                        CaretBrush = Brushes.White,
-                        SelectionBrush = Brushes.LightSkyBlue,
-                        Padding = new Thickness(4, 2, 4, 2),
-                        Margin = new Thickness(4, 0, 0, 0),
-                    };
-                    duration.TextChanged += (_, _) =>
-                    {
-                        if (string.IsNullOrWhiteSpace(duration.Text))
-                        {
-                            row.Duration = null;
-                            row.Invalid = false;
-                        }
-                        else if (PlayTimeFormat.TryParse(duration.Text, out var parsed))
-                        {
-                            row.Duration = parsed;
-                            row.Invalid = false;
-                        }
-                        else
-                            row.Invalid = true;
-
-                        duration.Foreground = row.Invalid ? new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x73)) : Brushes.White;
-                        UpdateSaveButton();
-                    };
-                    Grid.SetColumn(duration, 1);
-                    grid.Children.Add(duration);
-
-                    var delete = new TextBlock
-                    {
-                        Text = "✕",
-                        ToolTip = "Delete this session",
-                        Foreground = Brushes.White,
-                        Opacity = 0.4,
-                        FontSize = 11,
-                        Padding = new Thickness(8, 2, 0, 2),
-                        Cursor = Cursors.Hand,
-                        VerticalAlignment = VerticalAlignment.Center,
-                    };
-                    delete.MouseEnter += (_, _) => delete.Opacity = 1;
-                    delete.MouseLeave += (_, _) => delete.Opacity = 0.4;
-                    delete.MouseLeftButtonUp += (_, _) =>
-                    {
-                        row.Deleted = true;
-                        BuildSessionRows();
-                        UpdateSaveButton();
-                    };
-                    Grid.SetColumn(delete, 2);
-                    grid.Children.Add(delete);
-                }
-
-                SessionsList.Children.Add(grid);
-            }
+            int count = _sessions.Count(r => !r.Deleted);
+            SessionsButton.Text = $"Sessions ({count}){(SessionsChanged() ? " – edited" : string.Empty)}…";
         }
 
-        void AddSession_Click(object sender, MouseButtonEventArgs e)
+        void Sessions_Click(object sender, MouseButtonEventArgs e)
         {
-            if (!DateTime.TryParse(NewSessionStartBox.Text.Trim(), out var start) || !PlayTimeFormat.TryParse(NewSessionDurationBox.Text, out var duration))
-            {
-                new MessageDialog("Error", "Enter a start (yyyy-MM-dd HH:mm) and a duration (e.g. 1:30, 90, 2h, 45m).") { Owner = this }.ShowDialog();
+            var dialog = new SessionsDialog(TitleBox.Text.Trim(), _sessions) { Owner = this };
+            if (dialog.ShowDialog() != true)
                 return;
-            }
 
-            _sessions.Add(new SessionRow { Start = start, Duration = duration });
-            NewSessionDurationBox.Clear();
-            BuildSessionRows();
+            _sessions = dialog.Rows;
+            UpdateSessionsButton();
             UpdateSaveButton();
         }
 
@@ -358,8 +238,7 @@ namespace naLauncher2.Wpf
         void UpdateSaveButton()
         {
             var hasChanges = HasChanges();
-            // a session duration that doesn't parse blocks saving rather than being silently dropped
-            SaveButton.Visibility = hasChanges && !_sessions.Any(r => r.Invalid && !r.Deleted) ? Visibility.Visible : Visibility.Collapsed;
+            SaveButton.Visibility = hasChanges ? Visibility.Visible : Visibility.Collapsed;
             CloseButton.Text = hasChanges ? "Cancel" : "Close";
         }
 

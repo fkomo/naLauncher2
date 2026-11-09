@@ -146,28 +146,9 @@
             <TextBlock x:Name="PlayTimeText" Style="{StaticResource ReadOnlyValueStyle}" Margin="24,0,24,0" FontSize="16" FontWeight="SemiBold" Opacity="0.9"/>
             <TextBlock x:Name="PlayTimeDetailText" Style="{StaticResource ReadOnlyValueStyle}" TextWrapping="Wrap"/>
 
-            <TextBlock x:Name="SessionsLabel" Style="{StaticResource LabelStyle}" Text="SESSIONS"/>
-            <ScrollViewer Margin="24,0,24,8" MaxHeight="200" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
-                <StackPanel x:Name="SessionsList"/>
-            </ScrollViewer>
-            <Grid Margin="24,0,24,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="90"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="NewSessionStartBox" Grid.Column="0" ToolTip="Start (yyyy-MM-dd HH:mm)"
-                         Foreground="White" FontSize="12" Background="Transparent"
-                         BorderThickness="0,0,0,1" BorderBrush="#44FFFFFF"
-                         CaretBrush="White" SelectionBrush="LightSkyBlue" Padding="0,2"/>
-                <TextBox x:Name="NewSessionDurationBox" Grid.Column="1" ToolTip="Duration: 1:30, 90 (minutes), 2h, 45m"
-                         Foreground="White" FontSize="12" Background="Transparent"
-                         BorderThickness="0,0,0,1" BorderBrush="#44FFFFFF"
-                         CaretBrush="White" SelectionBrush="LightSkyBlue" Padding="4,2" Margin="4,0,0,0"/>
-                <TextBlock Grid.Column="2" Style="{StaticResource SmallButtonStyle}" Text="+" ToolTip="Add a session played without tracking"
-                           Foreground="LightSkyBlue" Margin="8,0,0,0"
-                           MouseLeftButtonUp="AddSession_Click"/>
-            </Grid>
+            <TextBlock x:Name="SessionsButton" Style="{StaticResource SmallButtonStyle}" HorizontalAlignment="Left"
+                       Foreground="LightSkyBlue" Margin="24,0,24,16" ToolTip="List, edit, add or delete sessions"
+                       MouseLeftButtonUp="Sessions_Click"/>
 
             <TextBlock x:Name="InstallDirLabel" Style="{StaticResource LabelStyle}" Text="INSTALL FOLDER"/>
             <Grid Margin="24,0,24,16">
