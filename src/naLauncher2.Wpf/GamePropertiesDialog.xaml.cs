@@ -7,7 +7,7 @@ namespace naLauncher2.Wpf
     public partial class GamePropertiesDialog : Window
     {
         readonly string _originalId;
-        readonly Dictionary<string, string> _pendingExtensions;
+        Dictionary<string, string> _pendingExtensions;
         readonly string _originalDeveloper;
         readonly string _originalGenres;
         readonly string _originalRating;
@@ -15,10 +15,12 @@ namespace naLauncher2.Wpf
         readonly string _originalImagePath;
         readonly string _originalCompleted;
         readonly string _originalReleaseDate;
-        readonly int _originalExtensionsCount;
         readonly string _originalInstallDir;
 
         List<SessionRow> _sessions;
+
+        // the game is running: everything is shown but nothing can be changed
+        readonly bool _readOnly;
 
         public string NewId => TitleBox.Text.Trim();
         public GameInfo Game { get; }
@@ -35,7 +37,6 @@ namespace naLauncher2.Wpf
             _originalImagePath = game.ImagePath ?? string.Empty;
             _originalCompleted = game.Completed.HasValue ? game.Completed.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty;
             _originalReleaseDate = game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString("yyyy-MM-dd") : string.Empty;
-            _originalExtensionsCount = game.Extensions.Count;
             _originalInstallDir = game.InstallDirIsManual ? game.InstallDir ?? string.Empty : string.Empty;
             _sessions = game.Played
                 .Select(s => new SessionRow { Original = s, Start = s.Start, Duration = s.Duration, Running = SessionTracker.Instance.IsTracked(s) })
@@ -64,11 +65,7 @@ namespace naLauncher2.Wpf
             UpdateInstallDirLabel();
             InstallDirBox.TextChanged += (_, _) => { UpdateInstallDirLabel(); UpdateSaveButton(); };
 
-            if (_pendingExtensions.Count > 0)
-            {
-                ExtensionsList.Visibility = Visibility.Visible;
-                ExtensionsList.ItemsSource = _pendingExtensions;
-            }
+            UpdateExtensionsButton();
 
             TitleBox.TextChanged += (_, _) => UpdateSaveButton();
             DeveloperBox.TextChanged += (_, _) => UpdateSaveButton();
@@ -79,52 +76,56 @@ namespace naLauncher2.Wpf
             CompletedBox.TextChanged += (_, _) => UpdateSaveButton();
             ReleaseDateBox.TextChanged += (_, _) => UpdateSaveButton();
 
-            ExtensionKeyBox.KeyDown += (_, e) =>
-            {
-                if (e.Key == Key.Enter) { ExtensionValueBox.Focus(); e.Handled = true; }
-            };
-            ExtensionValueBox.KeyDown += (_, e) =>
-            {
-                if (e.Key == Key.Enter) { AddExtension(); e.Handled = true; }
-            };
+            _readOnly = SessionTracker.Instance.IsTracked(game);
+            if (_readOnly)
+                MakeReadOnly(this);
 
             Loaded += (_, _) => { TitleBox.Focus(); TitleBox.SelectAll(); };
         }
 
-        void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
-
-        void RemoveExtension_Click(object sender, MouseButtonEventArgs e)
+        /// <summary>
+        /// Locks every field and hides the edit buttons; Sessions and Extensions still open, read-only.
+        /// </summary>
+        void MakeReadOnly(DependencyObject parent)
         {
-            if (sender is FrameworkElement { Tag: string key })
+            foreach (var child in LogicalTreeHelper.GetChildren(parent).OfType<DependencyObject>())
             {
-                _pendingExtensions.Remove(key);
-                ExtensionsList.ItemsSource = null;
-                ExtensionsList.ItemsSource = _pendingExtensions;
-                if (_pendingExtensions.Count == 0)
+                if (child is TextBox tb)
                 {
-                    ExtensionsList.Visibility = Visibility.Collapsed;
+                    // no focus and no mouse selection; the mouse wheel still scrolls the summary
+                    tb.IsReadOnly = true;
+                    tb.Focusable = false;
+                    tb.Cursor = Cursors.Arrow;
+                    tb.PreviewMouseLeftButtonDown += (_, e) => e.Handled = true;
+                    tb.PreviewMouseRightButtonUp += (_, e) => e.Handled = true;
                 }
-                UpdateSaveButton();
+                else if (child is TextBlock { Style: var style } button && style == FindResource("SmallButtonStyle")
+                         && button != SessionsButton && button != ExtensionsButton)
+                    button.Visibility = Visibility.Collapsed;
+
+                MakeReadOnly(child);
             }
+
+            HeaderText.Text = "Properties (read-only while the game is running)";
         }
 
-        void AddExtension_Click(object sender, MouseButtonEventArgs e) => AddExtension();
+        void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
 
-        void AddExtension()
+        bool ExtensionsChanged() =>
+            _pendingExtensions.Count != Game.Extensions.Count ||
+            _pendingExtensions.Any(kv => !Game.Extensions.TryGetValue(kv.Key, out var v) || v != kv.Value);
+
+        void UpdateExtensionsButton() =>
+            ExtensionsButton.Text = $"Extensions ({_pendingExtensions.Count}){(ExtensionsChanged() ? " – edited" : string.Empty)}…";
+
+        void Extensions_Click(object sender, MouseButtonEventArgs e)
         {
-            var key = ExtensionKeyBox.Text.Trim();
-            var value = ExtensionValueBox.Text.Trim();
-            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
+            var dialog = new ExtensionsDialog(TitleBox.Text.Trim(), _pendingExtensions, _readOnly) { Owner = this };
+            if (dialog.ShowDialog() != true)
                 return;
 
-            _pendingExtensions[key] = value;
-            ExtensionsList.ItemsSource = null;
-            ExtensionsList.ItemsSource = _pendingExtensions;
-            ExtensionsList.Visibility = Visibility.Visible;
-
-            ExtensionKeyBox.Clear();
-            ExtensionValueBox.Clear();
-            ExtensionKeyBox.Focus();
+            _pendingExtensions = dialog.Extensions;
+            UpdateExtensionsButton();
             UpdateSaveButton();
         }
 
@@ -181,7 +182,7 @@ namespace naLauncher2.Wpf
 
         void Sessions_Click(object sender, MouseButtonEventArgs e)
         {
-            var dialog = new SessionsDialog(TitleBox.Text.Trim(), _sessions) { Owner = this };
+            var dialog = new SessionsDialog(TitleBox.Text.Trim(), _sessions, _readOnly) { Owner = this };
             if (dialog.ShowDialog() != true)
                 return;
 
@@ -231,14 +232,14 @@ namespace naLauncher2.Wpf
             ImagePathBox.Text != _originalImagePath ||
             CompletedBox.Text != _originalCompleted ||
             ReleaseDateBox.Text != _originalReleaseDate ||
-            _pendingExtensions.Count != _originalExtensionsCount ||
+            ExtensionsChanged() ||
             InstallDirBox.Text.Trim() != _originalInstallDir ||
             SessionsChanged();
 
         void UpdateSaveButton()
         {
             var hasChanges = HasChanges();
-            SaveButton.Visibility = hasChanges ? Visibility.Visible : Visibility.Collapsed;
+            SaveButton.Visibility = hasChanges && !_readOnly ? Visibility.Visible : Visibility.Collapsed;
             CloseButton.Text = hasChanges ? "Cancel" : "Close";
         }
 

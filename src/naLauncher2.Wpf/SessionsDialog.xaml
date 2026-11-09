@@ -43,7 +43,8 @@
             </StackPanel>
 
             <StackPanel DockPanel.Dock="Bottom">
-                <Grid Margin="24,8,24,16">
+                <Rectangle Height="1" Fill="#33FFFFFF" Margin="24,0,24,0"/>
+                <Grid x:Name="AddRow" Margin="24,8,24,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="90"/>
@@ -64,11 +65,11 @@
                 <Rectangle Height="1" Fill="#FF404448"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock x:Name="OkButton" Style="{StaticResource ButtonStyle}" Text="OK" Foreground="LightSkyBlue" MouseLeftButtonUp="Ok_Click"/>
-                    <TextBlock Style="{StaticResource ButtonStyle}" Text="Cancel" MouseLeftButtonUp="Cancel_Click"/>
+                    <TextBlock x:Name="CancelButton" Style="{StaticResource ButtonStyle}" Text="Cancel" MouseLeftButtonUp="Cancel_Click"/>
                 </StackPanel>
             </StackPanel>
 
-            <ScrollViewer Margin="24,0,24,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+            <ScrollViewer Margin="24,0,24,8" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
                 <StackPanel x:Name="SessionsList"/>
             </ScrollViewer>
         </DockPanel>

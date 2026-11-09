@@ -41,6 +41,8 @@
                            HorizontalAlignment="Center"/>
 
                     <!-- Glass sheen overlay -->
+                    <!-- amber tint pulsing with the border glow while the game is running -->
+                    <Rectangle x:Name="RunningOverlay" Fill="#FFFFA01C" Opacity="0" IsHitTestVisible="False"/>
                     <Rectangle x:Name="GlassOverlay"
                            IsHitTestVisible="False"
                            Opacity="0">

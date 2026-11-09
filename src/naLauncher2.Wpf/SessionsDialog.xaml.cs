@@ -25,16 +25,24 @@ namespace naLauncher2.Wpf
     public partial class SessionsDialog : Window
     {
         internal List<SessionRow> Rows { get; }
+        readonly bool _readOnly;
 
-        internal SessionsDialog(string title, IEnumerable<SessionRow> rows)
+        internal SessionsDialog(string title, IEnumerable<SessionRow> rows, bool readOnly = false)
         {
             Rows = rows.Select(r => r with { }).ToList();
+            _readOnly = readOnly;
 
             InitializeComponent();
 
             MaxHeight = SystemParameters.WorkArea.Height - 40;
             TitleText.Text = $"Sessions – {title}";
             NewSessionStartBox.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+
+            if (readOnly)
+            {
+                AddRow.Visibility = Visibility.Collapsed;
+                CancelButton.Text = "Close";
+            }
 
             BuildSessionRows();
 
@@ -60,7 +68,7 @@ namespace naLauncher2.Wpf
 
             SummaryText.Text = string.Join("  ·  ", parts);
             // a session duration that doesn't parse blocks OK rather than being silently dropped
-            OkButton.Visibility = visible.Any(r => r.Invalid) ? Visibility.Collapsed : Visibility.Visible;
+            OkButton.Visibility = _readOnly || visible.Any(r => r.Invalid) ? Visibility.Collapsed : Visibility.Visible;
         }
 
         /// <summary>
@@ -91,12 +99,12 @@ namespace naLauncher2.Wpf
                 };
                 grid.Children.Add(when);
 
-                if (row.Running)
+                if (row.Running || _readOnly)
                 {
                     var running = new TextBlock
                     {
-                        Text = "playing…",
-                        Foreground = Brushes.LightSkyBlue,
+                        Text = row.Running ? "playing…" : row.Duration.HasValue ? PlayTimeFormat.FormatEditable(row.Duration.Value) : string.Empty,
+                        Foreground = row.Running ? Brushes.LightSkyBlue : Brushes.White,
                         FontSize = 12,
                         Padding = new Thickness(4, 2, 4, 2),
                         VerticalAlignment = VerticalAlignment.Center,

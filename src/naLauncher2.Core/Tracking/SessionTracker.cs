@@ -64,11 +64,17 @@ namespace naLauncher2.Core.Tracking
         }
 
         /// <summary>
-        /// Launches the game, records a new session for it right away and starts following it.
+        /// Launches the game (unless it is already being tracked), records a new session for it right away and starts following it.
         /// </summary>
         /// <exception cref="Exception">The game could not be started; nothing is recorded then.</exception>
         public async Task Launch(string title, GameInfo game)
         {
+            if (IsTracked(game))
+            {
+                Log.WriteLine($"{nameof(SessionTracker)}: '{title}' is already running, not launching it again");
+                return;
+            }
+
             var info = ShortcutResolver.Resolve(game.Shortcut!);
             var job = GameLauncher.Launch(info);
 

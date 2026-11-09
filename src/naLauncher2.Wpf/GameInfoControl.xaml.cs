@@ -59,6 +59,9 @@ namespace naLauncher2.Wpf
         readonly bool _hideStarredGlyph;
         readonly bool _hideCompletedGlyph;
         bool _isRefreshActive;
+        bool _isRunning;
+        static readonly Duration RunningPulseDuration = new(TimeSpan.FromMilliseconds(1200));
+        static readonly SolidColorBrush RunningBrush = new(Color.FromRgb(0xFF, 0xA0, 0x1C));
 
         public GameInfoControl(string id, GamesSortMode? sortMode = null,
             bool hideStarredGlyph = false, bool hideCompletedGlyph = false)
@@ -117,6 +120,8 @@ namespace naLauncher2.Wpf
             UpdateStatusFlag();
 
             LoadImageAsync(game.ImagePath, game.Installed);
+
+            UpdateRunningGlow();
         }
 
         /// <summary>
@@ -134,6 +139,15 @@ namespace naLauncher2.Wpf
                     continue;
 
                 var badge = TileBadges.Create(content);
+                if (_isRunning && definition.SortMode == GamesSortMode.PlayTime)
+                {
+                    // the playtime badge pulses amber along with the running overlay
+                    var pulse = new SolidColorBrush(RunningBrush.Color);
+                    pulse.BeginAnimation(Brush.OpacityProperty, new DoubleAnimation(0.5, 1, RunningPulseDuration)
+                        { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } });
+                    badge.Background = pulse;
+                    ((TextBlock)badge.Child).Foreground = Brushes.Black;
+                }
                 BadgeStrip.Children.Add(badge);
                 _badges.Add((definition.SortMode, badge));
             }
@@ -229,7 +243,7 @@ namespace naLauncher2.Wpf
             Canvas.SetZIndex(this, _originalZIndex);
 
             // Restore original border color
-            MainBorder.BorderBrush = _originalBorderBrush;
+            MainBorder.BorderBrush = _isRunning ? RunningBrush : _originalBorderBrush;
 
             // Restore original name label color and effect
             NameLabel.Foreground = _originalNameLabelForeground;
@@ -527,6 +541,42 @@ namespace naLauncher2.Wpf
 
             SnakeRect.BeginAnimation(Shape.StrokeDashOffsetProperty, null);
             SnakeRect.Opacity = 0;
+        }
+
+        /// <summary>
+        /// Pulses an amber glow around the tile while the session tracker follows this game.
+        /// </summary>
+        public void UpdateRunningGlow()
+        {
+            bool running = GameLibrary.Instance.Games.TryGetValue(_id, out var game) && SessionTracker.Instance.IsTracked(game);
+            if (running == _isRunning)
+                return;
+            _isRunning = running;
+
+            if (running)
+            {
+                ShadowEffect.Color = RunningBrush.Color;
+                var dur = RunningPulseDuration;
+                var ease = new SineEase { EasingMode = EasingMode.EaseInOut };
+                // only the opacity pulses: an animated blur radius resizes the tile's cached bitmap every frame, which makes the border shimmer
+                ShadowEffect.BlurRadius = 24;
+                ShadowEffect.BeginAnimation(DropShadowEffect.OpacityProperty,
+                    new DoubleAnimation(0.3, 1, dur) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = ease });
+                RunningOverlay.BeginAnimation(UIElement.OpacityProperty,
+                    new DoubleAnimation(0.05, 0.25, dur) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = ease });
+            }
+            else
+            {
+                ShadowEffect.BlurRadius = 16;
+                ShadowEffect.BeginAnimation(DropShadowEffect.OpacityProperty, null);
+                ShadowEffect.Color = Colors.Black;
+                RunningOverlay.BeginAnimation(UIElement.OpacityProperty, null);
+            }
+
+            if (!IsMouseOver)
+                MainBorder.BorderBrush = running ? RunningBrush : _originalBorderBrush;
+
+            UpdateBadges(game!);
         }
     }
 }

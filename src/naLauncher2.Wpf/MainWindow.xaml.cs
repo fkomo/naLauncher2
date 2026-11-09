@@ -303,6 +303,10 @@ namespace naLauncher2.Wpf
 
         async void RefreshButton_Click(object sender, MouseButtonEventArgs e)
         {
+            // a full refresh rewrites game data, which must not change under a running game
+            if (SessionTracker.Instance.IsTracking)
+                return;
+
             var glow = TryStartRefreshAnimation();
             if (glow is null)
                 return;
@@ -351,6 +355,7 @@ namespace naLauncher2.Wpf
             RefreshMenuStop.Visibility = _isRefreshing ? Visibility.Visible : Visibility.Collapsed;
             RefreshMenuAllGames.Visibility = _isRefreshing ? Visibility.Collapsed : Visibility.Visible;
             RefreshMenuMissingImages.Visibility = _isRefreshing ? Visibility.Collapsed : Visibility.Visible;
+            SetMenuItemEnabled(RefreshMenuAllGames, !SessionTracker.Instance.IsTracking);
 
             UserGamesFilterPanel.Visibility = Visibility.Collapsed;
             UserGamesOrderPanel.Visibility = Visibility.Collapsed;
@@ -1044,14 +1049,16 @@ namespace naLauncher2.Wpf
 
             if (_contextMenuTargetId is not null && GameLibrary.Instance.Games.TryGetValue(_contextMenuTargetId, out var game))
             {
-                SetMenuItemEnabled(ContextMenuRun, game.Installed);
-                SetMenuItemEnabled(ContextMenuRemove, game.Installed);
-                SetMenuItemEnabled(ContextMenuDelete, !game.Installed);
-                SetMenuItemEnabled(ContextMenuMarkAsCompleted, !game.Completed.HasValue);
+                // a running game can't be launched again or have its library state changed under the tracker
+                bool running = SessionTracker.Instance.IsTracked(game);
+                SetMenuItemEnabled(ContextMenuRun, game.Installed && !running);
+                SetMenuItemEnabled(ContextMenuRemove, game.Installed && !running);
+                SetMenuItemEnabled(ContextMenuDelete, !game.Installed && !running);
+                SetMenuItemEnabled(ContextMenuMarkAsCompleted, !game.Completed.HasValue && !running);
                 ContextMenuStar.Text = game.Starred ? "Unstar" : "Star";
-                SetMenuItemEnabled(ContextMenuStar, true);
+                SetMenuItemEnabled(ContextMenuStar, !running);
                 SetMenuItemEnabled(ContextMenuExplore, true);
-                SetMenuItemEnabled(ContextMenuRefresh, AppSettings.Instance.TwitchDev != null);
+                SetMenuItemEnabled(ContextMenuRefresh, AppSettings.Instance.TwitchDev != null && !running);
                 SetMenuItemEnabled(ContextMenuProperties, true);
             }
         }
@@ -1116,6 +1123,12 @@ namespace naLauncher2.Wpf
 
             if (_sectionsPopulated)
                 RefreshAllSections();
+
+            // reused tiles don't rebuild, so tell each one whether its game is running now
+            foreach (var c in NewGamesContainer.Children.OfType<GameInfoControl>()
+                .Concat(RecentGamesContainer.Children.OfType<GameInfoControl>())
+                .Concat(UserGamesContainer.Children.OfType<GameInfoControl>()))
+                c.UpdateRunningGlow();
         }
 
         /// <summary>
