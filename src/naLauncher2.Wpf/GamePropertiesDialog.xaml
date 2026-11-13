@@ -96,6 +96,11 @@
                      TextWrapping="Wrap" AcceptsReturn="True"
                      Height="80" VerticalScrollBarVisibility="Auto"/>
 
+            <TextBlock Style="{StaticResource LabelStyle}" Text="NOTE"/>
+            <TextBox x:Name="NoteBox" Style="{StaticResource FieldStyle}"
+                     TextWrapping="Wrap" AcceptsReturn="True"
+                     Height="80" VerticalScrollBarVisibility="Auto"/>
+
             <TextBlock Style="{StaticResource LabelStyle}" Text="IMAGE PATH"/>
             <Grid Margin="24,0,24,16">
                 <Grid.ColumnDefinitions>

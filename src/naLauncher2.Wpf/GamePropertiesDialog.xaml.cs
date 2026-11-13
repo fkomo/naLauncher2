@@ -12,6 +12,7 @@ namespace naLauncher2.Wpf
         readonly string _originalGenres;
         readonly string _originalRating;
         readonly string _originalSummary;
+        readonly string _originalNote;
         readonly string _originalImagePath;
         readonly string _originalCompleted;
         readonly string _originalReleaseDate;
@@ -34,6 +35,7 @@ namespace naLauncher2.Wpf
             _originalGenres = game.Genres.Length > 0 ? string.Join(", ", game.Genres) : string.Empty;
             _originalRating = game.Rating.HasValue ? game.Rating.Value.ToString() : string.Empty;
             _originalSummary = game.Summary ?? string.Empty;
+            _originalNote = game.Note ?? string.Empty;
             _originalImagePath = game.ImagePath ?? string.Empty;
             _originalCompleted = game.Completed.HasValue ? game.Completed.Value.ToString("yyyy-MM-dd HH:mm") : string.Empty;
             _originalReleaseDate = game.ReleaseDate.HasValue ? game.ReleaseDate.Value.ToString("yyyy-MM-dd") : string.Empty;
@@ -52,6 +54,7 @@ namespace naLauncher2.Wpf
             GenresBox.Text = _originalGenres;
             RatingBox.Text = _originalRating;
             SummaryBox.Text = _originalSummary;
+            NoteBox.Text = _originalNote;
             ImagePathBox.Text = _originalImagePath;
             ShortcutText.Text = game.Shortcut ?? "(not installed)";
             AddedText.Text = game.Added.ToString("yyyy-MM-dd HH:mm");
@@ -72,6 +75,7 @@ namespace naLauncher2.Wpf
             GenresBox.TextChanged += (_, _) => UpdateSaveButton();
             RatingBox.TextChanged += (_, _) => UpdateSaveButton();
             SummaryBox.TextChanged += (_, _) => UpdateSaveButton();
+            NoteBox.TextChanged += (_, _) => UpdateSaveButton();
             ImagePathBox.TextChanged += (_, _) => UpdateSaveButton();
             CompletedBox.TextChanged += (_, _) => UpdateSaveButton();
             ReleaseDateBox.TextChanged += (_, _) => UpdateSaveButton();
@@ -229,6 +233,7 @@ namespace naLauncher2.Wpf
             GenresBox.Text != _originalGenres ||
             RatingBox.Text != _originalRating ||
             SummaryBox.Text != _originalSummary ||
+            NoteBox.Text != _originalNote ||
             ImagePathBox.Text != _originalImagePath ||
             CompletedBox.Text != _originalCompleted ||
             ReleaseDateBox.Text != _originalReleaseDate ||
@@ -291,6 +296,7 @@ namespace naLauncher2.Wpf
                 ? []
                 : GenresBox.Text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             Game.Summary = string.IsNullOrWhiteSpace(SummaryBox.Text) ? null : SummaryBox.Text.Trim();
+            Game.Note = string.IsNullOrWhiteSpace(NoteBox.Text) ? null : NoteBox.Text.Trim();
             Game.ImagePath = string.IsNullOrWhiteSpace(ImagePathBox.Text) ? null : ImagePathBox.Text.Trim();
             Game.Rating = int.TryParse(RatingBox.Text, out int rating) && rating >= 0 && rating <= 100
                 ? rating
